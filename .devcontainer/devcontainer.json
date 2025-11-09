@@ -1,0 +1,53 @@
+{
+    "build": {
+      "dockerfile": "Dockerfile",
+      "context": "."
+    },
+    "containerEnv": {
+      "HOME": "/home/vscode"
+    },
+    "customizations": {
+      "vscode": {
+        "extensions": [
+          "ms-python.python",
+          "ms-toolsai.jupyter",
+          "ms-python.vscode-pylance",
+          "redhat.vscode-yaml",
+          "mhutchie.git-graph",
+          "ms-azuretools.vscode-docker",
+          "njpwerner.autodocstring",
+          "pomdtr.excalidraw-editor",
+          "tamasfe.even-better-toml",
+          "kokakiwi.vscode-just",
+          "saoudrizwan.claude-dev",
+          "bierner.markdown-mermaid",
+          "qwtel.sqlite-viewer",
+          "TendouAlice.markdown-obsidian-callout",
+          "MrtCtl.smartnotebook",
+          "Gruntfuggly.todo-tree",
+          "google.gemini-cli-vscode-ide-companion",
+        ],
+        "settings": {
+          "python.pythonPath": "/home/vscode/workspace/.venv/bin/python"
+        }
+      }
+    },
+    "postCreateCommand": "sudo chown -R vscode:vscode /home/vscode/workspace",
+    "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} && git config --global --add credential.useHttpPath true",
+    "runArgs": [
+      "--env-file",
+      ".devcontainer/.env"
+    ],
+    "workspaceFolder": "/home/vscode/workspace",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/home/vscode/workspace,type=bind",
+    "features": {
+      "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+    },
+    "containerUser": "vscode",
+    "mounts": [
+      "type=bind,source=${localEnv:HOME}/.config/gcloud,target=/home/vscode/.config/gcloud",
+      "type=bind,source=${localEnv:HOME}/.gemini,target=/home/vscode/.gemini",
+      "type=bind,source=${localEnv:HOME}/.persona,target=/home/vscode/.persona",
+      "type=bind,source=${localEnv:HOME}/.persona.config.yaml,target=/home/vscode/.persona.config.yaml"
+    ]
+}
