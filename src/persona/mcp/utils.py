@@ -30,7 +30,7 @@ async def lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
             config_raw = yaml.safe_load(f) or {}
         config = StorageConfig.model_validate(config_raw)
     else:
-        config = parse_storage_config({}) # Will be read from env vars
+        config = parse_storage_config({})  # Will be read from env vars
     storage_backend = get_storage_backend(config.root)
     index = Index.model_validate_json(storage_backend.load(config.root.index))
     app_context = AppContext(config=config, index=index)

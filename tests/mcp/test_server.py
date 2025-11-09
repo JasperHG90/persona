@@ -52,6 +52,13 @@ async def mock_app_context():
     mock_storage_config = StorageConfig(root={'type': 'local', 'root': '/tmp/test_persona'})
     app_context = AppContext(config=mock_storage_config, index=mock_index)
     app_context._target_storage = MagicMock()
+    # a string containing valid yaml frontmatter
+    app_context._target_storage.load.return_value = """---
+name: test
+description: a test
+---
+some content
+"""
     return app_context
 
 
@@ -97,10 +104,13 @@ async def test_get_nonexistent_persona_logic(mock_app_context):
 @pytest.mark.asyncio
 async def test_add_skill_logic(mock_app_context):
     response = await _add_skill_logic(mock_app_context, 'new_skill', 'A new skill')
-    assert response == "persona skill add --name new_skill --description 'A new skill'"
+    assert response == "persona skills register <PATH> --name new_skill --description 'A new skill'"
 
 
 @pytest.mark.asyncio
 async def test_add_persona_logic(mock_app_context):
     response = await _add_persona_logic(mock_app_context, 'new_persona', 'A new persona')
-    assert response == "persona persona add --name new_persona --description 'A new persona'"
+    assert (
+        response
+        == "persona personas register <PATH> --name new_persona --description 'A new persona'"
+    )
