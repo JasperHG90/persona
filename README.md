@@ -90,9 +90,9 @@ Run the dockerfile using e.g.
 
 ```shell
 docker run \
-    -v ~/.persona:/root/.persona \
-    -v ~/.persona.config.yaml:/root/.persona.config.yaml \
-    -e PERSONA_CONFIG_PATH=/root/.persona.config.yaml \
+    -v ~/.persona:/app/.persona \
+    -e PERSONA_STORAGE_ROOT=/app/.persona \
+    -e PERSONA_STORAGE_TYPE=local \
     persona mcp start
 ```
 
