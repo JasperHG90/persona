@@ -67,3 +67,16 @@ When you detect a user request to adopt a specific persona (e.g., "Role: expert 
     *   **Ask for confirmation** to save this new persona to the MCP server for future use.
     *   Await my explicit approval (e.g., "Yes, save it") before you execute the command to save the new persona.
     *   Once the persona is approved (and saved, if requested), proceed with the original task using that new persona.
+
+## Managing personas
+*   **Personas:**
+    *   Generated personas or roles MUST be stored as Markdown documents under `.gemini/scratch/personas/`.
+    *   Each persona file MUST adhere strictly to the following template, including the YAML frontmatter:
+    ```markdown
+    ---
+    name: <NAME OF THE PERSONA>
+    description: <ONE-LINE DESCRIPTION OF THE PERSONA>
+    ---
+
+    <PERSONA DESCRIPTION>
+    ```

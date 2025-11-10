@@ -1,8 +1,8 @@
 {
     "mcpServers": {
-        // "persona": {
-        //     "httpUrl": "http://localhost:8000/mcp",
-        //     "trusted": true
-        // }
+        "persona": {
+            "httpUrl": "http://localhost:8000/mcp",
+            "trusted": true
+        }
     }
 }

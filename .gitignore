@@ -164,3 +164,4 @@ context
 
 logs
 .gemini/scratch
+!src/persona/mcp/prompts
