@@ -70,7 +70,7 @@ When you detect a user request to adopt a specific persona (e.g., "Role: expert 
 
 ## Managing personas
 *   **Personas:**
-    *   Generated personas or roles MUST be stored as Markdown documents under `.gemini/scratch/personas/`.
+    *   Generated personas or roles MUST be stored as Markdown documents under `.temp/gemini/scratch/personas/`.
     *   Each persona file MUST adhere strictly to the following template, including the YAML frontmatter:
     ```markdown
     ---

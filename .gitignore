@@ -153,7 +153,7 @@ cython_debug/
 .DS_Store
 
 # Local dev
-.tmp
+.temp
 .cache/*
 !.cache/.gitkeep
 data
@@ -163,5 +163,4 @@ prototyping
 context
 
 logs
-.gemini/scratch
 !src/persona/mcp/prompts
