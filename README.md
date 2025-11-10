@@ -106,14 +106,15 @@ Here's the structure of the `settings.json` file:
 {
     "mcpServers": {
         "persona": {
-            "httpUrl": "http://localhost:8000/mcp",
+            "command": "uv",
+            "args": [
+                "run",
+                "persona",
+                "mcp",
+                "start"
+            ],
             "trusted": true
         }
     }
 }
 ```
-
-- **`mcpServers`**: This is a top-level object that holds configurations for different MCP servers.
-- **`persona`**: This is the name of the MCP server configuration. You can define multiple servers here.
-    - **`httpUrl`**: The URL where the MCP server is running. In this example, it's set to `http://localhost:8000/mcp`.
-    - **`trusted`**: A boolean indicating whether the server is trusted. When `true`, Gemini will automatically trust the server's capabilities.

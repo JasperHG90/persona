@@ -1,7 +1,13 @@
 {
     "mcpServers": {
         "persona": {
-            "httpUrl": "http://localhost:8000/mcp",
+            "command": "uv",
+            "args": [
+                "run",
+                "persona",
+                "mcp",
+                "start"
+            ],
             "trusted": true
         }
     }
