@@ -10,10 +10,12 @@ from persona.storage import Index, SubIndex, IndexEntry
 
 @pytest.fixture
 def mock_storage():
-    with patch("persona.cli.commands.get_storage_backend") as mock_get_storage_backend:
+    with patch('persona.cli.commands.get_storage_backend') as mock_get_storage_backend:
         mock = MagicMock()
         mock_get_storage_backend.return_value = mock
-        mock.load.return_value = Index(personas=SubIndex(root={}), skills=SubIndex(root={})).model_dump_json()
+        mock.load.return_value = Index(
+            personas=SubIndex(root={}), skills=SubIndex(root={})
+        ).model_dump_json()
         yield mock
 
 
@@ -22,10 +24,10 @@ def test_list_templates_personas(runner: CliRunner, mock_storage: MagicMock) -> 
     index = Index(
         personas=SubIndex(
             root={
-                "test_persona": IndexEntry(
-                    name="test_persona",
-                    description="A test persona",
-                    uuid="1234",
+                'test_persona': IndexEntry(
+                    name='test_persona',
+                    description='A test persona',
+                    uuid='1234',
                 )
             }
         ),
@@ -34,11 +36,11 @@ def test_list_templates_personas(runner: CliRunner, mock_storage: MagicMock) -> 
     mock_storage.load.return_value = index.model_dump_json()
 
     # Act
-    result = runner.invoke(app, ["personas", "list"])
+    result = runner.invoke(app, ['personas', 'list'])
 
     # Assert
     assert result.exit_code == 0
-    assert "test_persona" in result.stdout
+    assert 'test_persona' in result.stdout
 
 
 def test_list_templates_skills(runner: CliRunner, mock_storage: MagicMock) -> None:
@@ -47,10 +49,10 @@ def test_list_templates_skills(runner: CliRunner, mock_storage: MagicMock) -> No
         personas=SubIndex(root={}),
         skills=SubIndex(
             root={
-                "test_skill": IndexEntry(
-                    name="test_skill",
-                    description="A test skill",
-                    uuid="5678",
+                'test_skill': IndexEntry(
+                    name='test_skill',
+                    description='A test skill',
+                    uuid='5678',
                 )
             }
         ),
@@ -58,11 +60,11 @@ def test_list_templates_skills(runner: CliRunner, mock_storage: MagicMock) -> No
     mock_storage.load.return_value = index.model_dump_json()
 
     # Act
-    result = runner.invoke(app, ["skills", "list"])
+    result = runner.invoke(app, ['skills', 'list'])
 
     # Assert
     assert result.exit_code == 0
-    assert "test_skill" in result.stdout
+    assert 'test_skill' in result.stdout
 
 
 def test_list_templates_empty(runner: CliRunner, mock_storage: MagicMock) -> None:
@@ -71,7 +73,7 @@ def test_list_templates_empty(runner: CliRunner, mock_storage: MagicMock) -> Non
     mock_storage.load.return_value = index.model_dump_json()
 
     # Act
-    result = runner.invoke(app, ["personas", "list"])
+    result = runner.invoke(app, ['personas', 'list'])
 
     # Assert
     assert result.exit_code == 0
@@ -79,14 +81,14 @@ def test_list_templates_empty(runner: CliRunner, mock_storage: MagicMock) -> Non
 
 def test_copy_template(runner: CliRunner, mock_storage: MagicMock, tmp_path: Path) -> None:
     # Arrange
-    template_path = tmp_path / "PERSONA.md"
-    with open(template_path, "w") as f:
-        f.write("---\nname: new_persona\ndescription: A new persona\n---\n")
+    template_path = tmp_path / 'PERSONA.md'
+    with open(template_path, 'w') as f:
+        f.write('---\nname: new_persona\ndescription: A new persona\n---\n')
 
     # Act
     result = runner.invoke(
         app,
-        ["personas", "register", str(template_path)],
+        ['personas', 'register', str(template_path)],
     )
 
     # Assert
@@ -99,10 +101,10 @@ def test_remove_template(runner: CliRunner, mock_storage: MagicMock) -> None:
     index = Index(
         personas=SubIndex(
             root={
-                "test_persona": IndexEntry(
-                    name="test_persona",
-                    description="A test persona",
-                    uuid="1234",
+                'test_persona': IndexEntry(
+                    name='test_persona',
+                    description='A test persona',
+                    uuid='1234',
                 )
             }
         ),
@@ -111,11 +113,11 @@ def test_remove_template(runner: CliRunner, mock_storage: MagicMock) -> None:
     mock_storage.load.return_value = index.model_dump_json()
 
     # Act
-    result = runner.invoke(app, ["personas", "remove", "test_persona"])
+    result = runner.invoke(app, ['personas', 'remove', 'test_persona'])
 
     # Assert
     assert result.exit_code == 0
-    assert "Template \"test_persona\" has been removed" in result.stdout
+    assert 'Template "test_persona" has been removed' in result.stdout
 
 
 def test_remove_template_not_found(runner: CliRunner, mock_storage: MagicMock) -> None:
@@ -124,8 +126,8 @@ def test_remove_template_not_found(runner: CliRunner, mock_storage: MagicMock) -
     mock_storage.load.return_value = index.model_dump_json()
 
     # Act
-    result = runner.invoke(app, ["personas", "remove", "non_existent_persona"])
+    result = runner.invoke(app, ['personas', 'remove', 'non_existent_persona'])
 
     # Assert
     assert result.exit_code != 0
-    assert "Persona \"non_existent_persona\" does not exist" in result.stdout
+    assert 'Persona "non_existent_persona" does not exist' in result.stdout

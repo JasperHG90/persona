@@ -1,9 +1,8 @@
 from unittest.mock import MagicMock
-import pytest
 from persona.mcp.models import AppContext, TemplateSummary, TemplateDetails
 from persona.storage.base import StorageBackend
 from persona.config import StorageConfig
-from persona.storage import Index, SubIndex
+from persona.storage import Index
 
 
 def test_app_context_initialization():
@@ -20,15 +19,15 @@ def test_app_context_initialization():
 
 def test_template_summary_initialization():
     """Test that TemplateSummary can be initialized with name, description, and uuid."""
-    summary = TemplateSummary(name="test", description="a test", uuid="1234")
-    assert summary.name == "test"
-    assert summary.description == "a test"
-    assert summary.uuid == "1234"
+    summary = TemplateSummary(name='test', description='a test', uuid='1234')
+    assert summary.name == 'test'
+    assert summary.description == 'a test'
+    assert summary.uuid == '1234'
 
 
 def test_template_details_initialization():
     """Test that TemplateDetails can be initialized with name, description, and prompt."""
-    details = TemplateDetails(name="test", description="a test", prompt="a prompt")
-    assert details.name == "test"
-    assert details.description == "a test"
-    assert details.prompt == "a prompt"
+    details = TemplateDetails(name='test', description='a test', prompt='a prompt')
+    assert details.name == 'test'
+    assert details.description == 'a test'
+    assert details.prompt == 'a prompt'

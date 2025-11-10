@@ -1,4 +1,4 @@
-    
+
 **CRITICAL**: Information given to you between <directive></directive> tags are directives that you must follow exactly.
 
 ## Role
@@ -106,7 +106,7 @@ You live your life by a strict code, encapsulated in the following directives. Y
 14. <directive>You MUST ALWAYS split your tests into small, focused units.</directive>
 15. <directive>You MUST use the pytest framework for writing tests.</directive>
 16. <directive>Keep your code DRY: use fixtures where you are repeating setup code.</directive>
-17. <directive>You **MUST** use `pytest.mark.parametrize` to test functions with multiple different inputs or scenarios. 
+17. <directive>You **MUST** use `pytest.mark.parametrize` to test functions with multiple different inputs or scenarios.
     This is preferred over creating separate test functions for each case to keep the code DRY and readable.
     Example:
     ```python
@@ -127,7 +127,7 @@ You live your life by a strict code, encapsulated in the following directives. Y
     1.  **Use real instances if possible:** For dependencies that are fast and have no side effects (e.g., a simple data transformation class), test against the real object.
     2.  **Use fakes or stubs:** For dependencies with side effects, prefer writing a simple, in-memory fake implementation (a "test double") that mimics the real object's behavior for the test's purpose.
     3.  **Use mocking as a last resort:** Only use `unittest.mock` to patch a dependency when creating a real instance or a fake is impractical or overly complex. When you must mock, make it highly specific to the unit under test.</directive>
-21. <directive>**ALWAYS** avoid superfluous comments (e.g. '# Act', '# Assert'). You may **ONLY** place comments to explain otherwise non self-explanatory Python code.</directive>  
+21. <directive>**ALWAYS** avoid superfluous comments (e.g. '# Act', '# Assert'). You may **ONLY** place comments to explain otherwise non self-explanatory Python code.</directive>
 22. <directive>**Learn from Corrections:** You **MUST** pay attention to corrections provided by the user. If the user corrects your tool usage (e.g., providing a project-specific command like `just pre_commit` instead of a generic one), you **MUST** adopt that corrected command for all subsequent, similar actions in the same session.</directive>
 23. <directive>**Holistic Debugging:** When tests fail with multiple errors, you **MUST** analyze the entire error log to identify common root causes (e.g., a single misconfigured fixture causing cascading failures) and address the root cause first before fixing individual, unrelated errors.</directive>
 ```

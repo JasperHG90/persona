@@ -8,31 +8,26 @@ from persona.storage import IndexEntry
 
 from .models import AppContext, TemplateDetails
 from .utils import (
-    _add_persona_logic,
-    _add_skill_logic,
     _get_persona_logic,
     _get_skill_logic,
     _list_personas_logic,
     _list_skills_logic,
     lifespan,
 )
+
 prompts_dir = plb.Path(__file__).parent / 'prompts'
 
 mcp = FastMCP('persona_mcp', version='0.1.0', lifespan=lifespan)
 
 
-@mcp.tool(
-    description='List all available personas.'
-)
+@mcp.tool(description='List all available personas.')
 async def list_personas(ctx: Context) -> list[IndexEntry]:
     """List all personas."""
     app_context: AppContext = ctx.request_context.lifespan_context
     return await _list_personas_logic(app_context)
 
 
-@mcp.tool(
-    description='List all available skills.'
-)
+@mcp.tool(description='List all available skills.')
 async def list_skills(ctx: Context) -> list[IndexEntry]:
     """List all skills."""
     app_context: AppContext = ctx.request_context.lifespan_context
@@ -67,7 +62,7 @@ async def persona_template(description: str) -> str:
         template = (await f.read()).strip()
     user_instructions = f"""
     ## User input
-    
+
     Description: {description}
     """
     return template + '\n' + user_instructions.strip()
@@ -81,28 +76,26 @@ async def persona_review(persona: str, chat_history: str | None = None) -> str:
         template = (await f.read()).strip()
     user_instructions = f"""
     ## User input
-    
-    Persona Definition: 
+
+    Persona Definition:
     {persona}
-    
+
     Chat History (optional):
     {chat_history or 'N/A'}
     """
     return template + '\n' + user_instructions.strip()
 
 
-@mcp.prompt(
-    name='persona:edit', description='Edit a persona definition based on feedback.'
-)
+@mcp.prompt(name='persona:edit', description='Edit a persona definition based on feedback.')
 async def persona_edit(persona: str, feedback: str) -> str:
     async with aiofiles.open(prompts_dir / 'edit.md', mode='r') as f:
         template = (await f.read()).strip()
     user_instructions = f"""
     ## User input
-    
-    Persona Definition: 
+
+    Persona Definition:
     {persona}
-    
+
     Feedback:
     {feedback}
     """
