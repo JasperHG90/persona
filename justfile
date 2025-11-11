@@ -4,7 +4,7 @@ alias p := pre_commit
 
 # Install python dependencies
 install:
-  uv sync --all-groups
+  uv sync --all-groups --all-extras
 
 # Install pre-commit hooks
 pre_commit_setup:

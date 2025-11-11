@@ -14,7 +14,7 @@ app = typer.Typer()
 def start_server():
     """Start the MCP server."""
     if not _has_mcp_deps:
-        typer.echo('MCP dependencies are not installed. Please install the required packages.')
+        typer.echo('[red][bold]MCP dependencies are not installed. Please install Persona with the "mcp" extra.[/bold][/red]')
         raise typer.Exit(code=1)
     else:
         entrypoint()  # type: ignore

@@ -106,7 +106,7 @@ def entrypoint():
     """
     Entrypoint for the MCP server.
     """
-    asyncio.run(mcp.run_async(transport='stdio'))  # , host='127.0.0.1', port=8000))
+    asyncio.run(mcp.run_async(transport='stdio'))
 
 
 if __name__ == '__main__':
