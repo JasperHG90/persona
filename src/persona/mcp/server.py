@@ -1,10 +1,10 @@
 import asyncio
+from typing import cast
 import pathlib as plb
 
 import aiofiles
 from fastmcp import FastMCP, Context
-
-from persona.storage import IndexEntry
+from mcp.shared.context import RequestContext
 
 from .models import AppContext, TemplateDetails
 from .utils import (
@@ -21,16 +21,16 @@ mcp = FastMCP('persona_mcp', version='0.1.0', lifespan=lifespan)
 
 
 @mcp.tool(description='List all available personas.')
-async def list_personas(ctx: Context) -> list[IndexEntry]:
+async def list_personas(ctx: Context) -> list[dict]:
     """List all personas."""
-    app_context: AppContext = ctx.request_context.lifespan_context
+    app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
     return await _list_personas_logic(app_context)
 
 
 @mcp.tool(description='List all available skills.')
-async def list_skills(ctx: Context) -> list[IndexEntry]:
+async def list_skills(ctx: Context) -> list[dict]:
     """List all skills."""
-    app_context: AppContext = ctx.request_context.lifespan_context
+    app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
     return await _list_skills_logic(app_context)
 
 
@@ -40,7 +40,7 @@ async def list_skills(ctx: Context) -> list[IndexEntry]:
 )
 async def get_skill(ctx: Context, name: str) -> TemplateDetails:
     """Get a skill by name."""
-    app_context: AppContext = ctx.request_context.lifespan_context
+    app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
     return await _get_skill_logic(app_context, name)
 
 
@@ -50,7 +50,7 @@ async def get_skill(ctx: Context, name: str) -> TemplateDetails:
 )
 async def get_persona(ctx: Context, name: str) -> TemplateDetails:
     """Get a persona by name."""
-    app_context: AppContext = ctx.request_context.lifespan_context
+    app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
     return await _get_persona_logic(app_context, name)
 
 

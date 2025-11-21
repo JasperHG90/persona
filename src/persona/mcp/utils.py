@@ -38,26 +38,26 @@ async def lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
     yield app_context
 
 
-async def _list_personas_logic(ctx: AppContext) -> list[IndexEntry]:
+async def _list_personas_logic(ctx: AppContext) -> list[dict]:
     """List all personas (logic)."""
     return [
         IndexEntry(
             name=persona.name,
             description=persona.description,
             uuid=persona.uuid,
-        )
+        ).model_dump()
         for persona in ctx.index.personas.root.values()
     ]
 
 
-async def _list_skills_logic(ctx: AppContext) -> list[IndexEntry]:
+async def _list_skills_logic(ctx: AppContext) -> list[dict]:
     """List all skills (logic)."""
     return [
         IndexEntry(
             name=skill.name,
             description=skill.description,
             uuid=skill.uuid,
-        )
+        ).model_dump()
         for skill in ctx.index.skills.root.values()
     ]
 
