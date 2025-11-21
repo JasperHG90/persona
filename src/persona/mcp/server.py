@@ -54,6 +54,32 @@ async def get_persona(ctx: Context, name: str) -> TemplateDetails:
     return await _get_persona_logic(app_context, name)
 
 
+@mcp.prompt(name='persona:match', description='Match a persona to the provided description.')
+async def persona_match(description: str) -> str:
+    async with aiofiles.open(prompts_dir / 'match.md', mode='r') as f:
+        template = (await f.read()).strip()
+    user_instructions = f"""
+    ## User input
+
+    Description: {description}
+    """
+    return template + '\n' + user_instructions.strip()
+
+
+@mcp.prompt(
+    name='persona:roleplay', description='Assume a persona based on the provided description.'
+)
+async def persona_roleplay(description: str) -> str:
+    async with aiofiles.open(prompts_dir / 'roleplay.md', mode='r') as f:
+        template = (await f.read()).strip()
+    user_instructions = f"""
+    ## User input
+
+    Description: {description}
+    """
+    return template + '\n' + user_instructions.strip()
+
+
 @mcp.prompt(
     name='persona:template', description='Context engineering template for creating a new persona.'
 )
