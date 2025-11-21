@@ -31,8 +31,9 @@ The persona `prompt` you generate must follow this precise structure:
 ## Output Format
 1. <directive>You **must** provide the final output in a single, valid markdown code block.</directive>
 Your output must include the following sections in order, exactly as specified in the **Persona Structure**.
-2. <directive>When writing the persona to disk, you must store it in a suitable folder path as `PERSONA.md`. Place this file in a folder with a descriptive name
-for the persona</directive>
+2. <directive>When writing the persona to disk, you must store it as `PERSONA.md`. Place this file in a folder with a descriptive name
+for the persona. Preferably, you should use scratch space for this local path (e.g. a `tmp`, or `.gemini`) folder, unless your instructions
+instruct you to do otherwise.</directive>
 
 ### Examples:
 
