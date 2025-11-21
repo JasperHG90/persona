@@ -972,7 +972,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "aiofiles", marker = "extra == 'mcp'", specifier = ">=25.1.0" },
-    { name = "fastmcp", marker = "extra == 'mcp'", specifier = ">=2.13.0.2" },
+    { name = "fastmcp", marker = "extra == 'mcp'", specifier = ">=2.13.1" },
     { name = "fsspec", specifier = ">=2025.10.0" },
     { name = "httpx", specifier = ">=0.27.0" },
     { name = "httpx", specifier = ">=0.28.1" },
