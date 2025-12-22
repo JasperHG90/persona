@@ -40,7 +40,6 @@ class Transaction:
     def __init__(self, storage_backend: 'StorageBackend'):
         self._logger = logging.getLogger('persona.storage.Transaction')
         self._storage = storage_backend
-
         self._log: list[tuple[Literal['restore', 'delete'], str, Any]] = []
         self._hashes = TemplateHashValues()
 
@@ -52,6 +51,34 @@ class Transaction:
 
     def _add_file_hash(self, file: str, content: bytes) -> None:
         self._hashes.add(file, content)
+
+    def _update_index(self) -> None:
+        """Update the index with the new or updated template entry."""
+        db = VectorDatabase(uri=self._storage.config.index_path)
+        type_ = list(set(entry.type for _, entry in self._storage._metadata))
+        if len(type_) != 1:
+            raise ValueError('All index entries must have the same type for a single transaction.')
+        deletes = []
+        upserts = []
+
+        for action, entry in self._storage._metadata:
+            if entry.uuid is None:
+                entry.update('uuid', self.transaction_id)
+            if action == 'delete':
+                deletes.append(entry)
+            elif action == 'upsert':
+                upserts.append(entry)
+
+        if upserts:
+            db.update_table(
+                'skills' if type_[0] == 'skill' else 'personas',
+                [entry.model_dump(exclude=['type']) for entry in upserts],
+            )
+        if deletes:
+            db.remove(
+                'skills' if type_[0] == 'skill' else 'personas',
+                names=[entry.name for entry in deletes if entry.name is not None],
+            )
 
     @property
     def transaction_id(self) -> str:
@@ -80,7 +107,17 @@ class Transaction:
         self._storage._transaction = None
 
         if exc_type is not None:
+            self._logger.error(f'Transaction failed with exception: {exc_value}')
+            self._logger.debug('Performing rollback due to exception...')
             self.rollback()
+
+        try:
+            self._update_index()
+        except Exception as e:
+            self._logger.error(f'Failed to update index during transaction commit: {e}')
+            self._logger.debug('Performing rollback due to index update failure...')
+            self.rollback()
+            raise e
 
         self._undo_log = []
 
@@ -143,10 +180,11 @@ class VectorDatabase:
         """Drop the entire database."""
         self._db.drop_all_tables()
 
-    def remove(self, table_name: Literal['personas', 'skills'], name: str) -> None:
+    def remove(self, table_name: Literal['personas', 'skills'], names: list[str]) -> None:
         """Remove entries from the specified table by name."""
         table = self.get_or_create_table(table_name)
-        table.delete(where="name = '%s'" % (name))
+        names_joined = ','.join([f"'{name}'" for name in names])
+        table.delete(where='name IN (%s)' % (names_joined))
         if self.optimize:
             table.optimize()
 
@@ -181,6 +219,8 @@ class StorageBackend(Generic[T], metaclass=ABCMeta):
         self._fs = self.initialize()
         self._logger.debug(f'Storage backend filesystem initialized: {self._fs}')
 
+        self._metadata: list[tuple[Literal['upsert', 'delete'], IndexEntry]] = []
+
         self._transaction: Transaction | None = None
 
     @abstractmethod
@@ -198,6 +238,14 @@ class StorageBackend(Generic[T], metaclass=ABCMeta):
             str: joined path, e.g. /home/vscode/workspace/path/to/file.txt
         """
         return os.path.join(str(self.config.root), key)
+
+    def index(self, entry: IndexEntry) -> None:
+        """Stage metadata to be written to the metastore"""
+        self._metadata.append(('upsert', entry))
+
+    def deindex(self, entry: IndexEntry) -> None:
+        """Stage metadata deletion from the metastore"""
+        self._metadata.append(('delete', entry))
 
     def _save(self, key: str, data: bytes) -> None:
         """Save data to the storage backend without transaction logging."""

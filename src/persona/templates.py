@@ -13,9 +13,8 @@ from persona.storage import (
     StorageBackend,
     Transaction,
     IndexEntry,
-    VectorDatabase,
 )
-from persona.config import LocalStorageConfig, BaseStorageConfig
+from persona.config import LocalStorageConfig
 
 logger = logging.getLogger('persona.core.files')
 
@@ -118,14 +117,6 @@ class Template(BaseModel):
         fm = frontmatter.loads(content)
         return fm.metadata
 
-    def _update_index(self, entry: IndexEntry, storage: StorageBackend) -> None:
-        """Update the index with the new or updated template entry."""
-        storage_config: BaseStorageConfig = storage.config
-        VectorDatabase(uri=storage_config.index_path).update_table(
-            'skills' if self.get_type() == 'skill' else 'personas',
-            [entry.model_dump()],
-        )
-
     def copy_template(self, entry: IndexEntry, target_storage: StorageBackend):
         """
         Recursively copies all files from this template's root_path to a new location.
@@ -139,6 +130,7 @@ class Template(BaseModel):
             'description', entry.description or cast(str, metadata.get('description', None))
         )
         entry.update('name', entry.name or cast(str, metadata.get('name', None)))
+        entry.update('type', self.get_type())
 
         if not entry.name or not entry.description:
             raise ValueError(
@@ -150,7 +142,7 @@ class Template(BaseModel):
         local_path_root = self.path.parent if self.path.is_file() else self.path
         glob = '**/*' if plb.Path(self.path).is_dir() else self.path.name
 
-        with Transaction(target_storage) as tx:
+        with Transaction(target_storage):
             for filename in local_path_root.glob(glob):
                 if filename.is_dir():
                     continue
@@ -171,8 +163,7 @@ class Template(BaseModel):
                     content = file_.content
 
                 target_storage.save(file_.target_key, content)
-            entry.update('uuid', tx.transaction_id)
-            self._update_index(entry, storage=target_storage)
+            target_storage.index(entry)
 
 
 class Skill(Template):

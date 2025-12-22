@@ -92,6 +92,6 @@ def remove_template(ctx: typer.Context, name: str, type: TemplateTypeEnum):
             _file = cast(str, file)
             target_storage.delete(_file)
         target_storage.delete(f'{config.root.root}/{template_key}', recursive=True)
-    db.remove(_type, name)
+        target_storage.deindex(entry=IndexEntry(name=name, type=type.value))
 
     console.print(f'[green]Template "{name}" has been removed.[/green]')
