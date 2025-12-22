@@ -1,7 +1,7 @@
 [project]
 name = "persona"
 version = "0.0.0"
-description = "Open data contract POC for hosting API and MCP services"
+description = "A python library for storing and managing LLM prompts and skills."
 authors = [
   {name="Jasper Ginn", email="jasperginn@gmail.com"}
 ]

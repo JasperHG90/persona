@@ -2,7 +2,7 @@ import os
 import logging
 import hashlib
 import pathlib as plb
-from typing import Generic, TypeVar, Any, Literal
+from typing import Generic, TypeVar, Any, Literal, cast, BinaryIO
 from abc import ABCMeta, abstractmethod
 
 import orjson
@@ -20,8 +20,8 @@ class TemplateHashValues(RootModel[dict[str, str]]):
     def _hash_content(self, content: bytes) -> str:
         return hashlib.md5(content).hexdigest()
 
-    def add(self, file: str, content: str) -> None:
-        self.root[file] = self._hash_content(content.encode('utf-8'))
+    def add(self, file: str, content: bytes) -> None:
+        self.root[file] = self._hash_content(content)
 
     def hash(self, exclude: set[str] | None = None) -> str:
         model_dump = {
@@ -52,7 +52,7 @@ class Transaction:
         self._logger.debug(f'Logging action: {action} for key: {key}')
         self._log.append((action, key, data))
 
-    def _add_file_hash(self, file: str, content: str) -> None:
+    def _add_file_hash(self, file: str, content: bytes) -> None:
         self._hashes.add(file, content)
 
     @property
@@ -115,15 +115,15 @@ class StorageBackend(Generic[T], metaclass=ABCMeta):
         """
         return os.path.join(str(self.config.root), key)
 
-    def _save(self, key: str, data: str) -> None:
+    def _save(self, key: str, data: bytes) -> None:
         """Save data to the storage backend without transaction logging."""
         fp = self.join_path(key)
         self._logger.debug(f'Saving data to path: {fp}')
         self._fs.makedirs(self._fs._parent(fp), exist_ok=True)
-        with self._fs.open(fp, 'w') as f:
+        with cast(BinaryIO, self._fs.open(fp, 'wb')) as f:
             f.write(data)
 
-    def save(self, key: str, data: str) -> None:
+    def save(self, key: str, data: bytes) -> None:
         """
         Save data to the storage backend.
 
@@ -162,7 +162,7 @@ class StorageBackend(Generic[T], metaclass=ABCMeta):
                     self._transaction._add_file_hash(key, existing_data)
         self._delete(key, recursive=recursive)
 
-    def load(self, key: str) -> Any:
+    def load(self, key: str) -> bytes:
         """
         Load data from the storage backend.
 
@@ -174,7 +174,7 @@ class StorageBackend(Generic[T], metaclass=ABCMeta):
         """
         fp = self.join_path(key)
         self._logger.debug(f'Loading data from path: {fp}')
-        with self._fs.open(fp, 'r') as f:
+        with cast(BinaryIO, self._fs.open(fp, 'rb')) as f:
             return f.read()
 
     def exists(self, key: str) -> bool:

@@ -14,6 +14,53 @@ from persona.config import LocalStorageConfig
 logger = logging.getLogger('persona.core.files')
 
 
+def _is_persona_root_file(path: plb.Path) -> bool:
+    return path.name in ['PERSONA.md', 'SKILL.md']
+
+
+class SourceFile:
+    def __init__(
+        self,
+        path: plb.Path,
+        source_path_root: plb.Path | None = None,
+        target_path_root: str | None = None,
+    ) -> None:
+        self.path = path
+        self.source_path_root = source_path_root
+        self.target_path_root = target_path_root
+
+    @cached_property
+    def content(self) -> bytes:
+        return self.path.read_bytes()
+
+    @property
+    def target_key(self) -> str:
+        return '%s/%s' % (
+            self.target_path_root,
+            cast(str, str(self.path)).removeprefix(str(self.source_path_root)).lstrip('/'),
+        )
+
+
+class PersonaRootSourceFile(SourceFile):
+    @cached_property
+    def frontmatter(self) -> frontmatter.Post:
+        return frontmatter.loads(self.content.decode('utf-8'))
+
+    @cached_property
+    def metadata(self) -> dict[str, object] | None:
+        return self.frontmatter.metadata
+
+    def update_metadata(self, name: str | None, description: str | None) -> bytes:
+        fm = self.frontmatter
+        fm.metadata.update(
+            {
+                'name': name,
+                'description': description,
+            }
+        )
+        return frontmatter.dumps(fm).encode('utf-8')
+
+
 class Template(BaseModel):
     path: plb.Path
 
@@ -65,6 +112,16 @@ class Template(BaseModel):
         fm = frontmatter.loads(content)
         return fm.metadata
 
+    def _update_index(self, entry: IndexEntry, tx: Transaction) -> None:
+        """Update the index with the new or updated template entry."""
+        index = Index.model_validate_json(
+            tx._storage.load(tx._storage.config.index).decode('utf-8')
+        )
+        logger.debug(f'Transaction ID: {tx.transaction_id}')
+        entry.uuid = tx.transaction_id
+        index.skills.upsert(entry) if self.get_type() == 'skill' else index.personas.upsert(entry)
+        tx._storage.save('index.json', index.model_dump_json(indent=2).encode('utf-8'))
+
     def copy_template(self, entry: IndexEntry, target_storage: StorageBackend):
         """
         Recursively copies all files from this template's root_path to a new location.
@@ -86,44 +143,31 @@ class Template(BaseModel):
 
         target_key = f'{self.get_type()}s/{entry.name}'
 
+        local_path_root = self.path.parent if self.path.is_file() else self.path
+        glob = '**/*' if plb.Path(self.path).is_dir() else self.path.name
+
         with Transaction(target_storage) as tx:
-            local_path_root = self.path.parent if self.path.is_file() else self.path
-            glob = '**/*' if plb.Path(self.path).is_dir() else self.path.name
             for filename in local_path_root.glob(glob):
                 if filename.is_dir():
                     continue
-                _target_key = '%s/%s' % (
-                    target_key,
-                    cast(str, str(filename)).removeprefix(str(local_path_root)).lstrip('/'),
+                kwargs = {
+                    'path': filename,
+                    'source_path_root': local_path_root,
+                    'target_path_root': target_key,
+                }
+                file_ = (
+                    SourceFile(**kwargs)
+                    if not _is_persona_root_file(filename)
+                    else PersonaRootSourceFile(**kwargs)
                 )
-                logger.debug(f'Copying file {filename} to {target_key}')
-                try:
-                    with plb.Path(cast(str, filename)).open('r') as f:
-                        content = f.read()
-                except UnicodeDecodeError:
-                    logger.warning('Cannot read file %s as text, copying as binary.' % filename)
-                    _fp = '%s/%s' % (target_storage.config.root, _target_key)
-                    _fp_parent = str(plb.Path(_fp).parent)
-                    target_storage._fs.makedirs(_fp_parent, exist_ok=True)
-                    target_storage._fs.copy(str(filename), _fp)
-                    continue
-                if filename.name in ['PERSONA.md', 'SKILL.md']:
-                    fm = frontmatter.loads(content)
-                    fm.metadata.update(
-                        {
-                            'name': entry.name,
-                            'description': entry.description,
-                        }
-                    )
-                    content = frontmatter.dumps(fm)
-                target_storage.save(_target_key, content)
-            index = Index.model_validate_json(target_storage.load(target_storage.config.index))
-            logger.debug(f'Transaction ID: {tx.transaction_id}')
-            entry.uuid = tx.transaction_id
-            index.skills.upsert(entry) if self.get_type() == 'skill' else index.personas.upsert(
-                entry
-            )
-            target_storage.save('index.json', index.model_dump_json(indent=2))
+
+                if isinstance(file_, PersonaRootSourceFile):
+                    content = file_.update_metadata(entry.name, entry.description)
+                else:
+                    content = file_.content
+
+                target_storage.save(file_.target_key, content)
+            self._update_index(entry, tx)
 
 
 class Skill(Template):
