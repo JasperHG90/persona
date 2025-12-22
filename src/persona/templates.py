@@ -8,8 +8,14 @@ from functools import cached_property
 
 from pydantic import Field, BaseModel, field_validator, TypeAdapter, model_validator
 
-from persona.storage import LocalStorageBackend, StorageBackend, Transaction, Index, IndexEntry
-from persona.config import LocalStorageConfig
+from persona.storage import (
+    LocalStorageBackend,
+    StorageBackend,
+    Transaction,
+    IndexEntry,
+    VectorDatabase,
+)
+from persona.config import LocalStorageConfig, BaseStorageConfig
 
 logger = logging.getLogger('persona.core.files')
 
@@ -112,15 +118,13 @@ class Template(BaseModel):
         fm = frontmatter.loads(content)
         return fm.metadata
 
-    def _update_index(self, entry: IndexEntry, tx: Transaction) -> None:
+    def _update_index(self, entry: IndexEntry, storage: StorageBackend) -> None:
         """Update the index with the new or updated template entry."""
-        index = Index.model_validate_json(
-            tx._storage.load(tx._storage.config.index).decode('utf-8')
+        storage_config: BaseStorageConfig = storage.config
+        VectorDatabase(uri=storage_config.index_path).update_table(
+            'skills' if self.get_type() == 'skill' else 'personas',
+            [entry.model_dump()],
         )
-        logger.debug(f'Transaction ID: {tx.transaction_id}')
-        entry.uuid = tx.transaction_id
-        index.skills.upsert(entry) if self.get_type() == 'skill' else index.personas.upsert(entry)
-        tx._storage.save('index.json', index.model_dump_json(indent=2).encode('utf-8'))
 
     def copy_template(self, entry: IndexEntry, target_storage: StorageBackend):
         """
@@ -167,7 +171,8 @@ class Template(BaseModel):
                     content = file_.content
 
                 target_storage.save(file_.target_key, content)
-            self._update_index(entry, tx)
+            entry.update('uuid', tx.transaction_id)
+            self._update_index(entry, storage=target_storage)
 
 
 class Skill(Template):

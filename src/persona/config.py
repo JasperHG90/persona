@@ -8,15 +8,30 @@ from pydantic import RootModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+class IndexConfig(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix='PERSONA_STORAGE_INDEX_')
+
+    name: str = 'index'
+
+
 class BaseStorageConfig(BaseSettings):
     model_config = SettingsConfigDict(env_prefix='PERSONA_STORAGE_')
 
     root: str = Field(default_factory=lambda: str(plb.Path.home() / '.persona'))
-    index: str = 'index.json'
+    index: str = 'index'
+    # index: str = 'index.json'
 
     @property
     def index_path(self) -> str:
         return os.path.join(self.root, self.index)
+
+    @property
+    def personas_dir(self) -> str:
+        return os.path.join(self.root, 'personas')
+
+    @property
+    def skills_dir(self) -> str:
+        return os.path.join(self.root, 'skills')
 
 
 class LocalStorageConfig(BaseStorageConfig):

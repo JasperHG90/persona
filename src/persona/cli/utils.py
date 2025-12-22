@@ -5,7 +5,7 @@ import typer
 from rich.console import Console
 
 from persona.cache import download_and_cache_github_repo
-from .commands import copy_template, list_templates, remove_template, TemplateTypeEnum
+from .commands import copy_template, list_templates, remove_template, match_query, TemplateTypeEnum
 
 console = Console()
 
@@ -87,5 +87,21 @@ def create_cli(
         ],
     ):
         remove_template(ctx, name, template_type)
+
+    @app.command(
+        'match',
+        help=f'Match a {name} to available {name}s.',
+        no_args_is_help=True,
+    )
+    def match(
+        ctx: typer.Context,
+        query: Annotated[
+            str,
+            typer.Argument(
+                help=f'The description of the desired {name}.',
+            ),
+        ],
+    ):
+        match_query(ctx, query, template_type)
 
     return app

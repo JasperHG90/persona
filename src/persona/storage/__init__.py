@@ -1,6 +1,10 @@
-from .base import StorageBackend as StorageBackend, Transaction as Transaction
+from .base import (
+    StorageBackend as StorageBackend,
+    Transaction as Transaction,
+    VectorDatabase as VectorDatabase,
+)
 from .local import LocalStorageBackend as LocalStorageBackend
-from .models import Index as Index, IndexEntry as IndexEntry, SubIndex as SubIndex
+from .models import IndexEntry as IndexEntry
 
 from persona import config
 

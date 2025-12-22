@@ -1,4 +1,3 @@
-import json
 import uuid
 import logging
 import itertools
@@ -9,6 +8,7 @@ import pathlib as plb
 import typer
 import yaml
 import frontmatter
+from box import Box
 from rich import print
 from pydantic.v1.utils import deep_update
 
@@ -16,7 +16,7 @@ from .personas import app as personas_app
 from .skills import app as skills_app
 from .cache import app as cache_app
 from .mcp import app as mcp_app
-from persona.storage import Index, IndexEntry, SubIndex, get_storage_backend, Transaction
+from persona.storage import IndexEntry, get_storage_backend, VectorDatabase
 from persona.config import parse_storage_config, StorageConfig
 
 
@@ -65,7 +65,7 @@ def main(
         typer.Option(
             '--set',
             '-s',
-            help='Override a configuration value, e.g. --set root=/path/to/root',
+            help='Override a configuration value, e.g. --set root=/path/to/root. You can use dot notation for nested values, e.g. --set root.index_path=/new/index/path.',
             rich_help_panel='Configuration Overrides',
         ),
     ] = None,
@@ -73,17 +73,19 @@ def main(
     if debug:
         logger.setLevel(logging.DEBUG)
 
-    overrides = {}
+    box = Box(box_dots=True, default_box=True)
     if set_vars:
         for var in set_vars:
             try:
                 key, value = var.split('=', 1)
-                overrides[key.strip()] = value.strip()
+                # This will automatically create nested boxes if needed
+                box[key.strip()] = value.strip()
             except ValueError:
                 raise typer.BadParameter(
                     f"Invalid format for --set option: '{var}'. Expected format is key=value."
                 )
 
+    overrides = box.to_dict()
     # Reads from env vars if set
     try:
         if not config.exists():
@@ -108,7 +110,11 @@ def reindex(ctx: typer.Context):
     _config: StorageConfig = ctx.obj['config']
     target_storage = get_storage_backend(_config.root)
     _path = _config.root.root
-    index = Index(personas=SubIndex(root={}), skills=SubIndex(root={}))
+    index = {
+        'skills': [],
+        'personas': [],
+    }
+    logger.info(f'Re-indexing templates from path: {_path}')
     for template in itertools.chain(
         target_storage._fs.glob(f'{_path}/**/SKILL.md'),
         target_storage._fs.glob(f'{_path}/**/PERSONA.md'),
@@ -121,31 +127,37 @@ def reindex(ctx: typer.Context):
         entry_type = 'skill' if _template.split('/')[-1] == 'SKILL.md' else 'persona'
         entry = IndexEntry(
             name=cast(str, fm.metadata['name']),
-            description=cast(str, fm.metadata['description']),
+            description='%s - %s'
+            % (cast(str, fm.metadata['name']), cast(str, fm.metadata['description'])),
             uuid=uuid.uuid4().hex,  # Random init
         )
-        index.skills.upsert(entry) if entry_type == 'skill' else index.personas.upsert(entry)
-    with Transaction(target_storage):
-        target_storage.save(_config.root.index, index.model_dump_json(indent=2).encode('utf-8'))
+        index[entry_type + 's'].append(entry.model_dump())
+    db = VectorDatabase(uri=_config.root.index_path, optimize=False)
+    logger.info('Dropping existing tables...')
+    db.drop_all_tables()
+    db.create_persona_tables()
+    for k, v in index.items():
+        logger.info(f'Updating table: {k} with {len(v)} entries.')
+        db.update_table('personas' if k == 'personas' else 'skills', v)
 
 
-@app.command(help='Initialize Persona configuration file.')
+@app.command(help='Initialize Persona objects on target storage.')
 def init(ctx: typer.Context):
     """Initialize Persona configuration file."""
     _config: StorageConfig = ctx.obj['config']
+    target_storage = get_storage_backend(_config.root)
     config_path: plb.Path = ctx.obj['config_path']
     with config_path.open('w') as f:
         yaml.safe_dump(_config.model_dump(), f)
     typer.echo(f'Initialized Persona configuration file at {config_path}')
-    personas_dir = config_path.parent / '.persona' / 'personas'
-    personas_dir.mkdir(parents=True, exist_ok=True)
-    typer.echo(f'Created personas directory at {personas_dir}')
-    skills_dir = config_path.parent / '.persona' / 'skills'
-    skills_dir.mkdir(parents=True, exist_ok=True)
-    typer.echo(f'Created skills directory at {skills_dir}')
-    persona_index = config_path.parent / '.persona' / _config.root.index
-    with plb.Path(persona_index).open('w') as f:
-        json.dump({'personas': {}, 'skills': {}}, f)
+    target_storage._fs.mkdirs(_config.root.personas_dir, exist_ok=True)
+    typer.echo(f'Created personas directory at {_config.root.personas_dir}')
+    target_storage._fs.mkdirs(_config.root.skills_dir, exist_ok=True)
+    typer.echo(f'Created skills directory at {_config.root.skills_dir}')
+    persona_index = _config.root.index_path
+    typer.echo('Configuring vector database...')
+    db = VectorDatabase(uri=persona_index, optimize=False)
+    db.create_persona_tables()
     typer.echo(f'Created index file at {persona_index}')
 
 

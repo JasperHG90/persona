@@ -1,15 +1,19 @@
 import os
 import logging
 import hashlib
-import pathlib as plb
 from typing import Generic, TypeVar, Any, Literal, cast, BinaryIO
 from abc import ABCMeta, abstractmethod
 
+import lancedb as ldb
+from lancedb.embeddings import get_registry
+from lancedb.pydantic import LanceModel, Vector
+from lancedb.query import LanceQueryBuilder
 import orjson
 from fsspec import AbstractFileSystem
 from pydantic import RootModel, Field
 
 from persona.config import BaseStorageConfig
+from persona.storage.models import IndexEntry
 
 T = TypeVar('T', bound=BaseStorageConfig)
 
@@ -36,12 +40,6 @@ class Transaction:
     def __init__(self, storage_backend: 'StorageBackend'):
         self._logger = logging.getLogger('persona.storage.Transaction')
         self._storage = storage_backend
-        self._index_backup: plb.Path = plb.Path(
-            self._storage.join_path(f'./.persona/{self._storage.config.index}.bak')
-        )
-        self._index: plb.Path = plb.Path(
-            self._storage.join_path(f'./.persona/{self._storage.config.index}')
-        )
 
         self._log: list[tuple[Literal['restore', 'delete'], str, Any]] = []
         self._hashes = TemplateHashValues()
@@ -84,9 +82,95 @@ class Transaction:
         if exc_type is not None:
             self.rollback()
 
-        self._index_backup.unlink(missing_ok=True)
-
         self._undo_log = []
+
+
+class VectorDatabase:
+    def __init__(
+        self,
+        uri: str,
+        storage_options: dict[str, str] | None = None,
+        client_config: ldb.ClientConfig | None = None,
+        optimize: bool = True,
+    ):
+        self.optimize = optimize
+
+        self._db = ldb.connect(
+            uri=uri, storage_options=storage_options, client_config=client_config
+        )
+
+    def get_or_create_table(self, table_name: Literal['personas', 'skills']) -> ldb.Table:
+        """Attempt to open an existing table, or create it if it doesn't exist."""
+        try:
+            table = self._db.open_table(name=table_name)
+        except ValueError:
+            func = get_registry().get('sentence-transformers').create()
+
+            # NB: this has some start-up time because it's loading the embedding model
+            class PersonaEmbedding(LanceModel):
+                uuid: str
+                name: str
+                description: str = func.SourceField()
+                vector: Vector(func.ndims()) = func.VectorField()  # type: ignore
+
+                class Config:
+                    vector = 'embedding'
+                    embedding_function = func
+
+            table = self._db.create_table(name=table_name, schema=PersonaEmbedding)
+        return table
+
+    def update_table(
+        self, table_name: Literal['personas', 'skills'], data: list[dict[str, IndexEntry]]
+    ):
+        """Update the index table with new data. Existing entries will be updated."""
+        table = self.get_or_create_table(table_name)
+        (
+            table.merge_insert('name')
+            .when_matched_update_all()
+            .when_not_matched_insert_all()
+            .execute(new_data=data)
+        )
+        if self.optimize:
+            table.optimize()
+
+    def create_persona_tables(self):
+        """Create the persona and skills tables if they don't exist."""
+        self.get_or_create_table('personas')
+        self.get_or_create_table('skills')
+
+    def drop_all_tables(self) -> None:
+        """Drop the entire database."""
+        self._db.drop_all_tables()
+
+    def remove(self, table_name: Literal['personas', 'skills'], name: str) -> None:
+        """Remove entries from the specified table by name."""
+        table = self.get_or_create_table(table_name)
+        table.delete(where="name = '%s'" % (name))
+        if self.optimize:
+            table.optimize()
+
+    def exists(self, table_name: Literal['personas', 'skills'], name: str) -> bool:
+        """Check if an entry exists in the specified table by name."""
+        table = self.get_or_create_table(table_name)
+        n = table.count_rows(filter="name = '%s'" % (name))
+        return True if n > 0 else False
+
+    def search(
+        self,
+        query: str,
+        table_name: Literal['personas', 'skills'],
+        limit: int = 5,
+        max_cosine_distance: float | None = None,
+    ) -> LanceQueryBuilder:
+        """Search the specified table for the given query."""
+        return (
+            self.get_or_create_table(table_name)
+            .search(query)
+            .distance_type('cosine')  # type: ignore
+            .distance_range(upper_bound=max_cosine_distance)
+            .limit(limit)
+        )
 
 
 class StorageBackend(Generic[T], metaclass=ABCMeta):
