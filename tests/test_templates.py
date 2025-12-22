@@ -1,6 +1,6 @@
 import pathlib as plb
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from pydantic import ValidationError
 
 from persona.storage.models import Index, IndexEntry, SubIndex
@@ -79,7 +79,7 @@ def test_template_copy_template(
     mock_storage = MagicMock()
     mock_storage.config.index = 'index.json'
     mock_index = Index(skills=SubIndex(root={}), personas=SubIndex(root={}))
-    mock_storage.load.return_value = mock_index.model_dump_json()
+    mock_storage.load.return_value = mock_index.model_dump_json().encode('utf-8')
 
     entry = IndexEntry(name='test_name', description='test_description')
     template = template_class(path=template_path)
@@ -112,16 +112,12 @@ def test_template_copy_template_binary_file(tmp_path: plb.Path) -> None:
     mock_storage.config.index = 'index.json'
     mock_storage.config.root = str(tmp_path)
     mock_index = Index(skills=SubIndex(root={}), personas=SubIndex(root={}))
-    mock_storage.load.return_value = mock_index.model_dump_json()
+    mock_storage.load.return_value = mock_index.model_dump_json().encode('utf-8')
 
     entry = IndexEntry(name='test_name', description='test_description')
     skill = Skill(path=template_dir)
 
-    with patch('persona.templates.logger') as mock_logger:
-        skill.copy_template(entry, mock_storage)
-        mock_logger.warning.assert_called_with(
-            f'Cannot read file {binary_file} as text, copying as binary.'
-        )
+    skill.copy_template(entry, mock_storage)
 
 
 def test_skill_get_type(tmp_path: plb.Path) -> None:

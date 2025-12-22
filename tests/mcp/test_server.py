@@ -7,8 +7,6 @@ from persona.mcp.server import (
     _list_personas_logic,
     _get_skill_logic,
     _get_persona_logic,
-    _add_skill_logic,
-    _add_persona_logic,
 )
 from persona.storage.models import Index, SubIndex, IndexEntry
 from fastmcp.exceptions import ToolError
@@ -25,8 +23,6 @@ async def mock_app_context():
                     name='test_persona',
                     description='A test persona',
                     uuid='12345',
-                    instructions='Be a test persona',
-                    skills=['fakedescription'],
                 )
             }
         ),
@@ -36,20 +32,19 @@ async def mock_app_context():
                     name='fakedescription',
                     description='Some description of things',
                     uuid='0b35fcb04a7ac74a41271e2ced74fb62',
-                    instructions='Describe things',
-                    definition={'type': 'function', 'function': {'name': 'describe'}},
                 ),
                 'another_skill': IndexEntry(
                     name='another_skill',
                     description='Another test skill',
                     uuid='67890',
-                    instructions='Do something else',
-                    definition={'type': 'function', 'function': {'name': 'do_something_else'}},
                 ),
             }
         ),
     )
-    mock_storage_config = StorageConfig(root={'type': 'local', 'root': '/tmp/test_persona'})
+
+    mock_storage_config = StorageConfig.model_validate(
+        {'type': 'local', 'root': '/tmp/test_persona'}
+    )
     app_context = AppContext(config=mock_storage_config, index=mock_index)
     app_context._target_storage = MagicMock()
     # a string containing valid yaml frontmatter
@@ -66,15 +61,15 @@ some content
 async def test_list_skills_logic(mock_app_context):
     response = await _list_skills_logic(mock_app_context)
     assert len(response) == 2
-    assert response[0].name == 'fakedescription'
-    assert response[1].name == 'another_skill'
+    assert response[0]['name'] == 'fakedescription'
+    assert response[1]['name'] == 'another_skill'
 
 
 @pytest.mark.asyncio
 async def test_list_personas_logic(mock_app_context):
     response = await _list_personas_logic(mock_app_context)
     assert len(response) == 1
-    assert response[0].name == 'test_persona'
+    assert response[0]['name'] == 'test_persona'
 
 
 @pytest.mark.asyncio
@@ -99,18 +94,3 @@ async def test_get_nonexistent_skill_logic(mock_app_context):
 async def test_get_nonexistent_persona_logic(mock_app_context):
     with pytest.raises(ToolError, match='Persona not found'):
         await _get_persona_logic(mock_app_context, 'nonexistent_persona')
-
-
-@pytest.mark.asyncio
-async def test_add_skill_logic(mock_app_context):
-    response = await _add_skill_logic(mock_app_context, 'new_skill', 'A new skill')
-    assert response == "persona skills register <PATH> --name new_skill --description 'A new skill'"
-
-
-@pytest.mark.asyncio
-async def test_add_persona_logic(mock_app_context):
-    response = await _add_persona_logic(mock_app_context, 'new_persona', 'A new persona')
-    assert (
-        response
-        == "persona personas register <PATH> --name new_persona --description 'A new persona'"
-    )

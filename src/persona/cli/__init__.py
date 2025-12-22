@@ -116,7 +116,7 @@ def reindex(ctx: typer.Context):
         if target_storage._fs.isdir(template):
             continue
         _template = cast(str, template)
-        content = target_storage.load(_template)
+        content = target_storage.load(_template).decode('utf-8')
         fm = frontmatter.loads(content)
         entry_type = 'skill' if _template.split('/')[-1] == 'SKILL.md' else 'persona'
         entry = IndexEntry(
@@ -126,7 +126,7 @@ def reindex(ctx: typer.Context):
         )
         index.skills.upsert(entry) if entry_type == 'skill' else index.personas.upsert(entry)
     with Transaction(target_storage):
-        target_storage.save(_config.root.index, index.model_dump_json(indent=2))
+        target_storage.save(_config.root.index, index.model_dump_json(indent=2).encode('utf-8'))
 
 
 @app.command(help='Initialize Persona configuration file.')

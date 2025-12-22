@@ -30,7 +30,7 @@ class TestLocalStorageBackend:
     def test_save_and_load(self, temp_storage_backend: LocalStorageBackend):
         # Arrange
         key = 'test.txt'
-        data = 'hello world'
+        data = b'hello world'
 
         # Act
         temp_storage_backend.save(key, data)
@@ -45,13 +45,13 @@ class TestLocalStorageBackend:
 
         # Act & Assert
         assert not temp_storage_backend.exists(key)
-        temp_storage_backend.save(key, 'data')
+        temp_storage_backend.save(key, b'data')
         assert temp_storage_backend.exists(key)
 
     def test_delete(self, temp_storage_backend: LocalStorageBackend):
         # Arrange
         key = 'test.txt'
-        temp_storage_backend.save(key, 'data')
+        temp_storage_backend.save(key, b'data')
 
         # Act
         temp_storage_backend.delete(key)
@@ -63,7 +63,7 @@ class TestLocalStorageBackend:
         # Arrange
         dir_key = 'test_dir'
         file_key = f'{dir_key}/test.txt'
-        temp_storage_backend.save(file_key, 'data')
+        temp_storage_backend.save(file_key, b'data')
 
         # Act
         temp_storage_backend.delete(dir_key, recursive=True)
@@ -74,7 +74,7 @@ class TestLocalStorageBackend:
     def test_save_with_transaction(self, temp_storage_backend: LocalStorageBackend):
         # Arrange
         key = 'transaction_save.txt'
-        data = 'transaction data'
+        data = b'transaction data'
 
         # Act
         with Transaction(temp_storage_backend):
@@ -86,7 +86,7 @@ class TestLocalStorageBackend:
     def test_delete_with_transaction(self, temp_storage_backend: LocalStorageBackend):
         # Arrange
         key = 'transaction_delete.txt'
-        temp_storage_backend.save(key, 'data')
+        temp_storage_backend.save(key, b'data')
 
         # Act
         with Transaction(temp_storage_backend):

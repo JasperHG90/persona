@@ -13,9 +13,11 @@ def mock_storage():
     with patch('persona.cli.commands.get_storage_backend') as mock_get_storage_backend:
         mock = MagicMock()
         mock_get_storage_backend.return_value = mock
-        mock.load.return_value = Index(
-            personas=SubIndex(root={}), skills=SubIndex(root={})
-        ).model_dump_json()
+        mock.load.return_value = (
+            Index(personas=SubIndex(root={}), skills=SubIndex(root={}))
+            .model_dump_json()
+            .encode('utf-8')
+        )
         yield mock
 
 

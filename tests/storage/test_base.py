@@ -1,3 +1,5 @@
+from typing import cast, BinaryIO
+
 import pytest
 from unittest.mock import MagicMock
 from persona.storage.base import TemplateHashValues, Transaction, StorageBackend
@@ -21,7 +23,7 @@ class TestTemplateHashValues:
         thv = TemplateHashValues()
 
         # Act
-        thv.add('file.txt', 'hello world')
+        thv.add('file.txt', b'hello world')
 
         # Assert
         assert 'file.txt' in thv.root
@@ -30,8 +32,8 @@ class TestTemplateHashValues:
     def test_hash(self):
         # Arrange
         thv = TemplateHashValues()
-        thv.add('file1.txt', 'content1')
-        thv.add('file2.txt', 'content2')
+        thv.add('file1.txt', b'content1')
+        thv.add('file2.txt', b'content2')
 
         # Act
         h = thv.hash()
@@ -42,8 +44,8 @@ class TestTemplateHashValues:
     def test_hash_with_exclude(self):
         # Arrange
         thv = TemplateHashValues()
-        thv.add('file1.txt', 'content1')
-        thv.add('file2.txt', 'content2')
+        thv.add('file1.txt', b'content1')
+        thv.add('file2.txt', b'content2')
 
         # Act
         h = thv.hash(exclude={'file1.txt'})
@@ -59,15 +61,15 @@ class MockStorageBackend(StorageBackend):
     def initialize(self) -> MemoryFileSystem:
         return MemoryFileSystem()
 
-    def _save(self, key: str, data: str) -> None:
-        self._fs.pipe({self.join_path(key): data.encode()})
+    def _save(self, key: str, data: bytes) -> None:
+        self._fs.pipe({self.join_path(key): data})
 
     def _delete(self, key: str, recursive: bool) -> None:
         if self.exists(key):
             self._fs.rm(self.join_path(key), recursive=recursive)
 
-    def load(self, key: str) -> str:
-        with self._fs.open(self.join_path(key), 'r') as f:
+    def load(self, key: str) -> bytes:
+        with cast(BinaryIO, self._fs.open(self.join_path(key), 'rb')) as f:
             return f.read()
 
     def exists(self, key: str) -> bool:
@@ -96,13 +98,13 @@ class TestTransaction:
     def test_rollback_on_exception(self, mock_storage_backend):
         # Arrange
         key = 'test.txt'
-        original_data = 'original data'
+        original_data = b'original data'
         mock_storage_backend.save(key, original_data)
 
         # Act & Assert
         with pytest.raises(ValueError):
             with Transaction(mock_storage_backend):
-                mock_storage_backend.save(key, 'new data')
+                mock_storage_backend.save(key, b'new data')
                 raise ValueError('Something went wrong')
 
         assert mock_storage_backend.load(key) == original_data
@@ -111,11 +113,11 @@ class TestTransaction:
         # Arrange
         key_to_save = 'save.txt'
         key_to_delete = 'delete.txt'
-        mock_storage_backend.save(key_to_delete, 'delete me')
+        mock_storage_backend.save(key_to_delete, b'delete me')
 
         # Act
         with Transaction(mock_storage_backend) as t:
-            mock_storage_backend.save(key_to_save, 'new file')
+            mock_storage_backend.save(key_to_save, b'new file')
             mock_storage_backend.delete(key_to_delete)
 
             # Assert
@@ -128,8 +130,8 @@ class TestTransaction:
         # Arrange
         with Transaction(mock_storage_backend) as t:
             # Act
-            mock_storage_backend.save('file1.txt', 'content1')
-            mock_storage_backend.save('file2.txt', 'content2')
+            mock_storage_backend.save('file1.txt', b'content1')
+            mock_storage_backend.save('file2.txt', b'content2')
 
             # Assert
             assert t.transaction_id == 'ecb041d7e358afd47b1aeafab30a7d3c'
