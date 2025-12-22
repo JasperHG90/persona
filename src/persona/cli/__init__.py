@@ -131,7 +131,7 @@ def reindex(ctx: typer.Context):
             % (cast(str, fm.metadata['name']), cast(str, fm.metadata['description'])),
             uuid=uuid.uuid4().hex,  # Random init
         )
-        index[entry_type + 's'].append(entry.model_dump())
+        index[entry_type + 's'].append(entry.model_dump(exclude_none=True))
     db = VectorDatabase(uri=_config.root.index_path, optimize=False)
     logger.info('Dropping existing tables...')
     db.drop_all_tables()

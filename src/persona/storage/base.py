@@ -37,7 +37,9 @@ class TemplateHashValues(RootModel[dict[str, str]]):
 class Transaction:
     """A context manager for handling transactions in storage backends."""
 
-    def __init__(self, storage_backend: 'StorageBackend', vector_db: 'VectorDatabase | None' = None):
+    def __init__(
+        self, storage_backend: 'StorageBackend', vector_db: 'VectorDatabase | None' = None
+    ):
         self._logger = logging.getLogger('persona.storage.Transaction')
         self._storage = storage_backend
         self._db = vector_db or VectorDatabase(uri=self._storage.config.index_path)

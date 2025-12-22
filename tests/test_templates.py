@@ -1,9 +1,9 @@
 import pathlib as plb
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from pydantic import ValidationError
 
-from persona.storage import VectorDatabase, IndexEntry
+from persona.storage import IndexEntry
 from persona.templates import Persona, Skill, TemplateFile
 
 
@@ -79,7 +79,7 @@ def test_template_copy_template(
     mock_storage = MagicMock()
     mock_vector_db = MagicMock()
     entry = IndexEntry(name='test_name', description='test_description', type='skill')
-    mock_storage._metadata = [("upsert", entry)]
+    mock_storage._metadata = [('upsert', entry)]
     template = template_class.model_validate({'path': template_path})
 
     # Act
@@ -110,7 +110,7 @@ def test_template_copy_template_binary_file(tmp_path: plb.Path) -> None:
     mock_storage = MagicMock()
     mock_vector_db = MagicMock()
     entry = IndexEntry(name='test_name', description='test_description', type='skill')
-    mock_storage._metadata = [("upsert", entry)]
+    mock_storage._metadata = [('upsert', entry)]
     skill = Skill(path=template_dir)
 
     skill.copy_template(entry, mock_storage, mock_vector_db)

@@ -18,15 +18,12 @@ def mock_home(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def mock_config_file(mock_home: Path) -> Path:
-    config_file = mock_home / 'config.yaml'
-    config_data = {'type': 'local', 'root': str(mock_home)}
+    config_file = mock_home.parent / '.persona.config.yaml'
+    config_data = {'type': 'local', 'root': str(mock_home), 'index': 'index'}
     with open(config_file, 'w') as f:
         yaml.dump(config_data, f)
 
-    index_file = mock_home / 'index.json'
-    with open(index_file, 'w') as f:
-        import json
-
-        json.dump({'personas': {}, 'skills': {}}, f)
+    index = mock_home / 'index'
+    index.mkdir(parents=True, exist_ok=True)
 
     return config_file
