@@ -9,7 +9,7 @@ from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 
 from persona.config import StorageConfig, parse_storage_config
-from persona.storage import Index, IndexEntry, get_storage_backend
+from persona.storage import IndexEntry, get_storage_backend
 
 from .models import AppContext, TemplateDetails
 

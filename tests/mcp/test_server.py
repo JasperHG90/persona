@@ -8,7 +8,7 @@ from persona.mcp.server import (
     _get_skill_logic,
     _get_persona_logic,
 )
-from persona.storage.models import Index, SubIndex, IndexEntry
+from persona.storage.models import IndexEntry
 from fastmcp.exceptions import ToolError
 from persona.config import StorageConfig
 

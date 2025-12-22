@@ -37,9 +37,10 @@ class TemplateHashValues(RootModel[dict[str, str]]):
 class Transaction:
     """A context manager for handling transactions in storage backends."""
 
-    def __init__(self, storage_backend: 'StorageBackend'):
+    def __init__(self, storage_backend: 'StorageBackend', vector_db: 'VectorDatabase | None' = None):
         self._logger = logging.getLogger('persona.storage.Transaction')
         self._storage = storage_backend
+        self._db = vector_db or VectorDatabase(uri=self._storage.config.index_path)
         self._log: list[tuple[Literal['restore', 'delete'], str, Any]] = []
         self._hashes = TemplateHashValues()
 
@@ -54,7 +55,6 @@ class Transaction:
 
     def _update_index(self) -> None:
         """Update the index with the new or updated template entry."""
-        db = VectorDatabase(uri=self._storage.config.index_path)
         type_ = list(set(entry.type for _, entry in self._storage._metadata))
         if len(type_) != 1:
             raise ValueError('All index entries must have the same type for a single transaction.')
@@ -70,12 +70,12 @@ class Transaction:
                 upserts.append(entry)
 
         if upserts:
-            db.update_table(
+            self._db.update_table(
                 'skills' if type_[0] == 'skill' else 'personas',
                 [entry.model_dump(exclude=['type']) for entry in upserts],
             )
         if deletes:
-            db.remove(
+            self._db.remove(
                 'skills' if type_[0] == 'skill' else 'personas',
                 names=[entry.name for entry in deletes if entry.name is not None],
             )

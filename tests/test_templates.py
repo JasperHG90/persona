@@ -1,9 +1,9 @@
 import pathlib as plb
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from pydantic import ValidationError
 
-from persona.storage.models import Index, IndexEntry, SubIndex
+from persona.storage import VectorDatabase, IndexEntry
 from persona.templates import Persona, Skill, TemplateFile
 
 
@@ -65,7 +65,7 @@ def test_template_metadata_property(tmp_path: plb.Path) -> None:
     ],
 )
 def test_template_copy_template(
-    tmp_path: plb.Path, template_class, file_name: str, is_dir: bool
+    tmp_path: plb.Path, template_class: Skill | Persona, file_name: str, is_dir: bool
 ) -> None:
     # Arrange
     if is_dir:
@@ -77,18 +77,17 @@ def test_template_copy_template(
         template_path.write_text('---\n---\n')
 
     mock_storage = MagicMock()
-    mock_storage.config.index = 'index.json'
-    mock_index = Index(skills=SubIndex(root={}), personas=SubIndex(root={}))
-    mock_storage.load.return_value = mock_index.model_dump_json().encode('utf-8')
-
-    entry = IndexEntry(name='test_name', description='test_description')
-    template = template_class(path=template_path)
+    mock_vector_db = MagicMock()
+    entry = IndexEntry(name='test_name', description='test_description', type='skill')
+    mock_storage._metadata = [("upsert", entry)]
+    template = template_class.model_validate({'path': template_path})
 
     # Act
-    template.copy_template(entry, mock_storage)
+    template.copy_template(entry, mock_storage, mock_vector_db)
 
     # Assert
     mock_storage.save.assert_called()
+    mock_vector_db.update_table.assert_called()
 
 
 def test_template_copy_template_missing_name_description(tmp_path: plb.Path) -> None:
@@ -109,15 +108,12 @@ def test_template_copy_template_binary_file(tmp_path: plb.Path) -> None:
     binary_file.write_bytes(b'\x80')
 
     mock_storage = MagicMock()
-    mock_storage.config.index = 'index.json'
-    mock_storage.config.root = str(tmp_path)
-    mock_index = Index(skills=SubIndex(root={}), personas=SubIndex(root={}))
-    mock_storage.load.return_value = mock_index.model_dump_json().encode('utf-8')
-
-    entry = IndexEntry(name='test_name', description='test_description')
+    mock_vector_db = MagicMock()
+    entry = IndexEntry(name='test_name', description='test_description', type='skill')
+    mock_storage._metadata = [("upsert", entry)]
     skill = Skill(path=template_dir)
 
-    skill.copy_template(entry, mock_storage)
+    skill.copy_template(entry, mock_storage, mock_vector_db)
 
 
 def test_skill_get_type(tmp_path: plb.Path) -> None:

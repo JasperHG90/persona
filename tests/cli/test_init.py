@@ -7,7 +7,6 @@ import pytest
 from typer.testing import CliRunner
 
 from persona.cli import app
-from persona.storage import Index, SubIndex
 
 
 def test_main_debug(runner: CliRunner, mock_config_file: Path) -> None:

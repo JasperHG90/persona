@@ -5,7 +5,7 @@ import pytest
 from typer.testing import CliRunner
 
 from persona.cli import app
-from persona.storage import Index, SubIndex, IndexEntry
+from persona.storage import IndexEntry
 
 
 @pytest.fixture

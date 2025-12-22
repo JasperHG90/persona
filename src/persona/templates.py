@@ -13,6 +13,7 @@ from persona.storage import (
     StorageBackend,
     Transaction,
     IndexEntry,
+    VectorDatabase
 )
 from persona.config import LocalStorageConfig
 
@@ -117,7 +118,7 @@ class Template(BaseModel):
         fm = frontmatter.loads(content)
         return fm.metadata
 
-    def copy_template(self, entry: IndexEntry, target_storage: StorageBackend):
+    def copy_template(self, entry: IndexEntry, target_storage: StorageBackend, vector_db: VectorDatabase | None = None) -> None:
         """
         Recursively copies all files from this template's root_path to a new location.
 
@@ -142,7 +143,7 @@ class Template(BaseModel):
         local_path_root = self.path.parent if self.path.is_file() else self.path
         glob = '**/*' if plb.Path(self.path).is_dir() else self.path.name
 
-        with Transaction(target_storage):
+        with Transaction(target_storage, vector_db):
             for filename in local_path_root.glob(glob):
                 if filename.is_dir():
                     continue

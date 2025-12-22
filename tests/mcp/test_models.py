@@ -2,7 +2,6 @@ from unittest.mock import MagicMock
 from persona.mcp.models import AppContext, TemplateSummary, TemplateDetails
 from persona.storage.base import StorageBackend
 from persona.config import StorageConfig
-from persona.storage import Index
 
 
 def test_app_context_initialization():
