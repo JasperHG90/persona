@@ -170,7 +170,7 @@ class Template(BaseModel):
                     content = file_.content
 
                 target_storage.save(file_.target_key, content)
-                
+
                 files.append(file_.target_key)
             entry.update('files', files)
             vector_db.index(entry)

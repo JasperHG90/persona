@@ -125,7 +125,7 @@ def reindex(ctx: typer.Context):
         content = target_storage.load(_template).decode('utf-8')
         fm = frontmatter.loads(content)
         entry_type = 'skill' if _template.split('/')[-1] == 'SKILL.md' else 'persona'
-        fp = _template.rsplit('/', 1)[0] + "/**/*"
+        fp = _template.rsplit('/', 1)[0] + '/**/*'
         entry = IndexEntry(
             name=cast(str, fm.metadata['name']),
             description='%s - %s'

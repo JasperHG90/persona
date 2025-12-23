@@ -22,4 +22,4 @@ latest version using the `install_skill` tool.
 ## 🛑 Operational Constraints (Strict Enforcement)
 - **NO MANUAL VERIFICATION**: Using `read_file` to "check the version" is a protocol failure. You must use the `builtin_frontmatter_version` skill.
 - **ABSOLUTE PATHS ONLY**: Every shell command tool call (`list_directory`, `read_file`, `install_skill`) MUST use the full path from the root (e.g., `/usr/project/.skills...`).
-- **NO RELATIVE PATHS**: Starting a command with `.` or using relative paths is forbidden. 
+- **NO RELATIVE PATHS**: Starting a command with `.` or using relative paths is forbidden.

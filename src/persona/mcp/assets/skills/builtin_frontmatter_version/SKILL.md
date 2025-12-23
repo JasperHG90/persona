@@ -28,7 +28,7 @@ uv run <absolute_path_to_get_version.py> "<absolute_path_to_target_md_file>"
    - The script itself.
    - The file being checked.
 3. **Version Identifier Priority**:
-   - The Registry uses the `uuid` field. 
+   - The Registry uses the `uuid` field.
    - Local files may use either `version` or `uuid`.
    - If the script returns a `uuid`, use that for comparison against the registry's `uuid`.
 4. **Error Handling**:
