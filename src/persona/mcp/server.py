@@ -173,6 +173,18 @@ async def persona_edit(persona: str, feedback: str) -> str:
     return template + '\n' + user_instructions.strip()
 
 
+@mcp.prompt(name="skill:deploy", description="Execute a prompt with explicit skill deployment instructions.")
+async def skill_deploy(task: str) -> str:
+    async with aiofiles.open(prompts_dir / 'skill_deploy.md', mode='r') as f:
+        template = (await f.read()).strip()
+    user_instructions = f"""
+    ## User input
+
+    Task description: {task}
+    """
+    return template + '\n' + user_instructions.strip()
+
+
 def entrypoint():
     """
     Entrypoint for the MCP server.

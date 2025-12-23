@@ -5,6 +5,7 @@
 ## Features
 
 - GCS / S3 integration as storage backends
+- Version personas / skills
 
 ## Docs
 
