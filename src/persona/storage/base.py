@@ -17,6 +17,10 @@ from persona.storage.models import IndexEntry
 
 T = TypeVar('T', bound=BaseStorageConfig)
 
+global_session = ldb.Session(
+    metadata_cache_size_bytes=128 * 1024 * 1024  # 128 MB
+)
+
 
 class TemplateHashValues(RootModel[dict[str, str]]):
     root: dict[str, str] = Field(default_factory=dict)
@@ -37,9 +41,7 @@ class TemplateHashValues(RootModel[dict[str, str]]):
 class Transaction:
     """A context manager for handling transactions in storage backends."""
 
-    def __init__(
-        self, storage_backend: 'StorageBackend', vector_db: 'VectorDatabase'
-    ):
+    def __init__(self, storage_backend: 'StorageBackend', vector_db: 'VectorDatabase'):
         self._logger = logging.getLogger('persona.storage.Transaction')
         self._storage = storage_backend
         self._db = vector_db
@@ -138,7 +140,10 @@ class VectorDatabase:
     ):
         self.optimize = optimize
         self._db = ldb.connect(
-            uri=uri, storage_options=storage_options, client_config=client_config
+            uri=uri,
+            storage_options=storage_options,
+            client_config=client_config,
+            session=global_session,
         )
         self._metadata: list[tuple[Literal['upsert', 'delete'], IndexEntry]] = []
         self._transaction: Transaction | None = None
@@ -165,9 +170,7 @@ class VectorDatabase:
             table = self._db.create_table(name=table_name, schema=PersonaEmbedding)
         return table
 
-    def update_table(
-        self, table_name: Literal['personas', 'skills'], data: list[dict[str, str]]
-    ):
+    def update_table(self, table_name: Literal['personas', 'skills'], data: list[dict[str, str]]):
         """Update the index table with new data. Existing entries will be updated."""
         table = self.get_or_create_table(table_name)
         (
@@ -217,20 +220,20 @@ class VectorDatabase:
             .distance_range(upper_bound=max_cosine_distance)
             .limit(limit)
         )
-        
+
     def index(self, entry: IndexEntry) -> None:
         """Stage metadata to be written to the metastore"""
         if self._transaction:
             self._metadata.append(('upsert', entry))
         else:
-            self._logger.warning("Attempted to index entry outside of transaction.")
+            self._logger.warning('Attempted to index entry outside of transaction.')
 
     def deindex(self, entry: IndexEntry) -> None:
         """Stage metadata deletion from the metastore"""
         if self._transaction:
             self._metadata.append(('delete', entry))
         else:
-            self._logger.warning("Attempted to deindex entry outside of transaction.")
+            self._logger.warning('Attempted to deindex entry outside of transaction.')
 
 
 class StorageBackend(Generic[T], metaclass=ABCMeta):

@@ -53,10 +53,7 @@ async def get_persona(ctx: Context, name: str) -> TemplateDetails:
     return await _get('personas', app_context, name)
 
 
-@mcp.tool(
-    '/personas/match',
-    description='Match a persona to the provided description.'
-)
+@mcp.tool('/personas/match', description='Match a persona to the provided description.')
 async def match_persona(
     ctx: Context,
     description: str,
@@ -68,19 +65,16 @@ async def match_persona(
     return await _match('personas', description, app_context, limit, max_cosine_distance)
 
 
-@mcp.tool(
-    '/skills/match',
-    description='Match a persona to the provided description.'
-)
-async def match_persona(
+@mcp.tool('/skills/match', description='Match a skill to the provided description.')
+async def match_skill(
     ctx: Context,
     description: str,
     limit: int = 5,
     max_cosine_distance: float = 0.7,
 ) -> list[dict]:
-    """Match a persona to the provided description."""
+    """Match a skill to the provided description."""
     app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
-    return await _match('personas', description, app_context, limit, max_cosine_distance)
+    return await _match('skills', description, app_context, limit, max_cosine_distance)
 
 
 @mcp.prompt(

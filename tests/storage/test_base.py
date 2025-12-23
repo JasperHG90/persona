@@ -110,7 +110,7 @@ class TestTransaction:
                 raise ValueError('Something went wrong')
 
         assert mock_storage_backend.load(key) == original_data
-        
+
     def test_rollback_on_metadata_exception(self, mock_storage_backend):
         # Arrange
         key = 'test.txt'
@@ -124,8 +124,8 @@ class TestTransaction:
             with Transaction(mock_storage_backend, mock_vector_db) as t:
                 mock_storage_backend.save(key, b'new data')
                 # Force an error in metadata processing
-                t._db._metadata.append(('upsert', IndexEntry(type="skill")))
-                t._db._metadata.append(('upsert', IndexEntry(type="persona")))
+                t._db._metadata.append(('upsert', IndexEntry(type='skill')))
+                t._db._metadata.append(('upsert', IndexEntry(type='persona')))
 
         assert mock_storage_backend.load(key) == original_data
 

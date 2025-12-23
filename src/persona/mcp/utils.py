@@ -9,7 +9,7 @@ from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 
 from persona.config import StorageConfig, parse_storage_config
-from persona.storage import IndexEntry, get_storage_backend, VectorDatabase
+from persona.storage import get_storage_backend, VectorDatabase
 
 from .models import AppContext, TemplateDetails
 
@@ -41,9 +41,12 @@ async def lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
 
 async def _list(type: Literal['personas', 'skills'], ctx: AppContext) -> list[dict]:
     """List all personas (logic)."""
-    return ctx._vector_db.get_or_create_table(type).to_arrow().select(
-        ['name', 'description', 'uuid']
-    ).to_pylist()
+    return (
+        ctx._vector_db.get_or_create_table(type)
+        .to_arrow()
+        .select(['name', 'description', 'uuid'])
+        .to_pylist()
+    )
 
 
 async def _get(type: Literal['personas', 'skills'], ctx: AppContext, name: str) -> TemplateDetails:
@@ -62,10 +65,18 @@ async def _get(type: Literal['personas', 'skills'], ctx: AppContext, name: str) 
         raise ToolError(f'{type} "{name}" not found')
 
 
-async def _match(type: Literal['personas', 'skills'], description: str, ctx: AppContext, limit: int = 5, max_cosine_distance: float = 0.7) -> list[dict]:
+async def _match(
+    type: Literal['personas', 'skills'],
+    description: str,
+    ctx: AppContext,
+    limit: int = 5,
+    max_cosine_distance: float = 0.7,
+) -> list[dict]:
     """Match a persona to the provided description (logic)."""
     return (
-        ctx._vector_db.search(query=description, table_name=type, limit=limit, max_cosine_distance=max_cosine_distance)
+        ctx._vector_db.search(
+            query=description, table_name=type, limit=limit, max_cosine_distance=max_cosine_distance
+        )
         .to_arrow()
         .select(['uuid', 'name', 'description', '_distance'])
         .to_pylist()

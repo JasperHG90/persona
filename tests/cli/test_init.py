@@ -1,4 +1,3 @@
-import json
 import logging
 from pathlib import Path
 from unittest.mock import patch, MagicMock
@@ -47,7 +46,7 @@ def test_main_config_path_env_var(
 def test_main_set_vars(runner: CliRunner, mock_config_file: Path) -> None:
     # Arrange
     with patch('persona.storage.local.LocalStorageBackend.load') as mock_local_storage_load:
-        with patch("persona.cli.commands.VectorDatabase") as mock_vector_db:
+        with patch('persona.cli.commands.VectorDatabase') as mock_vector_db:
             mock_vector_db.return_value = MagicMock()
             mock_local_storage_load.return_value = MagicMock()
             # Act
@@ -113,7 +112,9 @@ def test_main_malformed_config(runner: CliRunner, mock_home: Path) -> None:
     assert 'Error loading configuration' in result.stdout
 
 
-def test_reindex(runner: CliRunner, mock_config_file: Path, mock_home: Path, vector_db: VectorDatabase) -> None:
+def test_reindex(
+    runner: CliRunner, mock_config_file: Path, mock_home: Path, vector_db: VectorDatabase
+) -> None:
     # Arrange
     (mock_home / 'personas' / 'test_persona').mkdir(parents=True)
     (mock_home / 'skills' / 'test_skill').mkdir(parents=True)
@@ -123,33 +124,37 @@ def test_reindex(runner: CliRunner, mock_config_file: Path, mock_home: Path, vec
         f.write('---\nname: test_skill\ndescription: A test skill\n---\n')
 
     # Act
-    with patch("persona.cli.VectorDatabase", return_value=vector_db):
+    with patch('persona.cli.VectorDatabase', return_value=vector_db):
         result = runner.invoke(app, ['--config', str(mock_config_file), 'reindex'])
 
     # Assert
     assert result.exit_code == 0
-    
+
     personas = vector_db.get_or_create_table('personas')
     skills = vector_db.get_or_create_table('skills')
-    
+
     assert personas.count_rows() == 1
     assert skills.count_rows() == 1
 
 
-def test_reindex_no_files(runner: CliRunner, mock_config_file: Path, vector_db: VectorDatabase) -> None:
+def test_reindex_no_files(
+    runner: CliRunner, mock_config_file: Path, vector_db: VectorDatabase
+) -> None:
     # Arrange
     # Act
-    with patch("persona.cli.VectorDatabase", return_value=vector_db):
+    with patch('persona.cli.VectorDatabase', return_value=vector_db):
         result = runner.invoke(app, ['--config', str(mock_config_file), 'reindex'])
 
     # Assert
     assert result.exit_code == 0
-    
+
     assert vector_db.get_or_create_table('personas').count_rows() == 0
     assert vector_db.get_or_create_table('skills').count_rows() == 0
 
 
-def test_init(runner: CliRunner, mock_home: Path, monkeypatch: pytest.MonkeyPatch, mock_config_file: Path) -> None:
+def test_init(
+    runner: CliRunner, mock_home: Path, monkeypatch: pytest.MonkeyPatch, mock_config_file: Path
+) -> None:
     # Arrange
     monkeypatch.setenv('PERSONA_STORAGE_TYPE', 'local')
     config_path = mock_home.parent / '.persona.config.yaml'
