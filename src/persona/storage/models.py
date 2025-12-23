@@ -5,7 +5,8 @@ class IndexEntry(BaseModel):
     name: str | None = None
     description: str | None = None
     uuid: str | None = None
+    files: list[str] | None = None
     type: str | None = None
 
-    def update(self, key: str, value: str | None):
+    def update(self, key: str, value: list[str] | str | None):
         setattr(self, key, value)

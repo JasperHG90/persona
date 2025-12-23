@@ -22,3 +22,10 @@ class TemplateDetails(BaseModel):
     name: str
     description: str
     prompt: str
+
+
+class SkillFile(BaseModel):
+    name: str
+    content: bytes
+    storage_file_path: str
+    extension: str | None = None

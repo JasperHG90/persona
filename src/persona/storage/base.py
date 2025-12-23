@@ -160,6 +160,7 @@ class VectorDatabase:
             class PersonaEmbedding(LanceModel):
                 uuid: str
                 name: str
+                files: list[str]
                 description: str = func.SourceField()
                 vector: Vector(func.ndims()) = func.VectorField()  # type: ignore
 
@@ -204,6 +205,22 @@ class VectorDatabase:
         table = self.get_or_create_table(table_name)
         n = table.count_rows(filter="name = '%s'" % (name))
         return True if n > 0 else False
+    
+    def get_record(self, table_name: Literal['personas', 'skills'], name: str, filter: list[str] | None = None) -> dict[str, Any] | None:
+        """Get a record from the specified table by name."""
+        results = (
+            self
+            .get_or_create_table(table_name)
+            .search()
+            .where("name = '%s'" % (name))
+            .to_arrow()
+        )
+        if filter:
+            results = results.select(filter)
+        results = results.to_pylist()
+        if results:
+            return results[0]
+        return None
 
     def search(
         self,

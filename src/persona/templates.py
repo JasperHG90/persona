@@ -149,6 +149,7 @@ class Template(BaseModel):
         glob = '**/*' if plb.Path(self.path).is_dir() else self.path.name
 
         with Transaction(target_storage, vector_db):
+            files: list[str] = []
             for filename in local_path_root.glob(glob):
                 if filename.is_dir():
                     continue
@@ -169,6 +170,9 @@ class Template(BaseModel):
                     content = file_.content
 
                 target_storage.save(file_.target_key, content)
+                
+                files.append(file_.target_key)
+            entry.update('files', files)
             vector_db.index(entry)
 
 
