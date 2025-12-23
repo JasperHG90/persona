@@ -4,6 +4,7 @@ import pathlib as plb
 
 import aiofiles
 from fastmcp import FastMCP, Context
+from fastmcp.exceptions import ToolError
 from fastmcp.utilities.types import File
 from mcp.shared.context import RequestContext
 from pydantic import Field
@@ -13,7 +14,7 @@ from .utils import (
     _list,
     _match,
     _get_persona,
-    _get_skill,
+    _skill_files,
     lifespan,
 )
 
@@ -36,25 +37,48 @@ async def list_skills(ctx: Context) -> list[dict]:
     return await _list('skills', app_context)
 
 
+# NB: this only works if the MCP is running locally so it can write files to disk
 @mcp.tool(
-    name="get_skill",
+    name="install_skill",
     description="""
     RETRIEVAL PROTOCOL:
-    1. This tool returns a list of File objects representing a Skill Package.
-    2. Each File object has a 'name' field which is the REQUIRED relative path.
-    3. You must use an appropriate tool to save each file to the path specified
-    in its 'name' field.
-    4. CRITICAL: You must perform a 1:1 raw copy. Do NOT remove metadata blocks 
-       like '# /// script'. Do NOT summarize or 'clean' the code.
-    5. **DO NOT** create any extra files beyond what is provided with the exception of required subdirectories.
-    6. You **MUST** follow the execution logic in SKILL.md after writing all files. Do **NOT** attempt to execute
-    any code, install any dependencies etc. without following the explicit instructions in the SKILL.md file.
+    1. This tool installs a Skill by installing it to the specified **absolute** target root directory.
+    2. The **absolute** target root directory must exist prior to calling this tool.
+    3. After installation, the SKILL.md file will be available in <target_skill_dir>/<skill_name>/SKILL.md.
+    4. You **MUST** read the SKILL.md file and follow the execution instructions specified there.
     """
 )
-async def get_skill(ctx: Context, name: Annotated[str, Field(description="Name of the skill to retrieve.")]) -> list[File]:
+async def install_skill(
+    ctx: Context,
+    name: Annotated[str, Field(description="Name of the skill to retrieve.")],
+    target_skill_dir: Annotated[str, Field(
+        description="""
+        The **absolute** path to the root directory where the skill will be stored in the current project.
+        This directory **must** exist prior to calling this tool. This tool will create all necessary
+        subdirectories under this root directory to store the skill files.
+        """,
+        examples=["/home/vscode/project/.skills", "/Users/johndoe/projects/.persona/skills", "/mnt/data/.persona/skills"]
+    )],
+)-> str:
     """Get a skill by name."""
     app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
-    return await _get_skill(app_context, name)
+    dir_ = plb.Path(target_skill_dir)
+    skill_file: str | None = None
+    if not dir_.is_absolute():
+        raise ToolError(f'Target skill directory "{target_skill_dir}" is not an absolute path. Please provide an absolute path.')
+    elif not dir_.exists():
+        raise ToolError(f'Target skill directory "{target_skill_dir}" does not exist. Please create it before installing the skill.')
+    for name, file in (await _skill_files(app_context, name)).items():
+        dest = dir_ / file.storage_file_path.replace("skills/", "")
+        if not dest.parent.exists():
+            dest.parent.mkdir(parents=True, exist_ok=True)
+        with plb.Path(dest).open('wb') as f:
+            f.write(file.content)
+        if file.name == 'SKILL.md':
+            skill_file = str(dest)
+    if skill_file is None:
+        raise ToolError(f'SKILL.md file not found for skill "{name}". Installation may have failed.')    
+    return skill_file
 
 
 @mcp.tool(
