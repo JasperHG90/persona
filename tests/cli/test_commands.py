@@ -32,6 +32,7 @@ def mock_vector_db(tmp_path: Path):
                     'name': 'test_persona',
                     'description': 'A test persona',
                     'uuid': '1234',
+                    'files': []
                 }
             ],
         )

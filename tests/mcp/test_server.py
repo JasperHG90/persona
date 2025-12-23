@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 from persona.mcp.server import (
     AppContext,
     _list,
-    _get,
+    _get_persona,
 )
 from persona.config import StorageConfig
 
@@ -65,12 +65,6 @@ async def test_list_personas_logic(mock_app_context):
 
 
 @pytest.mark.asyncio
-async def test_get_skill_logic(mock_app_context):
-    response = await _get('skills', mock_app_context, 'fakedescription')
-    assert response.name == 'fakedescription'
-
-
-@pytest.mark.asyncio
 async def test_get_persona_logic(mock_app_context):
-    response = await _get('personas', mock_app_context, 'test_persona')
+    response = await _get_persona(mock_app_context, 'test_persona')
     assert response.name == 'test_persona'
