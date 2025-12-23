@@ -2,6 +2,7 @@ import os
 import pathlib as plb
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, cast, Literal
+from collections import defaultdict
 
 import yaml
 import frontmatter
@@ -15,6 +16,28 @@ from persona.storage import get_storage_backend, VectorDatabase
 from .models import AppContext, TemplateDetails, SkillFile
 
 EXT_WHITELIST = ['.md', '.txt', '.json', '.yaml', '.yml', '.cfg', '.ini', '.py', '.js', '.ts', '.html', '.css']
+
+library_skills_path = plb.Path(__file__).parent / 'assets' / 'skills'
+
+def _get_builtin_skills() -> dict[str, dict[str, SkillFile]]:
+    """Get all skills that are part of this MCP library."""
+    skills = defaultdict(dict)
+    for skill_path in library_skills_path.glob('*/SKILL.md'):
+        skill_name = skill_path.parent.name
+        for fn in skill_path.parent.glob("**/*"):
+            if fn.is_dir():
+                continue
+            ext = fn.suffix
+            name = fn.name
+            skills[skill_name][name] = SkillFile(
+                content=fn.read_bytes(),
+                name=name,
+                storage_file_path=str(fn.relative_to(library_skills_path)),
+                extension=ext,
+            )
+    return skills
+
+library_skills = _get_builtin_skills()
 
 
 @asynccontextmanager
@@ -52,13 +75,54 @@ async def _list(type: Literal['personas', 'skills'], ctx: AppContext) -> list[di
     )
 
 
+async def _write_skill_files(
+    ctx: AppContext,
+    target_skill_dir: str,
+    name: str,
+):
+    """Write skill files to a local directory where the LLM can access them."""
+    dir_ = plb.Path(target_skill_dir)
+    skill_file: str | None = None
+    if not dir_.is_absolute():
+        raise ToolError(f'Target skill directory "{target_skill_dir}" is not an absolute path. Please provide an absolute path.')
+    elif not dir_.exists():
+        raise ToolError(f'Target skill directory "{target_skill_dir}" does not exist. Please create it before installing the skill.')
+    
+    skill_files = library_skills.get(name, None) or await _skill_files(ctx, name)
+    
+    for name, file in skill_files.items():
+        dest = dir_ / file.storage_file_path.replace("skills/", "")
+        if not dest.parent.exists():
+            dest.parent.mkdir(parents=True, exist_ok=True)
+        with plb.Path(dest).open('wb') as f:
+            f.write(file.content)
+        if file.name == 'SKILL.md':
+            skill_file = str(dest)
+    if skill_file is None:
+        raise ToolError(f'SKILL.md file not found for skill "{name}". Installation may have failed.')    
+    return skill_file
+
+
+async def _get_skill_version(ctx: AppContext, name: str) -> str:
+    """Get a skill version by name (logic)."""
+    if ctx._vector_db.exists('skills', name):
+        skill_files = cast(dict[str, str], ctx._vector_db.get_record('skills', name, ['name', 'files', 'uuid']))
+        return skill_files['uuid']
+    else:
+        raise ToolError(f'Skill "{name}" not found')
+
+
 async def _skill_files(ctx: AppContext, name: str) -> dict[str, SkillFile]:
     """Get a skill by name (logic)."""
     if ctx._vector_db.exists('skills', name):
-        skill_files = cast(dict[str, str], ctx._vector_db.get_record('skills', name, ['name', 'files']))
+        skill_files = cast(dict[str, str], ctx._vector_db.get_record('skills', name, ['name', 'files', 'uuid']))
+        content = frontmatter.loads(
+            ctx._target_storage.load(f'skills/{name}/SKILL.md').decode('utf-8')
+        )
+        content.metadata['metadata'] = {'version': skill_files['uuid']}
         results = {
             "SKILL.md": SkillFile(
-                content=ctx._target_storage.load(f'skills/{name}/SKILL.md'),
+                content=frontmatter.dumps(content).encode('utf-8'),
                 name='SKILL.md',
                 storage_file_path=f'skills/{name}/SKILL.md',
                 extension='.md',
@@ -81,7 +145,7 @@ async def _skill_files(ctx: AppContext, name: str) -> dict[str, SkillFile]:
                 )
         return results  
     else:
-        raise ToolError(f'{type} "{name}" not found')
+        raise ToolError(f'Skill "{name}" not found')
 
 
 async def _get_skill(ctx: AppContext, name: str) -> list[File]:

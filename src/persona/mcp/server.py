@@ -4,8 +4,6 @@ import pathlib as plb
 
 import aiofiles
 from fastmcp import FastMCP, Context
-from fastmcp.exceptions import ToolError
-from fastmcp.utilities.types import File
 from mcp.shared.context import RequestContext
 from pydantic import Field
 
@@ -14,7 +12,8 @@ from .utils import (
     _list,
     _match,
     _get_persona,
-    _skill_files,
+    _write_skill_files,
+    _get_skill_version,
     lifespan,
 )
 
@@ -62,23 +61,17 @@ async def install_skill(
 )-> str:
     """Get a skill by name."""
     app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
-    dir_ = plb.Path(target_skill_dir)
-    skill_file: str | None = None
-    if not dir_.is_absolute():
-        raise ToolError(f'Target skill directory "{target_skill_dir}" is not an absolute path. Please provide an absolute path.')
-    elif not dir_.exists():
-        raise ToolError(f'Target skill directory "{target_skill_dir}" does not exist. Please create it before installing the skill.')
-    for name, file in (await _skill_files(app_context, name)).items():
-        dest = dir_ / file.storage_file_path.replace("skills/", "")
-        if not dest.parent.exists():
-            dest.parent.mkdir(parents=True, exist_ok=True)
-        with plb.Path(dest).open('wb') as f:
-            f.write(file.content)
-        if file.name == 'SKILL.md':
-            skill_file = str(dest)
-    if skill_file is None:
-        raise ToolError(f'SKILL.md file not found for skill "{name}". Installation may have failed.')    
-    return skill_file
+    return await _write_skill_files(app_context, target_skill_dir, name)
+
+
+@mcp.tool(
+    name="get_skill_version",
+    description='Get a skill version by name.',
+)
+async def get_skill_version(ctx: Context, name: Annotated[str, Field(description="Name of the skill to retrieve the version for.")]) -> str:
+    """Get a skill version by name."""
+    app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
+    return await _get_skill_version(app_context, name)
 
 
 @mcp.tool(
@@ -205,6 +198,18 @@ async def skill_deploy(task: str) -> str:
     ## User input
 
     Task description: {task}
+    """
+    return template + '\n' + user_instructions.strip()
+
+
+@mcp.prompt(name="skill:update", description="Update a specific skill if a new version is available.")
+async def skill_update(name: Annotated[str, Field(description="Name of the skill to update.")]) -> str:
+    async with aiofiles.open(prompts_dir / 'skill_update.md', mode='r') as f:
+        template = (await f.read()).strip()
+    user_instructions = f"""
+    ## User input
+
+    Skill name: {name}
     """
     return template + '\n' + user_instructions.strip()
 
