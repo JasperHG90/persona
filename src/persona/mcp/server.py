@@ -8,10 +8,9 @@ from mcp.shared.context import RequestContext
 
 from .models import AppContext, TemplateDetails
 from .utils import (
-    _get_persona_logic,
-    _get_skill_logic,
-    _list_personas_logic,
-    _list_skills_logic,
+    _list,
+    _get,
+    _match,
     lifespan,
 )
 
@@ -24,14 +23,14 @@ mcp = FastMCP('persona_mcp', version='0.1.0', lifespan=lifespan)
 async def list_personas(ctx: Context) -> list[dict]:
     """List all personas."""
     app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
-    return await _list_personas_logic(app_context)
+    return await _list('personas', app_context)
 
 
 @mcp.tool(description='List all available skills.')
 async def list_skills(ctx: Context) -> list[dict]:
     """List all skills."""
     app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
-    return await _list_skills_logic(app_context)
+    return await _list('skills', app_context)
 
 
 @mcp.tool(
@@ -41,7 +40,7 @@ async def list_skills(ctx: Context) -> list[dict]:
 async def get_skill(ctx: Context, name: str) -> TemplateDetails:
     """Get a skill by name."""
     app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
-    return await _get_skill_logic(app_context, name)
+    return await _get('skills', app_context, name)
 
 
 @mcp.tool(
@@ -51,19 +50,37 @@ async def get_skill(ctx: Context, name: str) -> TemplateDetails:
 async def get_persona(ctx: Context, name: str) -> TemplateDetails:
     """Get a persona by name."""
     app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
-    return await _get_persona_logic(app_context, name)
+    return await _get('personas', app_context, name)
 
 
-@mcp.prompt(name='persona:match', description='Match a persona to the provided description.')
-async def persona_match(description: str) -> str:
-    async with aiofiles.open(prompts_dir / 'match.md', mode='r') as f:
-        template = (await f.read()).strip()
-    user_instructions = f"""
-    ## User input
+@mcp.tool(
+    '/personas/match',
+    description='Match a persona to the provided description.'
+)
+async def match_persona(
+    ctx: Context,
+    description: str,
+    limit: int = 5,
+    max_cosine_distance: float = 0.7,
+) -> list[dict]:
+    """Match a persona to the provided description."""
+    app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
+    return await _match('personas', description, app_context, limit, max_cosine_distance)
 
-    Description: {description}
-    """
-    return template + '\n' + user_instructions.strip()
+
+@mcp.tool(
+    '/skills/match',
+    description='Match a persona to the provided description.'
+)
+async def match_persona(
+    ctx: Context,
+    description: str,
+    limit: int = 5,
+    max_cosine_distance: float = 0.7,
+) -> list[dict]:
+    """Match a persona to the provided description."""
+    app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
+    return await _match('personas', description, app_context, limit, max_cosine_distance)
 
 
 @mcp.prompt(

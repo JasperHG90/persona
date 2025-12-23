@@ -1,7 +1,7 @@
 import os
 import pathlib as plb
 from contextlib import asynccontextmanager
-from typing import AsyncIterator, cast
+from typing import AsyncIterator, cast, Literal
 
 import yaml
 import frontmatter
@@ -9,7 +9,7 @@ from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 
 from persona.config import StorageConfig, parse_storage_config
-from persona.storage import IndexEntry, get_storage_backend
+from persona.storage import IndexEntry, get_storage_backend, VectorDatabase
 
 from .models import AppContext, TemplateDetails
 
@@ -32,71 +32,41 @@ async def lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
     else:
         config = parse_storage_config({})  # Will be read from env vars
     storage_backend = get_storage_backend(config.root)
-    index = Index.model_validate_json(storage_backend.load(config.root.index))
-    app_context = AppContext(config=config, index=index)
+    vector_db = VectorDatabase(uri=config.root.index_path, optimize=False)
+    app_context = AppContext(config=config)
     app_context._target_storage = storage_backend
+    app_context._vector_db = vector_db
     yield app_context
 
 
-async def _list_personas_logic(ctx: AppContext) -> list[dict]:
+async def _list(type: Literal['personas', 'skills'], ctx: AppContext) -> list[dict]:
     """List all personas (logic)."""
-    return [
-        IndexEntry(
-            name=persona.name,
-            description=persona.description,
-            uuid=persona.uuid,
-        ).model_dump()
-        for persona in ctx.index.personas.root.values()
-    ]
+    return ctx._vector_db.get_or_create_table(type).to_arrow().select(
+        ['name', 'description', 'uuid']
+    ).to_pylist()
 
 
-async def _list_skills_logic(ctx: AppContext) -> list[dict]:
-    """List all skills (logic)."""
-    return [
-        IndexEntry(
-            name=skill.name,
-            description=skill.description,
-            uuid=skill.uuid,
-        ).model_dump()
-        for skill in ctx.index.skills.root.values()
-    ]
-
-
-async def _get_skill_logic(ctx: AppContext, name: str) -> TemplateDetails:
+async def _get(type: Literal['personas', 'skills'], ctx: AppContext, name: str) -> TemplateDetails:
     """Get a skill by name (logic)."""
-    skill: IndexEntry | None = ctx.index.skills.root.get(name)
-    if skill:
+    root_name = 'SKILL.md' if type == 'skills' else 'PERSONA.md'
+    if ctx._vector_db.exists(type, name):
         content = frontmatter.loads(
-            ctx._target_storage.load('skills/%s/%s' % (skill.name, 'SKILL.md'))
+            ctx._target_storage.load(f'{type}/{name}/{root_name}').decode('utf-8')
         )
         return TemplateDetails(
-            name=cast(str, skill.name),
-            description=cast(str, skill.description),
+            name=name,
+            description=cast(str, content.metadata.get('description', '')),
             prompt=content.content.strip(),
         )
-    raise ToolError('Skill not found')
+    else:
+        raise ToolError(f'{type} "{name}" not found')
 
 
-async def _get_persona_logic(ctx: AppContext, name: str) -> TemplateDetails:
-    """Get a persona by name (logic)."""
-    persona: IndexEntry | None = ctx.index.personas.root.get(name)
-    if persona:
-        content = frontmatter.loads(
-            ctx._target_storage.load('personas/%s/%s' % (persona.name, 'PERSONA.md'))
-        )
-        return TemplateDetails(
-            name=cast(str, persona.name),
-            description=cast(str, persona.description),
-            prompt=content.content.strip(),
-        )
-    raise ToolError('Persona not found')
-
-
-async def _add_persona_logic(ctx: AppContext, name: str, description: str):
-    """Add a new persona (logic)."""
-    return f"persona personas register <PATH> --name {name} --description '{description}'"
-
-
-async def _add_skill_logic(ctx: AppContext, name: str, description: str):
-    """Add a new skill (logic)."""
-    return f"persona skills register <PATH> --name {name} --description '{description}'"
+async def _match(type: Literal['personas', 'skills'], description: str, ctx: AppContext, limit: int = 5, max_cosine_distance: float = 0.7) -> list[dict]:
+    """Match a persona to the provided description (logic)."""
+    return (
+        ctx._vector_db.search(query=description, table_name=type, limit=limit, max_cosine_distance=max_cosine_distance)
+        .to_arrow()
+        .select(['uuid', 'name', 'description', '_distance'])
+        .to_pylist()
+    )
