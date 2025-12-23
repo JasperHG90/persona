@@ -79,7 +79,7 @@ def test_template_copy_template(
     mock_storage = MagicMock()
     mock_vector_db = MagicMock()
     entry = IndexEntry(name='test_name', description='test_description', type='skill')
-    mock_storage._metadata = [('upsert', entry)]
+    mock_vector_db._metadata = [('upsert', entry)]
     template = template_class.model_validate({'path': template_path})
 
     # Act
@@ -95,9 +95,10 @@ def test_template_copy_template_missing_name_description(tmp_path: plb.Path) -> 
     template_file.write_text('---\n---\n')
     skill = Skill(path=template_file)
     mock_storage = MagicMock()
+    mock_vector_db = MagicMock()
     entry = IndexEntry()
     with pytest.raises(ValueError):
-        skill.copy_template(entry, mock_storage)
+        skill.copy_template(entry, mock_storage, mock_vector_db)
 
 
 def test_template_copy_template_binary_file(tmp_path: plb.Path) -> None:
@@ -110,7 +111,7 @@ def test_template_copy_template_binary_file(tmp_path: plb.Path) -> None:
     mock_storage = MagicMock()
     mock_vector_db = MagicMock()
     entry = IndexEntry(name='test_name', description='test_description', type='skill')
-    mock_storage._metadata = [('upsert', entry)]
+    mock_vector_db._metadata = [('upsert', entry)]
     skill = Skill(path=template_dir)
 
     skill.copy_template(entry, mock_storage, mock_vector_db)

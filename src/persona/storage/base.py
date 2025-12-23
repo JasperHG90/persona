@@ -38,11 +38,11 @@ class Transaction:
     """A context manager for handling transactions in storage backends."""
 
     def __init__(
-        self, storage_backend: 'StorageBackend', vector_db: 'VectorDatabase | None' = None
+        self, storage_backend: 'StorageBackend', vector_db: 'VectorDatabase'
     ):
         self._logger = logging.getLogger('persona.storage.Transaction')
         self._storage = storage_backend
-        self._db = vector_db or VectorDatabase(uri=self._storage.config.index_path)
+        self._db = vector_db
         self._log: list[tuple[Literal['restore', 'delete'], str, Any]] = []
         self._hashes = TemplateHashValues()
 
@@ -57,13 +57,16 @@ class Transaction:
 
     def _update_index(self) -> None:
         """Update the index with the new or updated template entry."""
-        type_ = list(set(entry.type for _, entry in self._storage._metadata))
-        if len(type_) != 1:
+        type_ = list(set(entry.type for _, entry in self._db._metadata))
+        if len(type_) > 1:
             raise ValueError('All index entries must have the same type for a single transaction.')
+        elif len(type_) == 0:
+            self._logger.debug('No metadata to update in index.')
+            return
         deletes = []
         upserts = []
 
-        for action, entry in self._storage._metadata:
+        for action, entry in self._db._metadata:
             if entry.uuid is None:
                 entry.update('uuid', self.transaction_id)
             if action == 'delete':
@@ -85,7 +88,7 @@ class Transaction:
     @property
     def transaction_id(self) -> str:
         """Generate a unique transaction ID based on the file hashes."""
-        return self._hashes.hash(exclude=set('index.json'))
+        return self._hashes.hash()
 
     def rollback(self) -> None:
         """Rollback all changes made during the transaction."""
@@ -101,6 +104,7 @@ class Transaction:
     def __enter__(self) -> 'Transaction':
         self._logger.debug('Starting transaction...')
         self._storage._transaction = self
+        self._db._transaction = self
 
         return self
 
@@ -133,10 +137,12 @@ class VectorDatabase:
         optimize: bool = True,
     ):
         self.optimize = optimize
-
         self._db = ldb.connect(
             uri=uri, storage_options=storage_options, client_config=client_config
         )
+        self._metadata: list[tuple[Literal['upsert', 'delete'], IndexEntry]] = []
+        self._transaction: Transaction | None = None
+        self._logger = logging.getLogger('persona.storage.base.VectorDatabase')
 
     def get_or_create_table(self, table_name: Literal['personas', 'skills']) -> ldb.Table:
         """Attempt to open an existing table, or create it if it doesn't exist."""
@@ -160,7 +166,7 @@ class VectorDatabase:
         return table
 
     def update_table(
-        self, table_name: Literal['personas', 'skills'], data: list[dict[str, IndexEntry]]
+        self, table_name: Literal['personas', 'skills'], data: list[dict[str, str]]
     ):
         """Update the index table with new data. Existing entries will be updated."""
         table = self.get_or_create_table(table_name)
@@ -211,6 +217,20 @@ class VectorDatabase:
             .distance_range(upper_bound=max_cosine_distance)
             .limit(limit)
         )
+        
+    def index(self, entry: IndexEntry) -> None:
+        """Stage metadata to be written to the metastore"""
+        if self._transaction:
+            self._metadata.append(('upsert', entry))
+        else:
+            self._logger.warning("Attempted to index entry outside of transaction.")
+
+    def deindex(self, entry: IndexEntry) -> None:
+        """Stage metadata deletion from the metastore"""
+        if self._transaction:
+            self._metadata.append(('delete', entry))
+        else:
+            self._logger.warning("Attempted to deindex entry outside of transaction.")
 
 
 class StorageBackend(Generic[T], metaclass=ABCMeta):
@@ -220,8 +240,6 @@ class StorageBackend(Generic[T], metaclass=ABCMeta):
         self._logger.debug(f'Initialized storage backend with config: {self.config}')
         self._fs = self.initialize()
         self._logger.debug(f'Storage backend filesystem initialized: {self._fs}')
-
-        self._metadata: list[tuple[Literal['upsert', 'delete'], IndexEntry]] = []
 
         self._transaction: Transaction | None = None
 
@@ -240,14 +258,6 @@ class StorageBackend(Generic[T], metaclass=ABCMeta):
             str: joined path, e.g. /home/vscode/workspace/path/to/file.txt
         """
         return os.path.join(str(self.config.root), key)
-
-    def index(self, entry: IndexEntry) -> None:
-        """Stage metadata to be written to the metastore"""
-        self._metadata.append(('upsert', entry))
-
-    def deindex(self, entry: IndexEntry) -> None:
-        """Stage metadata deletion from the metastore"""
-        self._metadata.append(('delete', entry))
 
     def _save(self, key: str, data: bytes) -> None:
         """Save data to the storage backend without transaction logging."""

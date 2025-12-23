@@ -68,6 +68,7 @@ def copy_template(
     template.copy_template(
         entry=IndexEntry(name=name, description=description),
         target_storage=target_storage,
+        vector_db=VectorDatabase(uri=config.root.index_path),
     )
 
 
@@ -75,15 +76,15 @@ def remove_template(ctx: typer.Context, name: str, type: TemplateTypeEnum):
     """Remove an existing template."""
     config: StorageConfig = ctx.obj['config']
     target_storage = get_storage_backend(config.root)
-    db = VectorDatabase(uri=config.root.index_path)
+    vector_db = VectorDatabase(uri=config.root.index_path)
 
     _type = type.value + 's'
 
-    if not db.exists(_type, name):
+    if not vector_db.exists(_type, name):
         console.print(f'[red]{type.value.capitalize()} "{name}" does not exist.[/red]')
         raise typer.Exit(code=1)
 
-    with Transaction(target_storage):
+    with Transaction(target_storage, vector_db):
         template_key = f'{_type}/{name}'
         print(f'{config.root.root}/{template_key}/**/*')
         for file in target_storage._fs.glob(f'{config.root.root}/{template_key}/**/*'):
@@ -92,6 +93,6 @@ def remove_template(ctx: typer.Context, name: str, type: TemplateTypeEnum):
             _file = cast(str, file)
             target_storage.delete(_file)
         target_storage.delete(f'{config.root.root}/{template_key}', recursive=True)
-        target_storage.deindex(entry=IndexEntry(name=name, type=type.value))
+        vector_db.deindex(entry=IndexEntry(name=name, type=type.value))
 
     console.print(f'[green]Template "{name}" has been removed.[/green]')

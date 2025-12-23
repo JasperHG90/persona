@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 import pytest
 from pathlib import Path
 from fsspec.implementations.local import LocalFileSystem
@@ -77,7 +79,7 @@ class TestLocalStorageBackend:
         data = b'transaction data'
 
         # Act
-        with Transaction(temp_storage_backend):
+        with Transaction(temp_storage_backend, MagicMock()):
             temp_storage_backend.save(key, data)
 
         # Assert
@@ -89,7 +91,7 @@ class TestLocalStorageBackend:
         temp_storage_backend.save(key, b'data')
 
         # Act
-        with Transaction(temp_storage_backend):
+        with Transaction(temp_storage_backend, MagicMock()):
             temp_storage_backend.delete(key)
 
         # Assert

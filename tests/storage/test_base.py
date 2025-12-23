@@ -5,6 +5,8 @@ from unittest.mock import MagicMock
 from persona.storage.base import TemplateHashValues, Transaction, StorageBackend
 from fsspec.implementations.memory import MemoryFileSystem
 
+from persona.storage.models import IndexEntry
+
 
 class TestTemplateHashValues:
     def test_hash_content(self):
@@ -90,7 +92,7 @@ def mock_storage_backend(tmp_path):
 class TestTransaction:
     def test_transaction_context_manager(self, mock_storage_backend):
         # Act
-        with Transaction(mock_storage_backend) as t:
+        with Transaction(mock_storage_backend, MagicMock()) as t:
             # Assert
             assert mock_storage_backend._transaction is t
         assert mock_storage_backend._transaction is None
@@ -103,9 +105,27 @@ class TestTransaction:
 
         # Act & Assert
         with pytest.raises(ValueError):
-            with Transaction(mock_storage_backend):
+            with Transaction(mock_storage_backend, MagicMock()):
                 mock_storage_backend.save(key, b'new data')
                 raise ValueError('Something went wrong')
+
+        assert mock_storage_backend.load(key) == original_data
+        
+    def test_rollback_on_metadata_exception(self, mock_storage_backend):
+        # Arrange
+        key = 'test.txt'
+        original_data = b'original data'
+        mock_storage_backend.save(key, original_data)
+        mock_vector_db = MagicMock()
+        mock_vector_db._metadata = []
+
+        # Act & Assert
+        with pytest.raises(ValueError):
+            with Transaction(mock_storage_backend, mock_vector_db) as t:
+                mock_storage_backend.save(key, b'new data')
+                # Force an error in metadata processing
+                t._db._metadata.append(('upsert', IndexEntry(type="skill")))
+                t._db._metadata.append(('upsert', IndexEntry(type="persona")))
 
         assert mock_storage_backend.load(key) == original_data
 
@@ -116,7 +136,7 @@ class TestTransaction:
         mock_storage_backend.save(key_to_delete, b'delete me')
 
         # Act
-        with Transaction(mock_storage_backend) as t:
+        with Transaction(mock_storage_backend, MagicMock()) as t:
             mock_storage_backend.save(key_to_save, b'new file')
             mock_storage_backend.delete(key_to_delete)
 
@@ -128,7 +148,7 @@ class TestTransaction:
 
     def test_transaction_id(self, mock_storage_backend):
         # Arrange
-        with Transaction(mock_storage_backend) as t:
+        with Transaction(mock_storage_backend, MagicMock()) as t:
             # Act
             mock_storage_backend.save('file1.txt', b'content1')
             mock_storage_backend.save('file2.txt', b'content2')

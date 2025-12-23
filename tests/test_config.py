@@ -17,31 +17,31 @@ def test_base_storage_config_defaults() -> None:
 
     # Assert
     assert config.root == str(plb.Path.home() / '.persona')
-    assert config.index == 'index.json'
+    assert config.index == 'index'
 
 
 def test_base_storage_config_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     # Arrange
     monkeypatch.setenv('PERSONA_STORAGE_ROOT', '/test/root')
-    monkeypatch.setenv('PERSONA_STORAGE_INDEX', 'test_index.json')
+    monkeypatch.setenv('PERSONA_STORAGE_INDEX', 'test_index')
 
     # Act
     config = BaseStorageConfig()
 
     # Assert
     assert config.root == '/test/root'
-    assert config.index == 'test_index.json'
+    assert config.index == 'test_index'
 
 
 def test_base_storage_config_index_path() -> None:
     # Arrange
-    config = BaseStorageConfig(root='/test/root', index='test_index.json')
+    config = BaseStorageConfig(root='/test/root', index='test_index')
 
     # Act
     index_path = config.index_path
 
     # Assert
-    assert index_path == '/test/root/test_index.json'
+    assert index_path == '/test/root/test_index'
 
 
 def test_local_storage_config_type() -> None:

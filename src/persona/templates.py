@@ -122,7 +122,7 @@ class Template(BaseModel):
         self,
         entry: IndexEntry,
         target_storage: StorageBackend,
-        vector_db: VectorDatabase | None = None,
+        vector_db: VectorDatabase,
     ) -> None:
         """
         Recursively copies all files from this template's root_path to a new location.
@@ -169,7 +169,7 @@ class Template(BaseModel):
                     content = file_.content
 
                 target_storage.save(file_.target_key, content)
-            target_storage.index(entry)
+            vector_db.index(entry)
 
 
 class Skill(Template):
