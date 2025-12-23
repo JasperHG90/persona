@@ -92,7 +92,7 @@ async def persona_roleplay(description: str) -> str:
 
 
 @mcp.prompt(
-    name='persona:template', description='Context engineering template for creating a new persona.'
+    name='persona:template', description='Prompt engineering template for creating a new persona.'
 )
 async def persona_template(description: str) -> str:
     async with aiofiles.open(prompts_dir / 'template.md', mode='r') as f:

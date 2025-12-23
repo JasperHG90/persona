@@ -8,7 +8,7 @@
                 "mcp",
                 "start"
             ],
-            "trusted": true
+            "trust": true
         }
     }
 }
