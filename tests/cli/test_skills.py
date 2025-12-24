@@ -18,7 +18,9 @@ def mock_storage(tmp_path: Path):
 
 
 @pytest.fixture
-def mock_vector_db(vector_db: VectorDatabase): ## NB: from top-level conftest - function-scoped fixture
+def mock_vector_db(
+    vector_db: VectorDatabase,
+):  ## NB: from top-level conftest - function-scoped fixture
     with patch('persona.cli.commands.VectorDatabase') as mock_vector_db_class:
         vector_db.update_table(
             'skills',
@@ -105,6 +107,7 @@ def test_remove_skill_not_found(
     assert result.exit_code != 0
     assert 'Skill "non_existent_skill" does not exist' in result.stdout
 
+
 def test_list_skills(
     runner: CliRunner, mock_storage: MagicMock, mock_vector_db: VectorDatabase
 ) -> None:
@@ -114,6 +117,7 @@ def test_list_skills(
     # Assert
     assert result.exit_code == 0
     assert 'test_skill' in result.stdout
+
 
 def test_list_skills_empty(
     runner: CliRunner, mock_storage: MagicMock, mock_vector_db: VectorDatabase

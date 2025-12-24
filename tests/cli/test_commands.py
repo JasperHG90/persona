@@ -18,7 +18,9 @@ def mock_storage(tmp_path: Path):
 
 
 @pytest.fixture
-def mock_vector_db(vector_db: VectorDatabase): ## NB: from top-level conftest - function-scoped fixture
+def mock_vector_db(
+    vector_db: VectorDatabase,
+):  ## NB: from top-level conftest - function-scoped fixture
     with patch('persona.cli.commands.VectorDatabase') as mock_vector_db_class:
         vector_db.update_table(
             'personas',

@@ -105,6 +105,7 @@ def test_remove_persona_not_found(
     assert result.exit_code != 0
     assert 'Persona "non_existent_persona" does not exist' in result.stdout
 
+
 def test_list_personas(
     runner: CliRunner, mock_storage: MagicMock, mock_vector_db: VectorDatabase
 ) -> None:
@@ -114,6 +115,7 @@ def test_list_personas(
     # Assert
     assert result.exit_code == 0
     assert 'test_persona' in result.stdout
+
 
 def test_list_personas_empty(
     runner: CliRunner, mock_storage: MagicMock, mock_vector_db: VectorDatabase
