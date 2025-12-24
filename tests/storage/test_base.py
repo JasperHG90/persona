@@ -1,8 +1,13 @@
 from typing import cast, BinaryIO
+from unittest.mock import patch, MagicMock
 
 import pytest
-from unittest.mock import MagicMock
-from persona.storage.base import TemplateHashValues, Transaction, StorageBackend
+from persona.storage.base import (
+    TemplateHashValues,
+    Transaction,
+    StorageBackend,
+    VectorDatabase,
+)
 from fsspec.implementations.memory import MemoryFileSystem
 
 from persona.storage.models import IndexEntry
@@ -89,6 +94,89 @@ def mock_storage_backend(tmp_path):
     return backend
 
 
+class TestStorageBackend:
+    def test_join_path(self, mock_storage_backend):
+        # Arrange
+        key = 'test.txt'
+
+        # Act
+        path = mock_storage_backend.join_path(key)
+
+        # Assert
+        assert path == f'{mock_storage_backend.config.root}/test.txt'
+
+    def test_save_and_load(self, mock_storage_backend):
+        # Arrange
+        key = 'test.txt'
+        data = b'test data'
+
+        # Act
+        mock_storage_backend.save(key, data)
+        loaded_data = mock_storage_backend.load(key)
+
+        # Assert
+        assert loaded_data == data
+
+    def test_exists(self, mock_storage_backend):
+        # Arrange
+        key = 'test.txt'
+        data = b'test data'
+        mock_storage_backend.save(key, data)
+
+        # Act & Assert
+        assert mock_storage_backend.exists(key)
+        assert not mock_storage_backend.exists('nonexistent.txt')
+
+    def test_delete(self, mock_storage_backend):
+        # Arrange
+        key = 'test.txt'
+        data = b'test data'
+        mock_storage_backend.save(key, data)
+
+        # Act
+        mock_storage_backend.delete(key)
+
+        # Assert
+        assert not mock_storage_backend.exists(key)
+
+    def test_save_in_transaction_new_file(self, mock_storage_backend):
+        # Arrange
+        key = 'new_file.txt'
+        with Transaction(mock_storage_backend, MagicMock()) as t:
+            # Act
+            mock_storage_backend.save(key, b'new data')
+
+            # Assert
+            assert t._log[0] == ('delete', key, None)
+
+    def test_save_in_transaction_existing_file(self, mock_storage_backend):
+        # Arrange
+        key = 'existing_file.txt'
+        original_data = b'original data'
+        mock_storage_backend.save(key, original_data)
+        with Transaction(mock_storage_backend, MagicMock()) as t:
+            # Act
+            mock_storage_backend.save(key, b'updated data')
+
+            # Assert
+            assert t._log[0] == ('restore', key, original_data)
+
+    def test_delete_in_transaction(self, mock_storage_backend):
+        # Arrange
+        key = 'delete_me.txt'
+        original_data = b'some data'
+        mock_storage_backend.save(key, original_data)
+        with Transaction(mock_storage_backend, MagicMock()) as t:
+            # Act
+            mock_storage_backend.delete(key)
+            # Assert
+            assert t._log[0] == ('restore', key, original_data)
+
+    def test_load_nonexistent_raises_error(self, mock_storage_backend):
+        with pytest.raises(FileNotFoundError):
+            mock_storage_backend.load('nonexistent.txt')
+
+
 class TestTransaction:
     def test_transaction_context_manager(self, mock_storage_backend):
         # Act
@@ -155,3 +243,128 @@ class TestTransaction:
 
             # Assert
             assert t.transaction_id == 'ecb041d7e358afd47b1aeafab30a7d3c'
+
+
+@pytest.fixture
+def mock_vector_db():
+    with patch('persona.storage.base.ldb.connect') as mock_connect:
+        mock_db_instance = MagicMock()
+        mock_connect.return_value = mock_db_instance
+        db = VectorDatabase(uri='dummy_uri')
+        db._db = mock_db_instance
+        yield db
+
+
+class TestVectorDatabase:
+    def test_get_or_create_table_opens_existing(self, mock_vector_db):
+        # Arrange
+        mock_table = MagicMock()
+        mock_vector_db._db.open_table.return_value = mock_table
+
+        # Act
+        table = mock_vector_db.get_or_create_table('personas')
+
+        # Assert
+        assert table == mock_table
+        mock_vector_db._db.open_table.assert_called_once_with(name='personas')
+
+    @patch('persona.storage.base.get_registry')
+    def test_get_or_create_table_creates_new(self, mock_get_registry, mock_vector_db):
+        # Arrange
+        mock_vector_db._db.open_table.side_effect = ValueError
+        mock_embedding_function = MagicMock()
+        mock_embedding_function.create.return_value.ndims.return_value = 128
+        mock_get_registry.return_value.get.return_value = mock_embedding_function
+
+        # Act
+        mock_vector_db.get_or_create_table('personas')
+
+        # Assert
+        mock_vector_db._db.create_table.assert_called_once()
+
+    def test_update_table(self, mock_vector_db):
+        # Arrange
+        mock_table = MagicMock()
+        mock_vector_db.get_or_create_table = MagicMock(return_value=mock_table)
+        data = [{'name': 'test', 'description': 'description'}]
+
+        # Act
+        mock_vector_db.update_table('personas', data)
+
+        # Assert
+        mock_table.merge_insert.assert_called_once_with('name')
+
+    def test_remove(self, mock_vector_db):
+        # Arrange
+        mock_table = MagicMock()
+        mock_vector_db.get_or_create_table = MagicMock(return_value=mock_table)
+
+        # Act
+        mock_vector_db.remove('personas', ['test1', 'test2'])
+
+        # Assert
+        mock_table.delete.assert_called_once_with(where="name IN ('test1','test2')")
+
+    def test_exists(self, mock_vector_db):
+        # Arrange
+        mock_table = MagicMock()
+        mock_vector_db.get_or_create_table = MagicMock(return_value=mock_table)
+        mock_table.count_rows.return_value = 1
+
+        # Act & Assert
+        assert mock_vector_db.exists('personas', 'test')
+        mock_table.count_rows.return_value = 0
+        assert not mock_vector_db.exists('personas', 'test')
+
+    def test_get_record(self, mock_vector_db):
+        # Arrange
+        mock_table = MagicMock()
+        mock_vector_db.get_or_create_table = MagicMock(return_value=mock_table)
+        mock_arrow_table = MagicMock()
+        mock_arrow_table.to_pylist.return_value = [{'name': 'test'}]
+        mock_table.search.return_value.where.return_value.to_arrow.return_value = mock_arrow_table
+
+        # Act
+        record = mock_vector_db.get_record('personas', 'test')
+
+        # Assert
+        assert record == {'name': 'test'}
+
+    def test_search(self, mock_vector_db):
+        # Arrange
+        mock_table = MagicMock()
+        mock_vector_db.get_or_create_table = MagicMock(return_value=mock_table)
+        mock_search = mock_table.search.return_value
+        mock_distance_type = mock_search.distance_type
+        mock_distance_range = mock_distance_type.return_value.distance_range
+        mock_limit = mock_distance_range.return_value.limit
+
+        # Act
+        mock_vector_db.search('query', 'personas', limit=10, max_cosine_distance=0.5)
+
+        # Assert
+        mock_table.search.assert_called_once_with('query')
+        mock_distance_type.assert_called_once_with('cosine')
+        mock_distance_range.assert_called_once_with(upper_bound=0.5)
+        mock_limit.assert_called_once_with(10)
+
+    def test_index_and_deindex_with_transaction(self, mock_vector_db, mock_storage_backend):
+        # Arrange
+        with Transaction(mock_storage_backend, mock_vector_db) as t:
+            entry = IndexEntry(name='test', type='skill')
+            # Act
+            mock_vector_db.index(entry)
+            mock_vector_db.deindex(entry)
+            # Assert
+            assert t._db._metadata[0] == ('upsert', entry)
+            assert t._db._metadata[1] == ('delete', entry)
+
+    def test_index_and_deindex_outside_transaction(self, mock_vector_db, caplog):
+        # Arrange
+        entry = IndexEntry(name='test', type='skill')
+        # Act
+        mock_vector_db.index(entry)
+        mock_vector_db.deindex(entry)
+        # Assert
+        assert 'Attempted to index entry outside of transaction.' in caplog.text
+        assert 'Attempted to deindex entry outside of transaction.' in caplog.text

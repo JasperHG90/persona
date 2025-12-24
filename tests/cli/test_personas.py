@@ -18,7 +18,7 @@ def mock_storage(tmp_path: Path):
 
 
 @pytest.fixture
-def mock_vector_db(vector_db: VectorDatabase): ## NB: from top-level conftest - function-scoped fixture
+def mock_vector_db(vector_db: VectorDatabase):
     with patch('persona.cli.commands.VectorDatabase') as mock_vector_db_class:
         vector_db.update_table(
             'personas',
@@ -35,32 +35,7 @@ def mock_vector_db(vector_db: VectorDatabase): ## NB: from top-level conftest - 
         yield vector_db
 
 
-def test_list_templates_personas(
-    runner: CliRunner, mock_storage: MagicMock, mock_vector_db: VectorDatabase
-) -> None:
-    # Act
-    result = runner.invoke(app, ['personas', 'list'])
-
-    # Assert
-    assert result.exit_code == 0
-    assert 'test_persona' in result.stdout
-
-
-def test_list_templates_empty(
-    runner: CliRunner, mock_storage: MagicMock, mock_vector_db: VectorDatabase
-) -> None:
-    # Arrange
-    mock_vector_db.drop_all_tables()
-    mock_vector_db.create_persona_tables()
-
-    # Act
-    result = runner.invoke(app, ['personas', 'list'])
-
-    # Assert
-    assert result.exit_code == 0
-
-
-def test_copy_template(
+def test_register_persona(
     runner: CliRunner, mock_storage: MagicMock, tmp_path: Path, mock_vector_db: VectorDatabase
 ) -> None:
     # Arrange
@@ -89,7 +64,25 @@ def test_copy_template(
     assert mock_vector_db.exists('personas', 'new_persona')
 
 
-def test_remove_template(
+def test_register_persona_already_exists(
+    runner: CliRunner, mock_storage: MagicMock, tmp_path: Path, mock_vector_db: VectorDatabase
+) -> None:
+    # Arrange
+    template_path = tmp_path / 'PERSONA.md'
+    with open(template_path, 'w') as f:
+        f.write('---\nname: test_persona\ndescription: A test persona\n---\n')
+
+    # Act
+    result = runner.invoke(
+        app,
+        ['personas', 'register', str(template_path)],
+    )
+
+    # Assert
+    assert result.exit_code == 0
+
+
+def test_remove_persona(
     runner: CliRunner, mock_storage: MagicMock, mock_vector_db: VectorDatabase
 ) -> None:
     # Act
@@ -102,7 +95,7 @@ def test_remove_template(
     assert not mock_vector_db.exists('personas', 'test_persona')
 
 
-def test_remove_template_not_found(
+def test_remove_persona_not_found(
     runner: CliRunner, mock_storage: MagicMock, mock_vector_db: VectorDatabase
 ) -> None:
     # Act
@@ -111,3 +104,26 @@ def test_remove_template_not_found(
     # Assert
     assert result.exit_code != 0
     assert 'Persona "non_existent_persona" does not exist' in result.stdout
+
+def test_list_personas(
+    runner: CliRunner, mock_storage: MagicMock, mock_vector_db: VectorDatabase
+) -> None:
+    # Act
+    result = runner.invoke(app, ['personas', 'list'])
+
+    # Assert
+    assert result.exit_code == 0
+    assert 'test_persona' in result.stdout
+
+def test_list_personas_empty(
+    runner: CliRunner, mock_storage: MagicMock, mock_vector_db: VectorDatabase
+) -> None:
+    # Arrange
+    mock_vector_db.drop_all_tables()
+    mock_vector_db.create_persona_tables()
+
+    # Act
+    result = runner.invoke(app, ['personas', 'list'])
+
+    # Assert
+    assert result.exit_code == 0

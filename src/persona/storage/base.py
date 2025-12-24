@@ -171,7 +171,9 @@ class VectorDatabase:
             table = self._db.create_table(name=table_name, schema=PersonaEmbedding)
         return table
 
-    def update_table(self, table_name: Literal['personas', 'skills'], data: list[dict[str, str | list[str]]]):
+    def update_table(
+        self, table_name: Literal['personas', 'skills'], data: list[dict[str, str | list[str]]]
+    ):
         """Update the index table with new data. Existing entries will be updated."""
         table = self.get_or_create_table(table_name)
         (
