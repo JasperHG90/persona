@@ -5,7 +5,6 @@ from typing import Any, Literal, TYPE_CHECKING
 import orjson
 from pydantic import RootModel, Field
 
-from persona.storage.models import IndexEntry
 
 if TYPE_CHECKING:
     from persona.storage.filestore import BaseFileStore

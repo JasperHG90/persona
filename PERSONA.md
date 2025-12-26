@@ -9,7 +9,7 @@ library prompts.
 
 ## Using roles
 
-Roles/personas are 
+Roles/personas are
 
 ## Using skills
 

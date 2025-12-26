@@ -13,7 +13,7 @@ from persona.storage import (
     IndexEntry,
     BaseFileStore,
     CursorLikeMetaStoreEngine,
-    LocalFileStore
+    LocalFileStore,
 )
 from persona.config import LocalFileStoreConfig
 from persona.embedder import FastEmbedder
@@ -125,7 +125,7 @@ class Template(BaseModel):
         entry: IndexEntry,
         target_file_store: BaseFileStore,
         meta_store_engine: CursorLikeMetaStoreEngine,
-        embedder: FastEmbedder
+        embedder: FastEmbedder,
     ) -> None:
         """Recursively copies all files in the directory of a template to the target file store.
 

@@ -25,28 +25,29 @@ T = TypeVar('T', bound=BaseMetaStoreConfig)
 
 
 class CursorLikeMetaStoreEngine(Generic[T], metaclass=ABCMeta):
-    
     def __init__(self, config: T):
-        self._logger = logging.getLogger(f"persona.storage.metastore.engine.{self.__class__.__name__}")
+        self._logger = logging.getLogger(
+            f'persona.storage.metastore.engine.{self.__class__.__name__}'
+        )
         self._config: T = config
         self._metadata: list[tuple[Literal['upsert', 'delete'], IndexEntry]] = []
         self._transaction: Transaction | None = None
-    
+
     @abstractmethod
     def connect(self):
         """Connect to the metastore backend."""
         ...
-        
+
     @abstractmethod
     def close(self):
         """Close the connection to the metastore backend."""
         ...
-        
+
     @abstractmethod
     def get_cursor(self) -> CursorLike:
         """Get a new cursor for executing queries."""
         ...
-        
+
     @contextmanager
     def session(self) -> Generator[CursorLikeMetaStore, None, None]:
         """Start a new session returning a cursor, and commit / close it upon exiting the context manager
@@ -54,18 +55,18 @@ class CursorLikeMetaStoreEngine(Generic[T], metaclass=ABCMeta):
         Yields:
             Generator[CursorLikeMetaStore, None, None]: a cursor-like object containing methods like: commit(), rollback(), execute(), fetchone(), fetchall()
         """
-        self._logger.debug("Starting new metastore session ...")
+        self._logger.debug('Starting new metastore session ...')
         cursor = self.get_cursor()
         cursor.begin()
         try:
             yield CursorLikeMetaStore(cursor)
             cursor.commit()
         except Exception as e:
-            self._logger.error(f"Session error: {e}. Rolling back transaction.")
+            self._logger.error(f'Session error: {e}. Rolling back transaction.')
             cursor.rollback()
             raise
         finally:
-            self._logger.debug("Closing session ...")
+            self._logger.debug('Closing session ...')
             cursor.close()
 
     def index(self, entry: IndexEntry) -> None:
@@ -84,59 +85,73 @@ class CursorLikeMetaStoreEngine(Generic[T], metaclass=ABCMeta):
 
 
 class DuckDBMetaStoreEngine(CursorLikeMetaStoreEngine[DuckDBMetaStoreConfig]):
-    
     def __init__(self, config: DuckDBMetaStoreConfig, read_only: bool = True):
         super().__init__(config=config)
-                
+
         self._conn: duckdb.DuckDBPyConnection | None = None
-        self._logger.debug(f"Engine is in {'read only' if read_only else 'write'} mode. Updates {'will not' if read_only else 'will'} be persisted ...")
+        self._logger.debug(
+            f'Engine is in {"read only" if read_only else "write"} mode. Updates {"will not" if read_only else "will"} be persisted ...'
+        )
         self._read_only = read_only
 
     def _bootstrap(self):
         """Bootstraps the in-memory database using existing indexes if available."""
         if self._conn is None:
-            raise RuntimeError("No database connection; call connect() first.")
+            raise RuntimeError('No database connection; call connect() first.')
         for table in ['roles', 'skills']:
-            self._conn.execute(f"CREATE TABLE {table} (name VARCHAR PRIMARY KEY, description VARCHAR, uuid VARCHAR(32), files VARCHAR[], embedding FLOAT[384])")
+            self._conn.execute(
+                f'CREATE TABLE {table} (name VARCHAR PRIMARY KEY, description VARCHAR, uuid VARCHAR(32), files VARCHAR[], embedding FLOAT[384])'
+            )
             path_ = getattr(self._config, f'{table}_index_path')
             try:
-                self._logger.debug(f"Loading existing {table} index from disk ...")
+                self._logger.debug(f'Loading existing {table} index from disk ...')
                 self._conn.execute(f"INSERT INTO {table} SELECT * FROM read_parquet('{path_}');")
             except Exception as e:
-                self._logger.warning(f"No existing {table} index found at {path_}: {e}. Table initialized empty ...")
+                self._logger.warning(
+                    f'No existing {table} index found at {path_}: {e}. Table initialized empty ...'
+                )
 
     def _export_tables(self):
         """Exports the in-memory database tables to disk."""
         if self._conn is None:
-            raise RuntimeError("No database connection; call connect() first.")
+            raise RuntimeError('No database connection; call connect() first.')
         for table in ['roles', 'skills']:
             path_ = getattr(self._config, f'{table}_index_path')
-            self._logger.debug(f"Exporting {table} index to disk at: {path_} ...")
+            self._logger.debug(f'Exporting {table} index to disk at: {path_} ...')
             self._conn.execute(f'COPY "{table}" TO "{path_}" (FORMAT PARQUET);')
 
     def connect(self):
-        cache_dir = plb.Path(user_cache_dir("persona", "jasper_ginn", ensure_exists=True)) / "duckdb"
+        cache_dir = (
+            plb.Path(user_cache_dir('persona', 'jasper_ginn', ensure_exists=True)) / 'duckdb'
+        )
         cache_dir.mkdir(parents=True, exist_ok=True)
-        self._logger.debug(f"Using DuckDB cache directory at: {str(cache_dir)}")
-        self._conn = duckdb.connect(database=":memory:persona")
-        self._conn.execute("INSTALL httpfs; LOAD httpfs; INSTALL cache_httpfs FROM community; LOAD cache_httpfs;")
-        self._conn.execute(f"SET cache_httpfs_cache_directory = '{str(cache_dir)}'; SET cache_httpfs_type = 'on_disk';")
-        self._conn.execute("SET cache_httpfs_enable_cache_validation = true;") # this checks for updated files on read
+        self._logger.debug(f'Using DuckDB cache directory at: {str(cache_dir)}')
+        self._conn = duckdb.connect(database=':memory:persona')
+        self._conn.execute(
+            'INSTALL httpfs; LOAD httpfs; INSTALL cache_httpfs FROM community; LOAD cache_httpfs;'
+        )
+        self._conn.execute(
+            f"SET cache_httpfs_cache_directory = '{str(cache_dir)}'; SET cache_httpfs_type = 'on_disk';"
+        )
+        self._conn.execute(
+            'SET cache_httpfs_enable_cache_validation = true;'
+        )  # this checks for updated files on read
         self._bootstrap()
-        
+
     def close(self):
         if self._conn is not None:
-            self._logger.debug("Closing DuckDB connection ...")
+            self._logger.debug('Closing DuckDB connection ...')
             if not self._read_only:
                 # NB: dump tables to storage
                 self._export_tables()
             self._conn.close()
             self._conn = None
-            
+
     def get_cursor(self) -> CursorLike:
         if self._conn is None:
-            raise RuntimeError("No database connection; call connect() first.")
+            raise RuntimeError('No database connection; call connect() first.')
         return self._conn.cursor()
+
 
 # class LanceDBMetaStore(MetaStore):
 #     def __init__(
