@@ -118,12 +118,11 @@ class Transaction:
         # Try to write updates/deletes to MetaStore. If that fails,
         # roll back changes on the FileStore
         try:
-            self._meta_store_engine.connect()
-            with self._meta_store_engine.session() as session:
-                self._update_index(meta_store=session)
             # NB: for DuckDB, closing the local session will trigger an export of the
             #  data to storage as parquet
-            self._meta_store_engine.close()
+            with self._meta_store_engine.open():
+                with self._meta_store_engine.session() as session:
+                    self._update_index(meta_store=session)
         except Exception as e:
             self._logger.error(f'Failed to update index during transaction commit: {e}')
             self._logger.debug('Performing rollback due to index update failure...')
