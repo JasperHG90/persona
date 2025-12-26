@@ -1,4 +1,4 @@
-# Persona
+![](./assets/logo.png)
 
 **A developer-friendly toolkit for managing and deploying LLM personas and skills across any environment.**
 

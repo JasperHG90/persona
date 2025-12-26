@@ -1,52 +1,117 @@
 import os
 import pathlib as plb
-from typing import Literal
+from typing import Literal, Union
 from typing_extensions import Annotated
 import copy
 
-from pydantic import RootModel, Field
+from pydantic import Field, model_validator, BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class BaseStorageConfig(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix='PERSONA_STORAGE_')
+class ConfigWithRoot(BaseModel):
+    """Settings shared by a root folder."""
+    root: str | None = None
 
-    root: str = Field(default_factory=lambda: str(plb.Path.home() / '.persona'))
-    index: str = 'index'
 
+class BaseFileStoreConfig(ConfigWithRoot):
     @property
-    def index_path(self) -> str:
-        return os.path.join(self.root, self.index)
-
-    @property
-    def personas_dir(self) -> str:
-        return os.path.join(self.root, 'personas')
+    def roles_dir(self) -> str:
+        if not self.root:
+            raise ValueError("Root path is not set.")
+        return os.path.join(self.root, 'roles')
 
     @property
     def skills_dir(self) -> str:
+        if not self.root:
+            raise ValueError("Root path is not set.")
         return os.path.join(self.root, 'skills')
 
 
-class LocalStorageConfig(BaseStorageConfig):
-    type: Literal['local']
+class LocalFileStoreConfig(BaseFileStoreConfig):
+    type: Literal['local'] = 'local'
 
 
-AnyStorage = Annotated[
-    LocalStorageConfig,  # Can union with multiple storage configs to discriminate on type field
-    Field(discriminator='type'),
+FileStoreBackend = Annotated[
+    Union[LocalFileStoreConfig],
+    Field(discriminator='type')
 ]
 
 
-class StorageConfig(RootModel[AnyStorage]):
-    root: AnyStorage
+class SimilaritySearchConfig(BaseModel):
+    model: Literal["sentence-transformers/all-MiniLM-L6-v2"] = "sentence-transformers/all-MiniLM-L6-v2"
+    max_cosine_distance: float = 0.5
+    max_results: int = 5
 
 
-def parse_storage_config(data: dict) -> StorageConfig:
-    """Parse storage configuration from a dictionary."""
+class BaseMetaStoreConfig(BaseModel):
+    similarity_search: SimilaritySearchConfig = Field(default_factory=lambda: SimilaritySearchConfig())
+
+
+class DuckDBMetaStoreConfig(BaseMetaStoreConfig, ConfigWithRoot):
+    type: Literal['duckdb'] = 'duckdb'
+    root: str | None = None
+    index_folder: str = 'index'
+    read_only: bool = False
+    
+    @property
+    def index_path(self) -> str:
+        if not self.root:
+            raise ValueError("Root path is not set.")
+        return os.path.join(self.root, self.index_folder)
+    
+    @property
+    def roles_index(self) -> str:
+        if not self.root:
+            raise ValueError("Root path is not set.")
+        return os.path.join(self.root, 'index', 'roles_index.duckdb')
+
+    @property
+    def skills_index(self) -> str:
+        if not self.root:
+            raise ValueError("Root path is not set.")
+        return os.path.join(self.root, 'index', 'skills_index.duckdb')
+
+
+MetaStoreBackend = Annotated[
+    Union[DuckDBMetaStoreConfig],
+    Field(discriminator='type')
+]
+
+
+class PersonaConfig(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_prefix='PERSONA_', 
+        env_nested_delimiter='__'
+    )
+    
+    root: str = Field(default_factory=lambda: str(plb.Path.home() / '.persona'))
+    
+    file_store: FileStoreBackend = Field(default_factory=lambda: LocalFileStoreConfig())
+    meta_store: MetaStoreBackend = Field(default_factory=lambda: DuckDBMetaStoreConfig())
+
+    @model_validator(mode='after')
+    def sync_root_paths(self) -> 'PersonaConfig':
+        """
+        Automatically propagate the top-level root to sub-configs 
+        if they haven't been overridden.
+        """
+        if self.file_store.root is None:
+            self.file_store.root = self.root
+        # NB: if this is an attribute and None, then propage the root value
+        if hasattr(self.meta_store, 'root'):            
+            if self.meta_store.root is None:
+                self.meta_store.root = self.root
+        return self
+
+
+def parse_persona_storage_config(data: dict) -> PersonaConfig:
+    """Parse persona config from a dictionary."""
     data_ = copy.deepcopy(data)
 
-    # Must be set otherwise discriminator won't work
-    if not data_.get('type'):
-        data_['type'] = os.getenv('PERSONA_STORAGE_TYPE')
+    if data['file_store'].get('type') is None:
+        data_['file_store']['type'] = 'local'
+    if data['meta_store'].get('type') is None:
+        data_['meta_store']['type'] = 'duckdb'
 
-    return StorageConfig.model_validate(data_)
+    return PersonaConfig.model_validate(data_, extra="forbid")
+

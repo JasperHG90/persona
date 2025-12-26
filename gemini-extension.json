@@ -1,0 +1,17 @@
+{
+  "name": "persona",
+  "version": "1.0.0",
+  "contextFileName": "PERSONA.md",
+  "mcpServers": {
+    "Persona": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "/home/vscode/workspace[mcp]",
+        "persona",
+        "mcp",
+        "start"
+      ]
+    }
+  }
+}
