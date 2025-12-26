@@ -120,14 +120,14 @@ def reindex(ctx: typer.Context):
     logger.info(f'Re-indexing templates from path: {_path}')
     for template in itertools.chain(
         target_file_store._fs.glob(f'{_path}/**/SKILL.md'),
-        target_file_store._fs.glob(f'{_path}/**/PERSONA.md'),
+        target_file_store._fs.glob(f'{_path}/**/ROLE.md'),
     ):
         if target_file_store._fs.isdir(template):
             continue
         _template = cast(str, template)
         content = target_file_store.load(_template).decode('utf-8')
         fm = frontmatter.loads(content)
-        entry_type = 'skill' if _template.split('/')[-1] == 'SKILL.md' else 'persona'
+        entry_type = 'skill' if _template.split('/')[-1] == 'SKILL.md' else 'role'
         fp = _template.rsplit('/', 1)[0] + '/**/*'
         description = '%s - %s' % (cast(str, fm.metadata['name']), cast(str, fm.metadata['description']))
         entry = IndexEntry(
