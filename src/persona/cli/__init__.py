@@ -139,8 +139,8 @@ def reindex(ctx: typer.Context):
         )
         index[entry_type + 's'].append(entry.model_dump(exclude_none=True))
     logger.info('Dropping and recreating index tables...')
-    with meta_store.open():
-        with meta_store.session() as session:
+    with meta_store.open() as connected:
+        with connected.session() as session:
             session.truncate_tables()
             # NB: will be persisted to storage when _connection_ is closed
             # for duckdb, since session-based database is memory

@@ -120,8 +120,8 @@ class Transaction:
         try:
             # NB: for DuckDB, closing the local session will trigger an export of the
             #  data to storage as parquet
-            with self._meta_store_engine.open():
-                with self._meta_store_engine.session() as session:
+            with self._meta_store_engine.open() as connected:
+                with connected.session() as session:
                     self._update_index(meta_store=session)
         except Exception as e:
             self._logger.error(f'Failed to update index during transaction commit: {e}')

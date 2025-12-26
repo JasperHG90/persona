@@ -5,7 +5,7 @@ class provides the business logic for interacting with the metastore.
 """
 
 import logging
-from typing import Generic, TypeVar, Generator, Literal, TYPE_CHECKING
+from typing import Generic, TypeVar, Generator, Literal, TYPE_CHECKING, Self
 import pathlib as plb
 from abc import abstractmethod, ABCMeta
 from contextlib import contextmanager
@@ -34,7 +34,7 @@ class CursorLikeMetaStoreEngine(Generic[T], metaclass=ABCMeta):
         self._transaction: Transaction | None = None
 
     @abstractmethod
-    def connect(self):
+    def connect(self) -> Self:
         """Connect to the metastore backend."""
         ...
 
@@ -49,7 +49,7 @@ class CursorLikeMetaStoreEngine(Generic[T], metaclass=ABCMeta):
         ...
 
     @contextmanager
-    def open(self):
+    def open(self) -> Generator[Self, None, None]:
         """Connect to a metastore backend and close the connection gracefully"""
         try:
             yield self.connect()
@@ -128,7 +128,7 @@ class DuckDBMetaStoreEngine(CursorLikeMetaStoreEngine[DuckDBMetaStoreConfig]):
             self._logger.debug(f'Exporting {table} index to disk at: {path_} ...')
             self._conn.execute(f'COPY "{table}" TO "{path_}" (FORMAT PARQUET);')
 
-    def connect(self):
+    def connect(self) -> Self:
         cache_dir = (
             plb.Path(user_cache_dir('persona', 'jasper_ginn', ensure_exists=True)) / 'duckdb'
         )
@@ -145,6 +145,7 @@ class DuckDBMetaStoreEngine(CursorLikeMetaStoreEngine[DuckDBMetaStoreConfig]):
             'SET cache_httpfs_enable_cache_validation = true;'
         )  # this checks for updated files on read
         self._bootstrap()
+        return self
 
     def close(self):
         if self._conn is not None:
