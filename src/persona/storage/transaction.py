@@ -5,9 +5,11 @@ from typing import Any, Literal, TYPE_CHECKING
 import orjson
 from pydantic import RootModel, Field
 
+from persona.storage.models import IndexEntry
+
 if TYPE_CHECKING:
-    from .file_store import FileStore
-    from .meta_store import MetaStore
+    from persona.storage.filestore import BaseFileStore
+    from persona.storage.metastore import CursorLikeMetaStoreEngine, BaseMetaStore
 
 
 class TemplateHashValues(RootModel[dict[str, str]]):
@@ -29,10 +31,10 @@ class TemplateHashValues(RootModel[dict[str, str]]):
 class Transaction:
     """A context manager for handling transactions in storage backends."""
 
-    def __init__(self, storage_backend: FileStore, vector_db: MetaStore):
+    def __init__(self, file_store: BaseFileStore, meta_store_engine: CursorLikeMetaStoreEngine):
         self._logger = logging.getLogger('persona.storage.transaction.Transaction')
-        self._storage = storage_backend
-        self._db = vector_db
+        self._file_store = file_store
+        self._meta_store_engine = meta_store_engine
         self._log: list[tuple[Literal['restore', 'delete'], str, Any]] = []
         self._hashes = TemplateHashValues()
 
@@ -45,34 +47,39 @@ class Transaction:
     def _add_file_hash(self, file: str, content: bytes) -> None:
         self._hashes.add(file, content)
 
-    def _update_index(self) -> None:
+    def _update_index(self, meta_store: BaseMetaStore) -> None:
         """Update the index with the new or updated template entry."""
-        type_ = list(set(entry.type for _, entry in self._db._metadata))
+        types: list[str] = []
+        deletes: list[str] = []
+        upserts: list[dict[str, str | list[str]]] = []
+
+        for action, entry in self._meta_store_engine._metadata:
+            if entry.uuid is None:
+                entry.update('uuid', self.transaction_id)
+            if action == 'delete':
+                if entry.name is not None:
+                    deletes.append(entry.name)
+            elif action == 'upsert':
+                upserts.append(entry.model_dump(exclude=set('type')))
+            if entry.type is not None:
+                types.append(entry.type)
+
+        type_ = list(set(types))
         if len(type_) > 1:
             raise ValueError('All index entries must have the same type for a single transaction.')
         elif len(type_) == 0:
             self._logger.debug('No metadata to update in index.')
             return
-        deletes = []
-        upserts = []
-
-        for action, entry in self._db._metadata:
-            if entry.uuid is None:
-                entry.update('uuid', self.transaction_id)
-            if action == 'delete':
-                deletes.append(entry)
-            elif action == 'upsert':
-                upserts.append(entry)
 
         if upserts:
-            self._db.upsert(
+            meta_store.upsert(
                 'skills' if type_[0] == 'skill' else 'roles',
-                [entry.model_dump(exclude=['type']) for entry in upserts],
+                upserts,
             )
         if deletes:
-            self._db.remove(
+            meta_store.remove(
                 'skills' if type_[0] == 'skill' else 'roles',
-                [entry.name for entry in deletes if entry.name is not None],
+                deletes,
             )
 
     @property
@@ -87,28 +94,37 @@ class Transaction:
         for action, key, data in reversed(self._log):
             # NB: use internal methods to avoid logging during rollback
             if action == 'restore':
-                self._storage._save(key, data)
+                self._file_store._save(key, data)
             elif action == 'delete':
-                self._storage._delete(key, recursive=False)
+                self._file_store._delete(key, recursive=False)
 
     def __enter__(self) -> 'Transaction':
         self._logger.debug('Starting transaction...')
-        self._storage._transaction = self
-        self._db._transaction = self
+        self._file_store._transaction = self
+        self._meta_store_engine._transaction = self
 
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         self._logger.debug('Ending transaction...')
-        self._storage._transaction = None
+        self._file_store._transaction = None
+        self._meta_store_engine._transaction = None
 
+        # If any error occurred, roll back changes on the FileStore
         if exc_type is not None:
             self._logger.error(f'Transaction failed with exception: {exc_value}')
             self._logger.debug('Performing rollback due to exception...')
             self.rollback()
 
+        # Try to write updates/deletes to MetaStore. If that fails,
+        # roll back changes on the FileStore
         try:
-            self._update_index()
+            self._meta_store_engine.connect()
+            with self._meta_store_engine.session() as session:
+                self._update_index(meta_store=session)
+            # NB: for DuckDB, closing the local session will trigger an export of the
+            #  data to storage as parquet
+            self._meta_store_engine.close()
         except Exception as e:
             self._logger.error(f'Failed to update index during transaction commit: {e}')
             self._logger.debug('Performing rollback due to index update failure...')

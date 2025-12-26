@@ -9,19 +9,20 @@ from functools import cached_property
 from pydantic import Field, BaseModel, field_validator, TypeAdapter, model_validator
 
 from persona.storage import (
-    LocalStorageBackend,
-    StorageBackend,
     Transaction,
     IndexEntry,
-    VectorDatabase,
+    BaseFileStore,
+    CursorLikeMetaStoreEngine,
+    LocalFileStore
 )
-from persona.config import LocalStorageConfig
+from persona.config import LocalFileStoreConfig
+from persona.embedder import FastEmbedder
 
 logger = logging.getLogger('persona.core.files')
 
 
 def _is_persona_root_file(path: plb.Path) -> bool:
-    return path.name in ['PERSONA.md', 'SKILL.md']
+    return path.name in ['ROLE.md', 'SKILL.md']
 
 
 class SourceFile:
@@ -70,12 +71,13 @@ class PersonaRootSourceFile(SourceFile):
 class Template(BaseModel):
     path: plb.Path
 
-    _storage: LocalStorageBackend | None = None
+    _file_store: BaseFileStore | None = None
 
     def model_post_init(self, __context) -> None:
         if self._storage is None:
-            self._storage = LocalStorageBackend(
-                LocalStorageConfig.model_validate(
+            # NB: use local file store to read templates as they should always be on-disk locally.
+            self._storage = LocalFileStore(
+                LocalFileStoreConfig.model_validate(
                     {
                         'root': str(self.path) if self.path.is_dir() else str(self.path.parent),
                         'type': 'local',
@@ -84,7 +86,7 @@ class Template(BaseModel):
             )
 
     @abstractmethod
-    def get_type(self) -> Literal['skill', 'persona']:
+    def get_type(self) -> Literal['skill'] | Literal['role']:
         raise NotImplementedError
 
     @property
@@ -99,7 +101,7 @@ class Template(BaseModel):
 
     @model_validator(mode='after')
     def file_template_name_correct(self) -> Self:
-        _type = 'SKILL.md' if self.get_type() == 'skill' else 'PERSONA.md'
+        _type = 'SKILL.md' if self.get_type() == 'skill' else 'ROLE.md'
         if self.is_dir:
             file_exists = (self.path / _type).exists()
         else:
@@ -112,24 +114,29 @@ class Template(BaseModel):
     def metadata(self) -> dict[str, object] | None:
         """Load the frontmatter metadata from the template file."""
         _path = self.path.parent if not self.is_dir else self.path
-        template_file = _path / ('SKILL.md' if self.get_type() == 'skill' else 'PERSONA.md')
+        template_file = _path / ('SKILL.md' if self.get_type() == 'skill' else 'ROLE.md')
         with template_file.open('r') as f:
             content = f.read()
         fm = frontmatter.loads(content)
         return fm.metadata
 
-    def copy_template(
+    def process_template(
         self,
         entry: IndexEntry,
-        target_storage: StorageBackend,
-        vector_db: VectorDatabase,
+        target_file_store: BaseFileStore,
+        meta_store_engine: CursorLikeMetaStoreEngine,
+        embedder: FastEmbedder
     ) -> None:
-        """
-        Recursively copies all files from this template's root_path to a new location.
+        """Recursively copies all files in the directory of a template to the target file store.
 
         Args:
-            target_storage: The StorageBackend instance for the destination.
-            target_path: The destination directory path.
+            entry (IndexEntry): Metadata entry that will be written to the metadata store.
+            target_file_store (BaseFileStore): File store to which template will be copied.
+            meta_store_engine (CursorLikeMetaStoreEngine): Metastore engine. Used to track metadata.
+            embedder (FastEmbedder): Embedding model used to embed the template description.
+
+        Raises:
+            ValueError: raised if either the entry name or description is not set.
         """
         metadata = self.metadata or {}
         entry.update(
@@ -138,17 +145,19 @@ class Template(BaseModel):
         entry.update('name', entry.name or cast(str, metadata.get('name', None)))
         entry.update('type', self.get_type())
 
-        if not entry.name or not entry.description:
+        if entry.name is None or entry.description is None:
             raise ValueError(
                 'Template must have a name and description either in the frontmatter or provided during registration.'
             )
+
+        entry.update('embedding', embedder.encode(entry.description).tolist())
 
         target_key = f'{self.get_type()}s/{entry.name}'
 
         local_path_root = self.path.parent if self.path.is_file() else self.path
         glob = '**/*' if plb.Path(self.path).is_dir() else self.path.name
 
-        with Transaction(target_storage, vector_db):
+        with Transaction(target_file_store, meta_store_engine=meta_store_engine):
             files: list[str] = []
             for filename in local_path_root.glob(glob):
                 if filename.is_dir():
@@ -169,11 +178,11 @@ class Template(BaseModel):
                 else:
                     content = file_.content
 
-                target_storage.save(file_.target_key, content)
+                target_file_store.save(file_.target_key, content)
 
                 files.append(file_.target_key)
             entry.update('files', files)
-            vector_db.index(entry)
+            meta_store_engine.index(entry)
 
 
 class Skill(Template):
@@ -183,14 +192,14 @@ class Skill(Template):
         return self.type
 
 
-class Persona(Template):
-    type: Literal['persona'] = 'persona'
+class Role(Template):
+    type: Literal['role'] = 'role'
 
-    def get_type(self) -> Literal['persona']:
+    def get_type(self) -> Literal['role']:
         return self.type
 
 
-AnyTemplate = Annotated[Skill | Persona, Field(discriminator='type')]
+AnyTemplate = Annotated[Skill | Role, Field(discriminator='type')]
 
 
 TemplateFile = TypeAdapter(AnyTemplate)

@@ -1,5 +1,5 @@
 from .engine import (
-    MetaStoreEngine as MetaStoreEngine,
+    CursorLikeMetaStoreEngine as CursorLikeMetaStoreEngine,
     DuckDBMetaStoreEngine as DuckDBMetaStoreEngine,
 )
 from .metastore import (

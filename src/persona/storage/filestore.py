@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 T = TypeVar('T', bound=BaseFileStoreConfig)
 
 
-class FileStore(Generic[T], metaclass=ABCMeta):
+class BaseFileStore(Generic[T], metaclass=ABCMeta):
     def __init__(self, config: T):
         self.config = config
         self._logger = logging.getLogger(f'persona.storage.{self.__class__.__name__}')
@@ -116,6 +116,6 @@ class FileStore(Generic[T], metaclass=ABCMeta):
         return self._fs.exists(self.join_path(key))
 
 
-class LocalFileStore(FileStore[LocalFileStoreConfig]):
+class LocalFileStore(BaseFileStore[LocalFileStoreConfig]):
     def initialize(self) -> LocalFileSystem:
         return LocalFileSystem()

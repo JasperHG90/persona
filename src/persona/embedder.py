@@ -13,11 +13,23 @@ from tokenizers import Tokenizer
 from pathlib import Path
 from platformdirs import user_data_dir
 
+logger = logging.getLogger('persona.embedder')
+
+
+def get_embedding_model(model_dir: str | plb.Path | None = None, model_name: str = "model.onnx") -> 'FastEmbedder':
+    model_dir = plb.Path(model_dir or (plb.Path(user_data_dir("persona", "jasper_ginn", ensure_exists=True)) / "embeddings/minilm-l6-v2-quantized"))
+    if not model_dir.exists():
+        logger.info("Embedding model not found. Downloading...")
+        downloader = EmbeddingDownloader()
+        downloader.download()
+    
+    return FastEmbedder(model_dir=str(model_dir), model_name=model_name)
+
 
 class EmbeddingDownloader:
     
     def __init__(self):
-        self._logger = logging.getLogger(f'persona.embedder.EmbeddingDownloader')
+        self._logger = logging.getLogger('persona.embedder.EmbeddingDownloader')
         self._persona_data_dir = plb.Path(user_data_dir("persona", "jasper_ginn", ensure_exists=True))
         self._model_dir = "embeddings/minilm-l6-v2-quantized"
         self._model_url = ""
@@ -60,7 +72,7 @@ class FastEmbedder:
             providers=["CPUExecutionProvider"]
         )
 
-    def encode(self, text):
+    def encode(self, text: str) -> np.ndarray:
         enc = self.tokenizer.encode(text)
         inputs = {
             "input_ids": np.array([enc.ids], dtype=np.int64),

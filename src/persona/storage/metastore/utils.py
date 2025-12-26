@@ -1,4 +1,4 @@
-from typing import Any, Literal, Protocol
+from typing import Any, Protocol
 
 
 class CursorLike(Protocol):
@@ -16,6 +16,6 @@ class CursorLike(Protocol):
         
     def execute(self, query: str, parameters: list | None = None) -> Any:
         ...
-
-
-personaTypes = Literal['roles', 'skills']
+        
+    def executemany(self, query: str, parameters: list | None = None) -> Any:
+        ...

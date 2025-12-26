@@ -51,7 +51,6 @@ class DuckDBMetaStoreConfig(BaseMetaStoreConfig, ConfigWithRoot):
     type: Literal['duckdb'] = 'duckdb'
     root: str | None = None
     index_folder: str = 'index'
-    read_only: bool = False
     
     @property
     def index_path(self) -> str:
@@ -60,16 +59,16 @@ class DuckDBMetaStoreConfig(BaseMetaStoreConfig, ConfigWithRoot):
         return os.path.join(self.root, self.index_folder)
     
     @property
-    def roles_index(self) -> str:
+    def roles_index_path(self) -> str:
         if not self.root:
             raise ValueError("Root path is not set.")
-        return os.path.join(self.root, 'index', 'roles_index.duckdb')
+        return os.path.join(self.index_path, 'roles.parquet')
 
     @property
-    def skills_index(self) -> str:
+    def skills_index_path(self) -> str:
         if not self.root:
             raise ValueError("Root path is not set.")
-        return os.path.join(self.root, 'index', 'skills_index.duckdb')
+        return os.path.join(self.index_path, 'skills.parquet')
 
 
 MetaStoreBackend = Annotated[
