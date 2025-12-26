@@ -16,8 +16,9 @@ from .personas import app as personas_app
 from .skills import app as skills_app
 from .cache import app as cache_app
 from .mcp import app as mcp_app
-from persona.storage import IndexEntry, get_storage_backend, VectorDatabase
-from persona.config import parse_storage_config, StorageConfig
+from persona.storage import IndexEntry, get_file_store_backend, get_meta_store_backend
+from persona.config import parse_persona_config, PersonaConfig
+from persona.embedder import get_embedding_model
 
 
 logger = logging.getLogger('persona')
@@ -65,7 +66,7 @@ def main(
         typer.Option(
             '--set',
             '-s',
-            help='Override a configuration value, e.g. --set root=/path/to/root. You can use dot notation for nested values, e.g. --set root.index_path=/new/index/path.',
+            help='Override a configuration value, e.g. --set root=/path/to/root. You can use dot notation for nested values, e.g. --set file_store.type=local.',
             rich_help_panel='Configuration Overrides',
         ),
     ] = None,
@@ -86,15 +87,15 @@ def main(
                 )
 
     overrides = box.to_dict()
-    # Reads from env vars if set
+    # NB: parse_persona_config reads from env vars if set
     try:
         if not config.exists():
-            config_parsed = parse_storage_config(overrides)
+            config_parsed = parse_persona_config(overrides)
         else:
             with config.open('r') as f:
                 config_raw = yaml.safe_load(f) or {}
             config_updated = deep_update(config_raw, overrides)
-            config_parsed = parse_storage_config(config_updated)
+            config_parsed = parse_persona_config(config_updated)
     except Exception:
         print(
             '[red][bold]Error loading configuration:[/bold][/red] malformed configuration file or invalid overrides.'
@@ -107,40 +108,45 @@ def main(
 @app.command(help='Re-index personas and skills.')
 def reindex(ctx: typer.Context):
     """Re-index personas and skills."""
-    _config: StorageConfig = ctx.obj['config']
-    target_storage = get_storage_backend(_config.root)
-    _path = _config.root.root
+    _config: PersonaConfig = ctx.obj['config']
+    target_file_store = get_file_store_backend(_config.file_store)
+    meta_store = get_meta_store_backend(_config.meta_store)
+    embedder = get_embedding_model()
+    _path = _config.root
     index = {
         'skills': [],
-        'personas': [],
+        'roles': [],
     }
     logger.info(f'Re-indexing templates from path: {_path}')
     for template in itertools.chain(
-        target_storage._fs.glob(f'{_path}/**/SKILL.md'),
-        target_storage._fs.glob(f'{_path}/**/PERSONA.md'),
+        target_file_store._fs.glob(f'{_path}/**/SKILL.md'),
+        target_file_store._fs.glob(f'{_path}/**/PERSONA.md'),
     ):
-        if target_storage._fs.isdir(template):
+        if target_file_store._fs.isdir(template):
             continue
         _template = cast(str, template)
-        content = target_storage.load(_template).decode('utf-8')
+        content = target_file_store.load(_template).decode('utf-8')
         fm = frontmatter.loads(content)
         entry_type = 'skill' if _template.split('/')[-1] == 'SKILL.md' else 'persona'
         fp = _template.rsplit('/', 1)[0] + '/**/*'
+        description = '%s - %s' % (cast(str, fm.metadata['name']), cast(str, fm.metadata['description']))
         entry = IndexEntry(
             name=cast(str, fm.metadata['name']),
-            description='%s - %s'
-            % (cast(str, fm.metadata['name']), cast(str, fm.metadata['description'])),
+            description=description,
             uuid=uuid.uuid4().hex,  # Random init
-            files=cast(list[str], target_storage._fs.glob(fp)),  # All files in template
+            files=cast(list[str], target_file_store._fs.glob(fp)),  # All files in template
+            embedding=embedder.encode(description).tolist()
         )
         index[entry_type + 's'].append(entry.model_dump(exclude_none=True))
-    db = VectorDatabase(uri=_config.root.index_path, optimize=False)
-    logger.info('Dropping existing tables...')
-    db.drop_all_tables()
-    db.create_persona_tables()
-    for k, v in index.items():
-        logger.info(f'Updating table: {k} with {len(v)} entries.')
-        db.update_table('personas' if k == 'personas' else 'skills', v)
+    logger.info('Dropping and recreating index tables...')
+    with meta_store.open():
+        with meta_store.session() as session:
+            session.truncate_tables()
+            # NB: will be persisted to storage when _connection_ is closed
+            # for duckdb, since session-based database is memory
+            for k, v in index.items():
+                logger.info(f'Updating table: {k} with {len(v)} entries.')
+                session.upsert('roles' if k == 'roles' else 'skills', v)
 
 
 @app.command(help='Initialize Persona objects on target storage.')

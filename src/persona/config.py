@@ -77,7 +77,7 @@ MetaStoreBackend = Annotated[Union[DuckDBMetaStoreConfig], Field(discriminator='
 
 
 class PersonaConfig(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix='PERSONA_', env_nested_delimiter='__')
+    model_config = SettingsConfigDict(env_prefix='PERSONA_', env_nested_delimiter='__', extra="forbid")
 
     root: str = Field(default_factory=lambda: str(plb.Path.home() / '.persona'))
 
@@ -99,7 +99,7 @@ class PersonaConfig(BaseSettings):
         return self
 
 
-def parse_persona_storage_config(data: dict) -> PersonaConfig:
+def parse_persona_config(data: dict) -> PersonaConfig:
     """Parse persona config from a dictionary."""
     data_ = copy.deepcopy(data)
 
@@ -108,4 +108,4 @@ def parse_persona_storage_config(data: dict) -> PersonaConfig:
     if data['meta_store'].get('type') is None:
         data_['meta_store']['type'] = 'duckdb'
 
-    return PersonaConfig.model_validate(data_, extra='forbid')
+    return PersonaConfig(**data_)

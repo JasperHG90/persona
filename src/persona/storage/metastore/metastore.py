@@ -25,7 +25,7 @@ class BaseMetaStore(metaclass=ABCMeta):
         ...
 
     @abstractmethod
-    def drop_all_tables(self):
+    def truncate_tables(self):
         """Drops all tables in the metastore."""
         ...
 
@@ -122,9 +122,8 @@ class CursorLikeMetaStore(BaseMetaStore):
         sql = f'INSERT OR REPLACE INTO "{table_name}" (name, description, uuid, files, embedding) VALUES ($name, $description, $uuid, $files, $embedding)'
         self._cursor.executemany(sql, data)
 
-    def drop_all_tables(self):
-        # NB: for duckdb this only drops in-memory tables
-        sql = 'DROP TABLE IF EXISTS roles; DROP TABLE IF EXISTS skills;'
+    def truncate_tables(self):
+        sql = 'TRUNCATE roles; TRUNCATE skills;'
         self._cursor.execute(sql)
 
     def remove(self, table_name: personaTypes, keys: list[str]) -> None:

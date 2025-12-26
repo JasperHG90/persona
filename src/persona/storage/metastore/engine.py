@@ -49,6 +49,14 @@ class CursorLikeMetaStoreEngine(Generic[T], metaclass=ABCMeta):
         ...
 
     @contextmanager
+    def open(self):
+        """Connect to a metastore backend and close the connection gracefully"""
+        try:
+            yield self.connect()
+        finally:
+            self.close()
+
+    @contextmanager
     def session(self) -> Generator[CursorLikeMetaStore, None, None]:
         """Start a new session returning a cursor, and commit / close it upon exiting the context manager
 
