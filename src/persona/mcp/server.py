@@ -27,12 +27,15 @@ from .utils import (
 
 prompts_dir = plb.Path(__file__).parent / 'prompts'
 
-mcp = FastMCP('persona_mcp', version='0.1.0', lifespan=lifespan)
+with prompts_dir / 'context.md' as f:
+    context_template = f.read_text().strip()
+
+mcp = FastMCP('persona_mcp', instructions=context_template, version='0.1.0', lifespan=lifespan)
 
 
-@mcp.tool(description='List all available personas.')
-def list_personas(session: Annotated[BaseMetaStore, Depends(get_meta_store_session)]) -> list[dict]:
-    """List all personas."""
+@mcp.tool(description='List all available roles.')
+def list_roles(session: Annotated[BaseMetaStore, Depends(get_meta_store_session)]) -> list[dict]:
+    """List all roles."""
     return _list('roles', session)
 
 
@@ -90,21 +93,21 @@ def get_skill_version(
 
 
 @mcp.tool(
-    name='get_persona',
-    description='Get a persona by name.',
+    name='get_role',
+    description='Get a role by name.',
 )
-def get_persona(
-    name: Annotated[str, Field(description='Name of the persona to retrieve.')],
+def get_role(
+    name: Annotated[str, Field(description='Name of the role to retrieve.')],
     meta_store: Annotated[BaseMetaStore, Depends(get_meta_store_session)],
     file_store: BaseFileStore = Depends(get_file_store),
 ) -> TemplateDetails:
-    """Get a persona by name."""
+    """Get a role by name."""
     return _get_persona(name, meta_store=meta_store, file_store=file_store)
 
 
 @mcp.tool(
-    name='match_persona',
-    description="""Searches the Persona registry for relevant roles or prompts based
+    name='match_role',
+    description="""Searches the Persona roles registry for relevant roles based
     on a natural language description. Use this tool when users ask for a specific role
     or some natural language description of a prompt.
 
@@ -115,7 +118,7 @@ def get_persona(
     OUTPUT: Returns a list of matching prompt names and their descriptions from the registry
     for matches within the specified cosine distance threshold and a maximum number of results.""",
 )
-def match_persona(
+def match_role(
     query: Annotated[
         str, Field(description='Natural language description of the prompt or role needed.')
     ],
@@ -135,7 +138,7 @@ def match_persona(
     embedding_model: FastEmbedder = Depends(get_embedder),
     config: PersonaConfig = Depends(get_config),
 ) -> list[dict]:
-    """Match a persona to the provided description."""
+    """Match a role to the provided description."""
     return _match(
         type='roles',
         query_string=query,
@@ -149,7 +152,7 @@ def match_persona(
 
 @mcp.tool(
     name='match_skill',
-    description="""Searches the Persona registry for relevant skills or capabilities.
+    description="""Searches the Persona skills registry for relevant skills or capabilities.
     Use this tool whenever the user asks for a task that you don't have a
     built-in tool for (e.g., 'scrape web', 'optimize code').
 
@@ -189,7 +192,7 @@ def match_skill(
 
 
 @mcp.prompt(
-    name='persona:roleplay', description='Assume a persona based on the provided description.'
+    name='persona:roles:roleplay', description='Assume a role based on the provided description.'
 )
 async def persona_roleplay(description: str) -> str:
     async with aiofiles.open(prompts_dir / 'roleplay.md', mode='r') as f:
@@ -203,7 +206,8 @@ async def persona_roleplay(description: str) -> str:
 
 
 @mcp.prompt(
-    name='persona:template', description='Prompt engineering template for creating a new persona.'
+    name='persona:roles:template',
+    description='Prompt engineering template for creating a new role.',
 )
 async def persona_template(description: str) -> str:
     async with aiofiles.open(prompts_dir / 'template.md', mode='r') as f:
@@ -217,16 +221,17 @@ async def persona_template(description: str) -> str:
 
 
 @mcp.prompt(
-    name='persona:review', description='Review a persona definition for quality and completeness.'
+    name='persona:roles:review',
+    description='Review a role definition for quality and completeness.',
 )
-async def persona_review(persona: str, chat_history: str | None = None) -> str:
+async def persona_review(role: str, chat_history: str | None = None) -> str:
     async with aiofiles.open(prompts_dir / 'review.md', mode='r') as f:
         template = (await f.read()).strip()
     user_instructions = f"""
     ## User input
 
-    Persona Definition:
-    {persona}
+    Role Definition:
+    {role}
 
     Chat History (optional):
     {chat_history or 'N/A'}
@@ -234,15 +239,15 @@ async def persona_review(persona: str, chat_history: str | None = None) -> str:
     return template + '\n' + user_instructions.strip()
 
 
-@mcp.prompt(name='persona:edit', description='Edit a persona definition based on feedback.')
-async def persona_edit(persona: str, feedback: str) -> str:
+@mcp.prompt(name='persona:roles:edit', description='Edit a role definition based on feedback.')
+async def persona_edit(role: str, feedback: str) -> str:
     async with aiofiles.open(prompts_dir / 'edit.md', mode='r') as f:
         template = (await f.read()).strip()
     user_instructions = f"""
     ## User input
 
-    Persona Definition:
-    {persona}
+    Role Definition:
+    {role}
 
     Feedback:
     {feedback}
@@ -251,7 +256,8 @@ async def persona_edit(persona: str, feedback: str) -> str:
 
 
 @mcp.prompt(
-    name='skill:deploy', description='Execute a prompt with explicit skill deployment instructions.'
+    name='persona:skills:deploy',
+    description='Execute a prompt with explicit skill deployment instructions.',
 )
 async def skill_deploy(task: str) -> str:
     async with aiofiles.open(prompts_dir / 'skill_deploy.md', mode='r') as f:
@@ -265,7 +271,8 @@ async def skill_deploy(task: str) -> str:
 
 
 @mcp.prompt(
-    name='skill:update', description='Update a specific skill if a new version is available.'
+    name='persona:skills:update',
+    description='Update a specific skill if a new version is available.',
 )
 async def skill_update(
     name: Annotated[str, Field(description='Name of the skill to update.')],
