@@ -7,8 +7,6 @@ import shutil
 import logging
 from io import BytesIO
 
-os.environ['ORT_LOGGING_LEVEL'] = '3'  # ERROR
-
 import httpx
 import numpy as np
 import onnxruntime as ort
@@ -51,7 +49,7 @@ class EmbeddingDownloader:
         self._logger = logging.getLogger('persona.embedder.EmbeddingDownloader')
         self._persona_data_dir = user_data_path('persona', 'jasper_ginn', ensure_exists=True)
         self._model_dir = 'embeddings/minilm-l6-v2-quantized'
-        self._model_url = ''
+        self._model_url = 'https://github.com/JasperHG90/persona/raw/refs/heads/main/assets/minilm-l6-v2-quantized.zip'
 
     @property
     def model_dir(self) -> plb.Path:
@@ -66,9 +64,17 @@ class EmbeddingDownloader:
                 with zipfile.ZipFile(BytesIO(response.content)) as z:
                     z.extractall(temp_dir)
 
-                extracted_dir = plb.Path(temp_dir) / self._model_dir
+                extracted_dir = plb.Path(temp_dir) / 'minilm-l6-v2-quantized'
 
-                shutil.move(str(extracted_dir), str(dest))
+                for item in extracted_dir.iterdir():
+                    target_path = dest / item.name
+                    if target_path.exists():
+                        if target_path.is_dir():
+                            shutil.rmtree(target_path)
+                        else:
+                            target_path.unlink()
+                    shutil.move(str(item), str(target_path))
+            self._logger.info(f'Model downloaded and extracted to {dest}')
 
         except httpx.RequestError as e:
             self._logger.error(f'Failed to download model from {url}: {e}')
