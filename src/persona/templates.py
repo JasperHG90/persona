@@ -144,7 +144,7 @@ class Template(BaseModel):
 
         entry.update('description', '%s - %s' % (entry_name, entry_description))
         entry.update('name', entry.name or cast(str, metadata.get('name', None)))
-        entry.update('type', self.get_type())
+        entry.update('type', str(self.get_type()))
 
         if entry.name is None or entry.description is None:
             raise ValueError(
