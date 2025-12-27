@@ -1,13 +1,17 @@
 import asyncio
-from typing import cast, Annotated
+from typing import Annotated
 import pathlib as plb
 
 import aiofiles
-from fastmcp import FastMCP, Context
-from mcp.shared.context import RequestContext
+from fastmcp import FastMCP
+from fastmcp.dependencies import Depends
 from pydantic import Field
 
-from .models import AppContext, TemplateDetails
+from persona.storage import BaseMetaStore, BaseFileStore
+from persona.config import PersonaConfig
+from persona.embedder import FastEmbedder
+
+from .models import TemplateDetails
 from .utils import (
     _list,
     _match,
@@ -15,6 +19,10 @@ from .utils import (
     _write_skill_files,
     _get_skill_version,
     lifespan,
+    get_embedder,
+    get_file_store,
+    get_config,
+    get_meta_store_session,
 )
 
 prompts_dir = plb.Path(__file__).parent / 'prompts'
@@ -23,17 +31,15 @@ mcp = FastMCP('persona_mcp', version='0.1.0', lifespan=lifespan)
 
 
 @mcp.tool(description='List all available personas.')
-async def list_personas(ctx: Context) -> list[dict]:
+def list_personas(session: Annotated[BaseMetaStore, Depends(get_meta_store_session)]) -> list[dict]:
     """List all personas."""
-    app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
-    return await _list('personas', app_context)
+    return _list('roles', session)
 
 
 @mcp.tool(description='List all available skills.')
-async def list_skills(ctx: Context) -> list[dict]:
+def list_skills(session: Annotated[BaseMetaStore, Depends(get_meta_store_session)]) -> list[dict]:
     """List all skills."""
-    app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
-    return await _list('skills', app_context)
+    return _list('skills', session)
 
 
 # NB: this only works if the MCP is running locally so it can write files to disk
@@ -41,16 +47,15 @@ async def list_skills(ctx: Context) -> list[dict]:
     name='install_skill',
     description="""
     RETRIEVAL PROTOCOL:
-    1. This tool installs a Skill by installing it to the specified **absolute** target root directory.
-    2. The **absolute** target root directory must exist prior to calling this tool.
-    3. After installation, the SKILL.md file will be available in <target_skill_dir>/<skill_name>/SKILL.md.
+    1. This tool installs a Skill by installing it to the specified **absolute** local root directory.
+    2. The **absolute** local root directory must exist prior to calling this tool.
+    3. After installation, the SKILL.md file will be available in <local_skill_dir>/<skill_name>/SKILL.md.
     4. You **MUST** read the SKILL.md file and follow the execution instructions specified there.
     """,
 )
-async def install_skill(
-    ctx: Context,
+def install_skill(
     name: Annotated[str, Field(description='Name of the skill to retrieve.')],
-    target_skill_dir: Annotated[
+    local_skill_dir: Annotated[
         str,
         Field(
             description="""
@@ -65,35 +70,36 @@ async def install_skill(
             ],
         ),
     ],
+    meta_store: Annotated[BaseMetaStore, Depends(get_meta_store_session)],
+    file_store: BaseFileStore = Depends(get_file_store),
 ) -> str:
     """Get a skill by name."""
-    app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
-    return await _write_skill_files(app_context, target_skill_dir, name)
+    return _write_skill_files(local_skill_dir, name, meta_store=meta_store, file_store=file_store)
 
 
 @mcp.tool(
     name='get_skill_version',
     description='Get a skill version by name.',
 )
-async def get_skill_version(
-    ctx: Context,
+def get_skill_version(
     name: Annotated[str, Field(description='Name of the skill to retrieve the version for.')],
+    meta_store: Annotated[BaseMetaStore, Depends(get_meta_store_session)],
 ) -> str:
     """Get a skill version by name."""
-    app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
-    return await _get_skill_version(app_context, name)
+    return _get_skill_version(name, meta_store)
 
 
 @mcp.tool(
     name='get_persona',
     description='Get a persona by name.',
 )
-async def get_persona(
-    ctx: Context, name: Annotated[str, Field(description='Name of the persona to retrieve.')]
+def get_persona(
+    name: Annotated[str, Field(description='Name of the persona to retrieve.')],
+    meta_store: Annotated[BaseMetaStore, Depends(get_meta_store_session)],
+    file_store: BaseFileStore = Depends(get_file_store),
 ) -> TemplateDetails:
     """Get a persona by name."""
-    app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
-    return await _get_persona(app_context, name)
+    return _get_persona(name, meta_store=meta_store, file_store=file_store)
 
 
 @mcp.tool(
@@ -109,19 +115,36 @@ async def get_persona(
     OUTPUT: Returns a list of matching prompt names and their descriptions from the registry
     for matches within the specified cosine distance threshold and a maximum number of results.""",
 )
-async def match_persona(
-    ctx: Context,
+def match_persona(
     query: Annotated[
         str, Field(description='Natural language description of the prompt or role needed.')
     ],
-    limit: Annotated[int, Field(description='Maximum number of results to return.')] = 5,
+    meta_store: Annotated[BaseMetaStore, Depends(get_meta_store_session)],
+    limit: Annotated[
+        int | None,
+        Field(
+            description='Maximum number of results to return. If None, will be taken from configuation file.'
+        ),
+    ] = None,
     max_cosine_distance: Annotated[
-        float, Field(description='Maximum cosine distance threshold for matches.')
-    ] = 0.7,
+        float | None,
+        Field(
+            description='Maximum cosine distance threshold for matches. If None, will be taken from configuration file.'
+        ),
+    ] = None,
+    embedding_model: FastEmbedder = Depends(get_embedder),
+    config: PersonaConfig = Depends(get_config),
 ) -> list[dict]:
     """Match a persona to the provided description."""
-    app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
-    return await _match('personas', query, app_context, limit, max_cosine_distance)
+    return _match(
+        type='roles',
+        query_string=query,
+        meta_store=meta_store,
+        embedding_model=embedding_model,
+        config=config,
+        limit=limit,
+        max_cosine_distance=max_cosine_distance,
+    )
 
 
 @mcp.tool(
@@ -133,19 +156,36 @@ async def match_persona(
     OUTPUT: Returns a list of matching skill names and their descriptions from the registry
     for matches within the specified cosine distance threshold and a maximum number of results.""",
 )
-async def match_skill(
-    ctx: Context,
+def match_skill(
     query: Annotated[
-        str, Field(description='Natural language description of the task or capability needed.')
+        str, Field(description='Natural language description of the prompt or role needed.')
     ],
-    limit: Annotated[int, Field(description='Maximum number of results to return.')] = 5,
+    meta_store: Annotated[BaseMetaStore, Depends(get_meta_store_session)],
+    limit: Annotated[
+        int | None,
+        Field(
+            description='Maximum number of results to return. If None, will be taken from configuation file.'
+        ),
+    ] = None,
     max_cosine_distance: Annotated[
-        float, Field(description='Maximum cosine distance threshold for matches.')
-    ] = 0.7,
+        float | None,
+        Field(
+            description='Maximum cosine distance threshold for matches. If None, will be taken from configuration file.'
+        ),
+    ] = None,
+    embedding_model: FastEmbedder = Depends(get_embedder),
+    config: PersonaConfig = Depends(get_config),
 ) -> list[dict]:
     """Match a skill to the provided description."""
-    app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
-    return await _match('skills', query, app_context, limit, max_cosine_distance)
+    return _match(
+        type='roles',
+        query_string=query,
+        meta_store=meta_store,
+        embedding_model=embedding_model,
+        config=config,
+        limit=limit,
+        max_cosine_distance=max_cosine_distance,
+    )
 
 
 @mcp.prompt(

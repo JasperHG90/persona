@@ -1,13 +1,15 @@
 from pydantic import BaseModel, PrivateAttr
 
-from persona.config import StorageConfig
-from persona.storage import StorageBackend, VectorDatabase
+from persona.config import PersonaConfig
+from persona.storage import BaseFileStore, CursorLikeMetaStoreEngine
+from persona.embedder import FastEmbedder
 
 
 class AppContext(BaseModel):
-    config: StorageConfig
-    _target_storage: StorageBackend = PrivateAttr()
-    _vector_db: VectorDatabase = PrivateAttr()
+    config: PersonaConfig
+    _file_store: BaseFileStore = PrivateAttr()
+    _meta_store_engine: CursorLikeMetaStoreEngine = PrivateAttr()
+    _embedding_model: FastEmbedder = PrivateAttr()
 
     model_config = {'arbitrary_types_allowed': True}
 

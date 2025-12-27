@@ -28,7 +28,7 @@ dependencies = [
 [project.optional-dependencies]
 mcp = [
     "aiofiles>=25.1.0",
-    "fastmcp>=2.13.1",
+    "fastmcp>=2.14.0",
     "httpx>=0.28.1",
     "watchfiles>=1.1.1",
 ]

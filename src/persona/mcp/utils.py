@@ -1,17 +1,26 @@
 import os
 import pathlib as plb
 from contextlib import asynccontextmanager
-from typing import AsyncIterator, cast, Literal
+from typing import AsyncIterator, cast, Generator, Annotated
 from collections import defaultdict
 
 import yaml
 import frontmatter
-from fastmcp import FastMCP
+from fastmcp import FastMCP, Context
 from fastmcp.exceptions import ToolError
 from fastmcp.utilities.types import File
+from fastmcp.dependencies import Depends
+from mcp.shared.context import RequestContext
 
-from persona.config import StorageConfig, parse_storage_config
-from persona.storage import get_storage_backend, VectorDatabase
+from persona.config import parse_persona_config, PersonaConfig
+from persona.storage import (
+    get_file_store_backend,
+    get_meta_store_backend,
+    BaseMetaStore,
+    BaseFileStore,
+)
+from persona.embedder import get_embedding_model, FastEmbedder
+from persona.types import personaTypes
 
 from .models import AppContext, TemplateDetails, SkillFile
 
@@ -69,45 +78,71 @@ async def lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
     if persona_config_path.exists():
         with persona_config_path.open('r') as f:
             config_raw = yaml.safe_load(f) or {}
-        config = StorageConfig.model_validate(config_raw)
+        config = parse_persona_config(config_raw)
     else:
-        config = parse_storage_config({})  # Will be read from env vars
-    storage_backend = get_storage_backend(config.root)
-    vector_db = VectorDatabase(uri=config.root.index_path, optimize=False)
+        config = parse_persona_config({})  # Will be read from env vars
+    file_store = get_file_store_backend(config.file_store)
+    # NB: read_only prevents changes from being persisted
+    meta_store_engine = get_meta_store_backend(config.meta_store, read_only=True)
+    meta_store_engine.connect()
+    meta_store_engine.bootstrap()
     app_context = AppContext(config=config)
-    app_context._target_storage = storage_backend
-    app_context._vector_db = vector_db
+    app_context._file_store = file_store
+    app_context._meta_store_engine = meta_store_engine
+    app_context._embedding_model = get_embedding_model()
     yield app_context
+    meta_store_engine.close()
 
 
-async def _list(type: Literal['personas', 'skills'], ctx: AppContext) -> list[dict]:
+def get_meta_store_session(ctx: Context) -> Generator[BaseMetaStore, None, None]:
+    app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
+    meta_store = app_context._meta_store_engine
+    with meta_store.session() as session:
+        yield session
+
+
+def get_file_store(ctx: Context) -> BaseFileStore:
+    app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
+    return app_context._file_store
+
+
+def get_embedder(ctx: Context) -> FastEmbedder:
+    app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
+    return app_context._embedding_model
+
+
+def get_config(ctx: Context) -> PersonaConfig:
+    app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
+    return app_context.config
+
+
+def _list(type: personaTypes, session: BaseMetaStore) -> list[dict]:
     """List all personas (logic)."""
-    return (
-        ctx._vector_db.get_or_create_table(type)
-        .to_arrow()
-        .select(['name', 'description', 'uuid'])
-        .to_pylist()
+    return session.get_many(
+        table_name=type,
+        column_filter=['name', 'description', 'uuid'],
     )
 
 
-async def _write_skill_files(
-    ctx: AppContext,
-    target_skill_dir: str,
+def _write_skill_files(
+    local_skill_dir: str,
     name: str,
+    meta_store: BaseMetaStore,
+    file_store: BaseFileStore,
 ):
     """Write skill files to a local directory where the LLM can access them."""
-    dir_ = plb.Path(target_skill_dir)
+    dir_ = plb.Path(local_skill_dir)
     skill_file: str | None = None
     if not dir_.is_absolute():
         raise ToolError(
-            f'Target skill directory "{target_skill_dir}" is not an absolute path. Please provide an absolute path.'
+            f'Target skill directory "{local_skill_dir}" is not an absolute path. Please provide an absolute path.'
         )
     elif not dir_.exists():
         raise ToolError(
-            f'Target skill directory "{target_skill_dir}" does not exist. Please create it before installing the skill.'
+            f'Target skill directory "{local_skill_dir}" does not exist. Please create it before installing the skill.'
         )
 
-    skill_files = library_skills.get(name, None) or await _skill_files(ctx, name)
+    skill_files = library_skills.get(name, None) or _skill_files(file_store, meta_store, name)
 
     for name, file in skill_files.items():
         dest = dir_ / file.storage_file_path.replace('skills/', '')
@@ -124,26 +159,26 @@ async def _write_skill_files(
     return skill_file
 
 
-async def _get_skill_version(ctx: AppContext, name: str) -> str:
+def _get_skill_version(name: str, meta_store: BaseMetaStore) -> str:
     """Get a skill version by name (logic)."""
-    if ctx._vector_db.exists('skills', name):
+    if meta_store.exists('skills', name):
         skill_files = cast(
-            dict[str, str], ctx._vector_db.get_record('skills', name, ['name', 'files', 'uuid'])
+            dict[str, str], meta_store.get_one('skills', name, ['name', 'files', 'uuid'])
         )
         return skill_files['uuid']
     else:
         raise ToolError(f'Skill "{name}" not found')
 
 
-async def _skill_files(ctx: AppContext, name: str) -> dict[str, SkillFile]:
+def _skill_files(
+    file_store: BaseFileStore, meta_store: BaseMetaStore, name: str
+) -> dict[str, SkillFile]:
     """Get a skill by name (logic)."""
-    if ctx._vector_db.exists('skills', name):
+    if meta_store.exists('skills', name):
         skill_files = cast(
-            dict[str, str], ctx._vector_db.get_record('skills', name, ['name', 'files', 'uuid'])
+            dict[str, str], meta_store.get_one('skills', name, ['name', 'files', 'uuid'])
         )
-        content = frontmatter.loads(
-            ctx._target_storage.load(f'skills/{name}/SKILL.md').decode('utf-8')
-        )
+        content = frontmatter.loads(file_store.load(f'skills/{name}/SKILL.md').decode('utf-8'))
         content.metadata['metadata'] = {'version': skill_files['uuid']}
         results = {
             'SKILL.md': SkillFile(
@@ -161,7 +196,7 @@ async def _skill_files(ctx: AppContext, name: str) -> dict[str, SkillFile]:
             elif file.endswith('SKILL.md'):
                 continue
             else:
-                _file_content = ctx._target_storage.load(target_store_file)
+                _file_content = file_store.load(target_store_file)
                 results[file] = SkillFile(
                     content=_file_content,
                     name=file,
@@ -173,10 +208,14 @@ async def _skill_files(ctx: AppContext, name: str) -> dict[str, SkillFile]:
         raise ToolError(f'Skill "{name}" not found')
 
 
-async def _get_skill(ctx: AppContext, name: str) -> list[File]:
+def _get_skill(
+    name: str,
+    meta_store: Annotated[BaseMetaStore, Depends(get_meta_store_session)],
+    file_store: BaseFileStore = Depends(get_file_store),
+) -> list[File]:
     """Get a skill by name (logic)."""
     results = []
-    for name, skill in (await _skill_files(ctx, name)).items():
+    for name, skill in (_skill_files(file_store, meta_store, name)).items():
         results.append(
             File(
                 data=skill.content,
@@ -187,34 +226,42 @@ async def _get_skill(ctx: AppContext, name: str) -> list[File]:
     return results
 
 
-async def _get_persona(ctx: AppContext, name: str) -> TemplateDetails:
+def _get_persona(
+    name: str,
+    meta_store: BaseMetaStore,
+    file_store: BaseFileStore,
+) -> TemplateDetails:
     """Get a persona by name (logic)."""
-    if ctx._vector_db.exists('personas', name):
-        content = frontmatter.loads(
-            ctx._target_storage.load(f'personas/{name}/PERSONA.md').decode('utf-8')
-        )
+    if meta_store.exists('roles', name):
+        content = frontmatter.loads(file_store.load(f'roles/{name}/ROLE.md').decode('utf-8'))
         return TemplateDetails(
             name=name,
             description=cast(str, content.metadata.get('description', '')),
             prompt=content.content.strip(),
         )
     else:
-        raise ToolError(f'Persona "{name}" not found')
+        raise ToolError(f'Role "{name}" not found')
 
 
-async def _match(
-    type: Literal['personas', 'skills'],
-    description: str,
-    ctx: AppContext,
-    limit: int = 5,
-    max_cosine_distance: float = 0.7,
-) -> list[dict]:
+def _match(
+    type: personaTypes,
+    query_string: str,
+    embedding_model: FastEmbedder,
+    config: PersonaConfig,
+    meta_store: BaseMetaStore,
+    limit: int | None = None,
+    max_cosine_distance: float | None = None,
+) -> list[dict[str, str]]:
     """Match a persona to the provided description (logic)."""
-    return (
-        ctx._vector_db.search(
-            query=description, table_name=type, limit=limit, max_cosine_distance=max_cosine_distance
-        )
-        .to_arrow()
-        .select(['uuid', 'name', 'description', '_distance'])
-        .to_pylist()
-    )
+    query = embedding_model.encode(query_string).tolist()
+    if limit is None:
+        limit = config.meta_store.similarity_search.max_results
+    if max_cosine_distance is None:
+        max_cosine_distance = config.meta_store.similarity_search.max_cosine_distance
+    return meta_store.search(
+        query=query,
+        table_name=type,
+        limit=cast(int, limit),
+        column_filter=['uuid', 'name', 'description'],
+        max_cosine_distance=cast(float, max_cosine_distance),
+    ).to_pylist()
