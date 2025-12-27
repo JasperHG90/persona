@@ -33,7 +33,7 @@ def match_query(ctx: typer.Context, query: str, type: personaTypes):
                 query=query_vector,
                 table_name=type,
                 limit=config.meta_store.similarity_search.max_results,
-                column_filter=['name', 'description', 'uuid', 'score'],
+                column_filter=['name', 'description', 'uuid'],
                 max_cosine_distance=config.meta_store.similarity_search.max_cosine_distance,
             )
     for result in results.to_pylist():

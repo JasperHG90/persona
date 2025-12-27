@@ -59,7 +59,7 @@ class Transaction:
                 if entry.name is not None:
                     deletes.append(entry.name)
             elif action == 'upsert':
-                upserts.append(entry.model_dump(exclude=set('type')))
+                upserts.append(entry.model_dump(exclude={'type'}))
             if entry.type is not None:
                 types.append(entry.type)
 
@@ -72,12 +72,12 @@ class Transaction:
 
         if upserts:
             meta_store.upsert(
-                'skills' if type_[0] == 'skill' else 'roles',
+                'skills' if type_[0] == 'skills' else 'roles',
                 upserts,
             )
         if deletes:
             meta_store.remove(
-                'skills' if type_[0] == 'skill' else 'roles',
+                'skills' if type_[0] == 'skills' else 'roles',
                 deletes,
             )
 

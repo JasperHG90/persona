@@ -16,6 +16,7 @@ from persona.storage import (
 )
 from persona.config import LocalFileStoreConfig
 from persona.embedder import FastEmbedder
+from persona.types import personaTypes
 
 logger = logging.getLogger('persona.core.files')
 
@@ -73,9 +74,9 @@ class Template(BaseModel):
     _file_store: BaseFileStore | None = None
 
     def model_post_init(self, __context) -> None:
-        if self._storage is None:
+        if self._file_store is None:
             # NB: use local file store to read templates as they should always be on-disk locally.
-            self._storage = LocalFileStore(
+            self._file_store = LocalFileStore(
                 LocalFileStoreConfig.model_validate(
                     {
                         'root': str(self.path) if self.path.is_dir() else str(self.path.parent),
@@ -85,7 +86,7 @@ class Template(BaseModel):
             )
 
     @abstractmethod
-    def get_type(self) -> Literal['skill'] | Literal['role']:
+    def get_type(self) -> personaTypes:
         raise NotImplementedError
 
     @property
@@ -100,7 +101,7 @@ class Template(BaseModel):
 
     @model_validator(mode='after')
     def file_template_name_correct(self) -> Self:
-        _type = 'SKILL.md' if self.get_type() == 'skill' else 'ROLE.md'
+        _type = 'SKILL.md' if self.get_type() == 'skills' else 'ROLE.md'
         if self.is_dir:
             file_exists = (self.path / _type).exists()
         else:
@@ -113,7 +114,7 @@ class Template(BaseModel):
     def metadata(self) -> dict[str, object] | None:
         """Load the frontmatter metadata from the template file."""
         _path = self.path.parent if not self.is_dir else self.path
-        template_file = _path / ('SKILL.md' if self.get_type() == 'skill' else 'ROLE.md')
+        template_file = _path / ('SKILL.md' if self.get_type() == 'skills' else 'ROLE.md')
         with template_file.open('r') as f:
             content = f.read()
         fm = frontmatter.loads(content)
@@ -151,7 +152,7 @@ class Template(BaseModel):
 
         entry.update('embedding', embedder.encode(entry.description).tolist())
 
-        target_key = f'{self.get_type()}s/{entry.name}'
+        target_key = f'{self.get_type()}/{entry.name}'
 
         local_path_root = self.path.parent if self.path.is_file() else self.path
         glob = '**/*' if plb.Path(self.path).is_dir() else self.path.name
@@ -185,16 +186,16 @@ class Template(BaseModel):
 
 
 class Skill(Template):
-    type: Literal['skill'] = 'skill'
+    type: Literal['skills'] = 'skills'
 
-    def get_type(self) -> Literal['skill']:
+    def get_type(self) -> Literal['skills']:
         return self.type
 
 
 class Role(Template):
-    type: Literal['role'] = 'role'
+    type: Literal['roles'] = 'roles'
 
-    def get_type(self) -> Literal['role']:
+    def get_type(self) -> Literal['roles']:
         return self.type
 
 

@@ -113,7 +113,7 @@ class BaseMetaStore(metaclass=ABCMeta):
 class CursorLikeMetaStore(BaseMetaStore):
     @staticmethod
     def _get_column_filter(column_filter: list[str] | None) -> str:
-        if column_filter:
+        if column_filter is not None:
             columns = ', '.join([f'"{c}"' for c in column_filter])
         else:
             columns = '*'
@@ -163,12 +163,16 @@ class CursorLikeMetaStore(BaseMetaStore):
         limit: int = 5,
         max_cosine_distance: float | None = None,
     ) -> pa.Table:
+        columns = self._get_column_filter(column_filter)
+        columns += ',array_cosine_distance(embedding, ?::FLOAT[384]) as score'
         sql = f"""
-        SELECT {self._get_column_filter(column_filter)},
-                array_cosine_distance(embedding, ?::FLOAT[384]) as score
-        FROM "{table_name}"
+        WITH search_results AS (
+            SELECT {columns},
+            FROM "{table_name}"
+        )
+        SELECT * FROM search_results
         """
         if max_cosine_distance is not None:
-            sql += f' WHERE score <= {max_cosine_distance}'
+            sql += f'WHERE score <= {max_cosine_distance}'
         sql += f' ORDER BY score ASC LIMIT {limit}'
         return self._cursor.execute(sql, [query]).fetch_arrow_table()

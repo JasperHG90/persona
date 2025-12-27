@@ -40,7 +40,7 @@ class SimilaritySearchConfig(BaseModel):
     model: Literal['sentence-transformers/all-MiniLM-L6-v2'] = (
         'sentence-transformers/all-MiniLM-L6-v2'
     )
-    max_cosine_distance: float = 0.5
+    max_cosine_distance: float = 0.7
     max_results: int = 5
 
 
