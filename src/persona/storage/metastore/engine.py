@@ -34,6 +34,11 @@ class CursorLikeMetaStoreEngine(Generic[T], metaclass=ABCMeta):
         self._transaction: Transaction | None = None
 
     @abstractmethod
+    def bootstrap(self):
+        """Bootstraps the metastore backend, creating necessary tables or structures."""
+        ...
+
+    @abstractmethod
     def connect(self) -> Self:
         """Connect to the metastore backend."""
         ...
@@ -49,10 +54,12 @@ class CursorLikeMetaStoreEngine(Generic[T], metaclass=ABCMeta):
         ...
 
     @contextmanager
-    def open(self) -> Generator[Self, None, None]:
+    def open(self, bootstrap: bool = False) -> Generator[Self, None, None]:
         """Connect to a metastore backend and close the connection gracefully"""
         try:
             yield self.connect()
+            if bootstrap:
+                self.bootstrap()
         finally:
             self.close()
 
@@ -102,7 +109,7 @@ class DuckDBMetaStoreEngine(CursorLikeMetaStoreEngine[DuckDBMetaStoreConfig]):
         )
         self._read_only = read_only
 
-    def _bootstrap(self):
+    def bootstrap(self):
         """Bootstraps the in-memory database using existing indexes if available."""
         if self._conn is None:
             raise RuntimeError('No database connection; call connect() first.')
@@ -129,6 +136,11 @@ class DuckDBMetaStoreEngine(CursorLikeMetaStoreEngine[DuckDBMetaStoreConfig]):
             self._conn.execute(f'COPY "{table}" TO "{path_}" (FORMAT PARQUET);')
 
     def connect(self) -> Self:
+        if self._conn is not None:
+            self._logger.debug(
+                'DuckDB connection already established. To open a new connection, close the existing one first.'
+            )
+            return self
         cache_dir = (
             plb.Path(user_cache_dir('persona', 'jasper_ginn', ensure_exists=True)) / 'duckdb'
         )
@@ -144,7 +156,6 @@ class DuckDBMetaStoreEngine(CursorLikeMetaStoreEngine[DuckDBMetaStoreConfig]):
         self._conn.execute(
             'SET cache_httpfs_enable_cache_validation = true;'
         )  # this checks for updated files on read
-        self._bootstrap()
         return self
 
     def close(self):

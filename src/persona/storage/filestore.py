@@ -115,6 +115,30 @@ class BaseFileStore(Generic[T], metaclass=ABCMeta):
         self._logger.debug(f'Checking for existence of key: {key}')
         return self._fs.exists(self.join_path(key))
 
+    def is_dir(self, key: str) -> bool:
+        """
+        Check if a key is a directory in the storage backend.
+
+        Args:
+            key: The identifier for the data.
+
+        Returns:
+            True if the key is a directory, False otherwise.
+        """
+        return self._fs.isdir(self.join_path(key))
+
+    def glob(self, pattern: str) -> list[str]:
+        """
+        Glob for files matching a pattern in the storage backend.
+
+        Args:
+            pattern: The glob pattern to match files.
+
+        Returns:
+            A list of matching file paths.
+        """
+        return cast(list[str], self._fs.glob(self.join_path(pattern)))
+
 
 class LocalFileStore(BaseFileStore[LocalFileStoreConfig]):
     def initialize(self) -> LocalFileSystem:

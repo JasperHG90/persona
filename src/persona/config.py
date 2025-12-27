@@ -1,8 +1,8 @@
 import os
-import pathlib as plb
 from typing import Literal, Union
 from typing_extensions import Annotated
 import copy
+from platformdirs import user_data_dir
 
 from pydantic import Field, model_validator, BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -51,23 +51,35 @@ class BaseMetaStoreConfig(BaseModel):
 
 class DuckDBMetaStoreConfig(BaseMetaStoreConfig, ConfigWithRoot):
     type: Literal['duckdb'] = 'duckdb'
-    root: str | None = None
-    index_folder: str = 'index'
+    root: str | None = Field(
+        default=None,
+        description='The root directory for storing DuckDB index files. If not set, '
+        'will default to the top-level PersonaConfig root path.',
+    )
+    index_folder: str = Field(
+        default='index',
+        description='Folder within the root directory to store index files. The DuckDB metastore '
+        'implementation will store the index files as parquet files on the same storage backend as '
+        ' the file store. Defaults to "index".',
+    )
 
     @property
     def index_path(self) -> str:
+        """Directory on the file store backend where index files are stored."""
         if not self.root:
             raise ValueError('Root path is not set.')
         return os.path.join(self.root, self.index_folder)
 
     @property
     def roles_index_path(self) -> str:
+        """Path to the roles index parquet file."""
         if not self.root:
             raise ValueError('Root path is not set.')
         return os.path.join(self.index_path, 'roles.parquet')
 
     @property
     def skills_index_path(self) -> str:
+        """Path to the skills index parquet file."""
         if not self.root:
             raise ValueError('Root path is not set.')
         return os.path.join(self.index_path, 'skills.parquet')
@@ -77,12 +89,26 @@ MetaStoreBackend = Annotated[Union[DuckDBMetaStoreConfig], Field(discriminator='
 
 
 class PersonaConfig(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix='PERSONA_', env_nested_delimiter='__', extra="forbid")
+    model_config = SettingsConfigDict(
+        env_prefix='PERSONA_', env_nested_delimiter='__', extra='forbid'
+    )
 
-    root: str = Field(default_factory=lambda: str(plb.Path.home() / '.persona'))
+    root: str = Field(
+        default_factory=lambda: user_data_dir('persona', 'jasper_ginn'),
+        description='The root directory for Persona file store and for some meta store backends. '
+        'Defaults to the user data directory.',
+        examples=['/home/vscode/.local/share/persona', 'gs://my-bucket/persona'],
+    )
 
-    file_store: FileStoreBackend = Field(default_factory=lambda: LocalFileStoreConfig())
-    meta_store: MetaStoreBackend = Field(default_factory=lambda: DuckDBMetaStoreConfig())
+    file_store: FileStoreBackend = Field(
+        default_factory=lambda: LocalFileStoreConfig(),
+        description='Configuration for the file storage backend. Defaults to local file storage.',
+    )
+    meta_store: MetaStoreBackend = Field(
+        default_factory=lambda: DuckDBMetaStoreConfig(),
+        description='Configuration for the metadata storage backend. Defaults to a DuckDB metadata '
+        'store that stores indexes as parquet files in the user data directory.',
+    )
 
     @model_validator(mode='after')
     def sync_root_paths(self) -> 'PersonaConfig':

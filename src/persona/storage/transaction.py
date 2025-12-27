@@ -30,7 +30,7 @@ class TemplateHashValues(RootModel[dict[str, str]]):
 class Transaction:
     """A context manager for handling transactions in storage backends."""
 
-    def __init__(self, file_store: BaseFileStore, meta_store_engine: CursorLikeMetaStoreEngine):
+    def __init__(self, file_store: 'BaseFileStore', meta_store_engine: 'CursorLikeMetaStoreEngine'):
         self._logger = logging.getLogger('persona.storage.transaction.Transaction')
         self._file_store = file_store
         self._meta_store_engine = meta_store_engine
@@ -46,7 +46,7 @@ class Transaction:
     def _add_file_hash(self, file: str, content: bytes) -> None:
         self._hashes.add(file, content)
 
-    def _update_index(self, meta_store: BaseMetaStore) -> None:
+    def _update_index(self, meta_store: 'BaseMetaStore') -> None:
         """Update the index with the new or updated template entry."""
         types: list[str] = []
         deletes: list[str] = []
@@ -120,7 +120,7 @@ class Transaction:
         try:
             # NB: for DuckDB, closing the local session will trigger an export of the
             #  data to storage as parquet
-            with self._meta_store_engine.open() as connected:
+            with self._meta_store_engine.open(bootstrap=True) as connected:
                 with connected.session() as session:
                     self._update_index(meta_store=session)
         except Exception as e:
@@ -129,4 +129,4 @@ class Transaction:
             self.rollback()
             raise e
 
-        self._undo_log = []
+        self._log = []

@@ -92,6 +92,7 @@ class BaseMetaStore(metaclass=ABCMeta):
         self,
         query: list[float],
         table_name: personaTypes,
+        column_filter: list[str] | None = None,
         limit: int = 5,
         max_cosine_distance: float | None = None,
     ) -> pa.Table:
@@ -158,11 +159,12 @@ class CursorLikeMetaStore(BaseMetaStore):
         self,
         query: list[float],
         table_name: personaTypes,
+        column_filter: list[str] | None = None,
         limit: int = 5,
         max_cosine_distance: float | None = None,
     ) -> pa.Table:
         sql = f"""
-        SELECT name, description,
+        SELECT {self._get_column_filter(column_filter)},
                 array_cosine_distance(embedding, ?::FLOAT[384]) as score
         FROM "{table_name}"
         """

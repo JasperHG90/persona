@@ -18,9 +18,11 @@ dependencies = [
     "rich>=14.2.0",
     "typer>=0.20.0",
     "python-box>=7.3.2",
-    "lancedb>=0.26.0",
-    "sentence-transformers>=5.2.0",
     "platformdirs>=4.5.0",
+    "onnxruntime>=1.23.2",
+    "tokenizers>=0.22.1",
+    "pyarrow>=22.0.0",
+    "duckdb>=1.4.3",
 ]
 
 [project.optional-dependencies]

@@ -12,14 +12,13 @@ from box import Box
 from rich import print
 from pydantic.v1.utils import deep_update
 
-from .personas import app as personas_app
+from .roles import app as roles_app
 from .skills import app as skills_app
 from .cache import app as cache_app
 from .mcp import app as mcp_app
 from persona.storage import IndexEntry, get_file_store_backend, get_meta_store_backend
 from persona.config import parse_persona_config, PersonaConfig
 from persona.embedder import get_embedding_model
-
 
 logger = logging.getLogger('persona')
 handler = logging.StreamHandler()
@@ -31,13 +30,13 @@ logger.setLevel(logging.INFO)
 
 app = typer.Typer(
     name='persona',
-    help='Manage LLM personas and skills.',
+    help='Manage LLM roles and skills.',
     no_args_is_help=True,
     pretty_exceptions_show_locals=False,
     pretty_exceptions_enable=True,
     pretty_exceptions_short=True,
 )
-app.add_typer(personas_app, name='personas', help='Manage personas.')
+app.add_typer(roles_app, name='roles', help='Manage roles.')
 app.add_typer(skills_app, name='skills', help='Manage skills.')
 app.add_typer(cache_app, name='cache', help='Manage the cache.')
 app.add_typer(mcp_app, name='mcp', help='Manage the MCP server.')
@@ -94,6 +93,8 @@ def main(
         else:
             with config.open('r') as f:
                 config_raw = yaml.safe_load(f) or {}
+                # NB: validate the raw config if it exists
+                PersonaConfig.model_validate(config_raw)
             config_updated = deep_update(config_raw, overrides)
             config_parsed = parse_persona_config(config_updated)
     except Exception:
@@ -110,7 +111,7 @@ def reindex(ctx: typer.Context):
     """Re-index personas and skills."""
     _config: PersonaConfig = ctx.obj['config']
     target_file_store = get_file_store_backend(_config.file_store)
-    meta_store = get_meta_store_backend(_config.meta_store)
+    meta_store = get_meta_store_backend(_config.meta_store, read_only=False)
     embedder = get_embedding_model()
     _path = _config.root
     index = {
@@ -129,44 +130,53 @@ def reindex(ctx: typer.Context):
         fm = frontmatter.loads(content)
         entry_type = 'skill' if _template.split('/')[-1] == 'SKILL.md' else 'role'
         fp = _template.rsplit('/', 1)[0] + '/**/*'
-        description = '%s - %s' % (cast(str, fm.metadata['name']), cast(str, fm.metadata['description']))
+        description = '%s - %s' % (
+            cast(str, fm.metadata['name']),
+            cast(str, fm.metadata['description']),
+        )
         entry = IndexEntry(
             name=cast(str, fm.metadata['name']),
             description=description,
             uuid=uuid.uuid4().hex,  # Random init
             files=cast(list[str], target_file_store._fs.glob(fp)),  # All files in template
-            embedding=embedder.encode(description).tolist()
+            embedding=embedder.encode(description).tolist(),
         )
         index[entry_type + 's'].append(entry.model_dump(exclude_none=True))
     logger.info('Dropping and recreating index tables...')
-    with meta_store.open() as connected:
+    with meta_store.open(bootstrap=True) as connected:
         with connected.session() as session:
             session.truncate_tables()
             # NB: will be persisted to storage when _connection_ is closed
             # for duckdb, since session-based database is memory
             for k, v in index.items():
                 logger.info(f'Updating table: {k} with {len(v)} entries.')
+                # NB: type hint is literal so using k makes pylance unhappy
                 session.upsert('roles' if k == 'roles' else 'skills', v)
 
 
 @app.command(help='Initialize Persona objects on target storage.')
 def init(ctx: typer.Context):
     """Initialize Persona configuration file."""
-    _config: StorageConfig = ctx.obj['config']
-    target_storage = get_storage_backend(_config.root)
+    _config: PersonaConfig = ctx.obj['config']
+    target_storage = get_file_store_backend(_config.file_store)
+    meta_store = get_meta_store_backend(_config.meta_store, read_only=False)
     config_path: plb.Path = ctx.obj['config_path']
+    # NB: this writes any overrides back to the config file
     with config_path.open('w') as f:
         yaml.safe_dump(_config.model_dump(), f)
+    # NB: this needs to be refactored if the metadata store backend is not file-based
     typer.echo(f'Initialized Persona configuration file at {config_path}')
-    target_storage._fs.mkdirs(_config.root.personas_dir, exist_ok=True)
-    typer.echo(f'Created personas directory at {_config.root.personas_dir}')
-    target_storage._fs.mkdirs(_config.root.skills_dir, exist_ok=True)
-    typer.echo(f'Created skills directory at {_config.root.skills_dir}')
-    persona_index = _config.root.index_path
+    target_storage._fs.mkdirs(_config.file_store.roles_dir, exist_ok=True)
+    typer.echo(f'Created roles directory at {_config.file_store.roles_dir}')
+    target_storage._fs.mkdirs(_config.file_store.skills_dir, exist_ok=True)
+    typer.echo(f'Created skills directory at {_config.file_store.skills_dir}')
+    persona_index = _config.meta_store.index_path
     typer.echo('Configuring vector database...')
-    db = VectorDatabase(uri=persona_index, optimize=False)
-    db.create_persona_tables()
+    with meta_store.open() as connected:
+        connected.bootstrap()
     typer.echo(f'Created index file at {persona_index}')
+    typer.echo('Downloading embedding model...')
+    _ = get_embedding_model()
 
 
 def entrypoint():

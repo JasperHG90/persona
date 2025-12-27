@@ -7,11 +7,13 @@ from io import BytesIO
 
 import httpx
 from rich.console import Console
+from platformdirs import user_cache_path
 
 console = Console()
 
-DEFAULT_CACHE_DIR = plb.Path.home() / '.persona' / '.cache'
+DEFAULT_CACHE_DIR = user_cache_path('persona', 'jasper_ginn', ensure_exists=True) / 'github_repos'
 PERSONA_CACHE = plb.Path(os.environ.get('PERSONA_CACHE', DEFAULT_CACHE_DIR)).resolve()
+PERSONA_CACHE.mkdir(parents=True, exist_ok=True)
 
 
 def parse_gh_url(url: str) -> tuple[str, str, str]:

@@ -1,4 +1,3 @@
-import enum
 import pathlib as plb
 from typing import cast
 
@@ -6,51 +5,70 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from persona.config import StorageConfig
-from persona.storage import get_storage_backend, IndexEntry, Transaction, VectorDatabase
+from persona.config import PersonaConfig
+from persona.storage import get_file_store_backend, get_meta_store_backend, IndexEntry, Transaction
 from persona.templates import TemplateFile, Template
+from persona.embedder import get_embedding_model
+from persona.types import personaTypes
 
 console = Console()
 
 
-class TemplateTypeEnum(str, enum.Enum):
-    PERSONA = 'persona'
-    SKILL = 'skill'
+def match_query(ctx: typer.Context, query: str, type: personaTypes):
+    """Match a query based on the description of a template
 
-
-def match_query(ctx: typer.Context, query: str, type: TemplateTypeEnum):
-    config: StorageConfig = ctx.obj['config']
-    db = VectorDatabase(uri=config.root.index_path)
-    _type = type.value + 's'
-    table = Table('Name', 'Path', 'Description', 'distance', 'UUID')
-    for result in (
-        db.search(query=query, table_name=_type, limit=5, max_cosine_distance=0.7)
-        .to_arrow()
-        .select(['uuid', 'name', 'description', '_distance'])
-        .to_pylist()
-    ):
+    Args:
+        ctx (typer.Context): Typer context
+        query (str): query string to match
+        type (personaTypes): type of template to search in
+    """
+    config: PersonaConfig = ctx.obj['config']
+    meta_store = get_meta_store_backend(config.meta_store)
+    embedder = get_embedding_model()
+    table = Table('Name', 'Path', 'Description', 'Distance', 'UUID')
+    query_vector = embedder.encode(query).tolist()
+    with meta_store.open(bootstrap=True) as connected:
+        with connected.session() as session:
+            results = session.search(
+                query=query_vector,
+                table_name=type,
+                limit=config.meta_store.similarity_search.max_results,
+                column_filter=['name', 'description', 'uuid', 'score'],
+                max_cosine_distance=config.meta_store.similarity_search.max_cosine_distance,
+            )
+    for result in results.to_pylist():
         table.add_row(
             result['name'],
-            '%s/%s/%s' % (config.root.root, _type, result['name']),
+            '%s/%s/%s' % (config.root, type, result['name']),
             result['description'],
-            str(round(result['_distance'], 2)),
+            str(round(result['score'], 2)),
             result['uuid'],
         )
     console.print(table)
 
 
-def list_templates(ctx: typer.Context, type: TemplateTypeEnum):
-    config: StorageConfig = ctx.obj['config']
-    db = VectorDatabase(uri=config.root.index_path, optimize=False)
-    _type = type.value + 's'
-    index = db.get_or_create_table(_type)
+def list_templates(ctx: typer.Context, type: personaTypes):
+    """List the templates currently available for a type
+
+    Args:
+        ctx (typer.Context): Typer context
+        type (personaTypes): type of template to list
+    """
+    config: PersonaConfig = ctx.obj['config']
+    meta_store = get_meta_store_backend(config.meta_store)
     table = Table('Name', 'Path', 'Description', 'UUID')
-    for entry in index.to_arrow().select(['uuid', 'name', 'description']).to_pylist():
+    with meta_store.open(bootstrap=True) as connected:
+        with connected.session() as session:
+            results = session.get_many(
+                table_name=type,
+                column_filter=['name', 'description', 'uuid'],
+            )
+    for result in results.to_pylist():
         table.add_row(
-            entry['name'],
-            '%s/%s/%s' % (config.root.root, _type, entry['name']),
-            entry['description'],
-            entry['uuid'],
+            result['name'],
+            '%s/%s/%s' % (config.root, type, result['name']),
+            result['description'],
+            result['uuid'],
         )
     console.print(table)
 
@@ -60,39 +78,61 @@ def copy_template(
     path: plb.Path,
     name: str | None,
     description: str | None,
-    type: TemplateTypeEnum,
+    type: personaTypes,
 ):
-    config: StorageConfig = ctx.obj['config']
-    target_storage = get_storage_backend(config.root)
-    template: Template = TemplateFile.validate_python({'path': path, 'type': type.value})
-    template.copy_template(
-        entry=IndexEntry(name=name, description=description),
-        target_storage=target_storage,
-        vector_db=VectorDatabase(uri=config.root.index_path),
-    )
+    """Copy a template from a local path to the target file store.
+
+    Args:
+        ctx (typer.Context): Typer context
+        path (plb.Path): Path to the template directory
+        name (str | None): Name of the template. Defaults to None. If None, then we try to infer it from the template frontmatter.
+        description (str | None): Description of the template. Defaults to None. If None, then we try to infer it from the template frontmatter.
+        type (personaTypes): Type of the template
+    """
+    config: PersonaConfig = ctx.obj['config']
+    target_file_store = get_file_store_backend(config.file_store)
+    meta_store = get_meta_store_backend(config.meta_store)
+    embedder = get_embedding_model()
+    template: Template = TemplateFile.validate_python({'path': path, 'type': type})
+    with Transaction(target_file_store, meta_store):
+        template.process_template(
+            entry=IndexEntry(name=name, description=description),
+            target_file_store=target_file_store,
+            meta_store_engine=meta_store,
+            embedder=embedder,
+        )
 
 
-def remove_template(ctx: typer.Context, name: str, type: TemplateTypeEnum):
-    """Remove an existing template."""
-    config: StorageConfig = ctx.obj['config']
-    target_storage = get_storage_backend(config.root)
-    vector_db = VectorDatabase(uri=config.root.index_path)
+def remove_template(ctx: typer.Context, name: str, type: personaTypes):
+    """Remove an existing template
 
-    _type = type.value + 's'
+    Args:
+        ctx (typer.Context): Typer context
+        name (str): Name of the template to remove
+        type (personaTypes): Type of the template to remove
 
-    if not vector_db.exists(_type, name):
-        console.print(f'[red]{type.value.capitalize()} "{name}" does not exist.[/red]')
-        raise typer.Exit(code=1)
+    Raises:
+        typer.Exit: If the template does not exist
+    """
+    config: PersonaConfig = ctx.obj['config']
+    target_file_store = get_file_store_backend(config.file_store)
+    meta_store = get_meta_store_backend(config.meta_store)
 
-    with Transaction(target_storage, vector_db):
-        template_key = f'{_type}/{name}'
-        print(f'{config.root.root}/{template_key}/**/*')
-        for file in target_storage._fs.glob(f'{config.root.root}/{template_key}/**/*'):
-            if target_storage._fs.isdir(file):
-                continue
-            _file = cast(str, file)
-            target_storage.delete(_file)
-        target_storage.delete(f'{config.root.root}/{template_key}', recursive=True)
-        vector_db.deindex(entry=IndexEntry(name=name, type=type.value))
+    with Transaction(target_file_store, meta_store):
+        # NB: connection is re-used later since we've already opened it
+        with meta_store.open(bootstrap=True) as connected:
+            with connected.session() as session:
+                if not session.exists(type, name):
+                    console.print(f'[red]{type.capitalize()} "{name}" does not exist.[/red]')
+                    raise typer.Exit(code=1)
+            template_key = '%s/%s' % (type, name)
+            for file in target_file_store.glob('%s/**/*' % template_key):
+                if target_file_store.is_dir(file):
+                    continue
+                file_ = cast(str, file)
+                target_file_store.delete(file_)
+            # Delete the template directory
+            target_file_store.delete(template_key, recursive=True)
+            meta_store.deindex(entry=IndexEntry(name=name, type=type))
 
     console.print(f'[green]Template "{name}" has been removed.[/green]')

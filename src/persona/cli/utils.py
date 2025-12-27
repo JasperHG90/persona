@@ -5,14 +5,13 @@ import typer
 from rich.console import Console
 
 from persona.cache import download_and_cache_github_repo
-from .commands import copy_template, list_templates, remove_template, match_query, TemplateTypeEnum
+from persona.types import personaTypes
+from persona.cli.commands import copy_template, list_templates, remove_template, match_query
 
 console = Console()
 
 
-def create_cli(
-    name: str, template_type: TemplateTypeEnum, help_string: str, description_string: str
-):
+def create_cli(name: str, template_type: personaTypes, help_string: str, description_string: str):
     app = typer.Typer(
         name=name,
         help=help_string,

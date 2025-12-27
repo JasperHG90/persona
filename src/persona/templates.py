@@ -9,7 +9,6 @@ from functools import cached_property
 from pydantic import Field, BaseModel, field_validator, TypeAdapter, model_validator
 
 from persona.storage import (
-    Transaction,
     IndexEntry,
     BaseFileStore,
     CursorLikeMetaStoreEngine,
@@ -157,32 +156,32 @@ class Template(BaseModel):
         local_path_root = self.path.parent if self.path.is_file() else self.path
         glob = '**/*' if plb.Path(self.path).is_dir() else self.path.name
 
-        with Transaction(target_file_store, meta_store_engine=meta_store_engine):
-            files: list[str] = []
-            for filename in local_path_root.glob(glob):
-                if filename.is_dir():
-                    continue
-                kwargs = {
-                    'path': filename,
-                    'source_path_root': local_path_root,
-                    'target_path_root': target_key,
-                }
-                file_ = (
-                    SourceFile(**kwargs)
-                    if not _is_persona_root_file(filename)
-                    else PersonaRootSourceFile(**kwargs)
-                )
+        files: list[str] = []
+        for filename in local_path_root.glob(glob):
+            if filename.is_dir():
+                continue
+            kwargs = {
+                'path': filename,
+                'source_path_root': local_path_root,
+                'target_path_root': target_key,
+            }
+            file_ = (
+                SourceFile(**kwargs)
+                if not _is_persona_root_file(filename)
+                else PersonaRootSourceFile(**kwargs)
+            )
 
-                if isinstance(file_, PersonaRootSourceFile):
-                    content = file_.update_metadata(entry.name, entry.description)
-                else:
-                    content = file_.content
+            if isinstance(file_, PersonaRootSourceFile):
+                content = file_.update_metadata(entry.name, entry.description)
+            else:
+                content = file_.content
 
-                target_file_store.save(file_.target_key, content)
+            target_file_store.save(file_.target_key, content)
 
-                files.append(file_.target_key)
-            entry.update('files', files)
-            meta_store_engine.index(entry)
+            files.append(file_.target_key)
+
+        entry.update('files', files)
+        meta_store_engine.index(entry)
 
 
 class Skill(Template):

@@ -24,8 +24,8 @@ def get_file_store_backend(config: config.FileStoreBackend) -> BaseFileStore:
     return file_store_class(config)
 
 
-def get_meta_store_backend(config: config.MetaStoreBackend) -> CursorLikeMetaStoreEngine:
+def get_meta_store_backend(config: config.MetaStoreBackend, **kwargs) -> CursorLikeMetaStoreEngine:
     meta_store_class = METASTORE_BACKEND_MAP.get(type(config))
     if not meta_store_class:
         raise ValueError(f'No meta store found for config type: {type(config)}')
-    return meta_store_class(config)
+    return meta_store_class(config, **kwargs)
