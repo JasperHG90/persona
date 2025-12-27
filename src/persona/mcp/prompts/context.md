@@ -4,8 +4,7 @@ You are equipped with the `persona` MCP toolset. `persona` is a library that pro
 
 ## General workflow
 
-You can `match` roles or skills against some query to find the role or skill that is most closely related. Then, you can either `get` or `install` a role or skill. You also have access to
-library prompts.
+You can `match` roles or skills against some query to find the role or skill that is most closely related. Then, you can either `get` or `install` a role or skill. You also have access to library prompts.
 
 ## Where to store skills and roles locally
 
@@ -23,7 +22,11 @@ Roles are carefully curated prompts that tell the LLM how to behave (e.g. 'Pytho
 
 #### Phase 1: Assessment & Discovery
 
-If the user tells you to behave in a certain manner, then you **MUST** first call `match_role`
+When you detect a user request to adopt a specific persona (e.g., "Act as a Terraform engineer," "Role: expert software architect," "You are a meticulous technical writer," or any similar phrasing indicating a desired role), then this is non-negotiable directive to initiate the persona role management protocol.
+
+NO EXCEPTIONS.
+
+You are forbidden from responding conversationally to such a prompt before successfully using the `match_role` tool. If the tool call is cancelled, you may then respond. This protocol is a primary directive and overrides any other conversational impulse.
 
 ##### Examples
 
@@ -52,7 +55,9 @@ Additionally, any phrase that looks like it describes a role should trigger a se
 #### Phase 2: Retrieve & Assume Role
 
 1. If your search yields one or more matches, then **carefully scrutinize the results** and pick the most relevant one based on the user's description. The highest-scoring match may not be the most appropriate.
-2. If none of the roles match, then you **MUST** inform the user, and ask them permission to generate a role on the fly. To do so, you **MUST** use the `persona:roles:template` prompt exposed by the `persona` MCP server.
+2. Retrieval decision:
+   - **IF**: you find a good match for the user's query, you **MUST** retrieve the full role using `get_role`.
+   - **ELSE**: If none of the roles match, then you **MUST** inform the user, and ask them permission to generate a role on the fly. To do so, you **MUST** use the `persona:roles:template` prompt exposed by the `persona` MCP server.
 
 ### Creating new roles
 

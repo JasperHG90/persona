@@ -164,7 +164,7 @@ class CursorLikeMetaStore(BaseMetaStore):
         max_cosine_distance: float = 0.8,
     ) -> pa.Table:
         columns = self._get_column_filter(column_filter)
-        columns += ',array_cosine_distance(embedding, ?::FLOAT[384]) as score'
+        columns += ',ROUND(array_cosine_distance(embedding, ?::FLOAT[384]), 3) as score'
         sql = f"""
         WITH search_results AS (
             SELECT {columns},

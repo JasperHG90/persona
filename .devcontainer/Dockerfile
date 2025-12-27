@@ -14,8 +14,6 @@ WORKDIR /home/vscode
 ENV NVM_DIR="/home/vscode/.nvm"
 RUN touch /home/vscode/.bashrc
 
-RUN uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
-
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash \
     && . "$NVM_DIR/nvm.sh" \
     && nvm install ${NODE_VERSION} \

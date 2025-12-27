@@ -1,3 +1,4 @@
+import os
 import logging
 from abc import abstractmethod
 import pathlib as plb
@@ -44,7 +45,9 @@ class SourceFile:
     def target_key(self) -> str:
         return '%s/%s' % (
             self.target_path_root,
-            cast(str, str(self.path)).removeprefix(str(self.source_path_root)).lstrip('/'),
+            os.path.relpath(self.path, self.source_path_root)
+            .replace('../', '')
+            .replace('.persona/', ''),
         )
 
 

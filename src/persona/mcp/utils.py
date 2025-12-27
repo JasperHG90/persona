@@ -1,15 +1,15 @@
 import os
 import pathlib as plb
 from contextlib import asynccontextmanager
-from typing import AsyncIterator, cast, Generator, Annotated
+from typing import AsyncIterator, cast, Generator
 from collections import defaultdict
+from contextlib import contextmanager
 
 import yaml
 import frontmatter
 from fastmcp import FastMCP, Context
 from fastmcp.exceptions import ToolError
 from fastmcp.utilities.types import File
-from fastmcp.dependencies import Depends
 from mcp.shared.context import RequestContext
 
 from persona.config import parse_persona_config, PersonaConfig
@@ -95,6 +95,7 @@ async def lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
     meta_store_engine.close()
 
 
+@contextmanager
 def get_meta_store_session(ctx: Context) -> Generator[BaseMetaStore, None, None]:
     app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
     meta_store = app_context._meta_store_engine
@@ -122,7 +123,7 @@ def _list(type: personaTypes, session: BaseMetaStore) -> list[dict]:
     return session.get_many(
         table_name=type,
         column_filter=['name', 'description', 'uuid'],
-    )
+    ).to_pylist()
 
 
 def _write_skill_files(
@@ -177,7 +178,8 @@ def _skill_files(
     """Get a skill by name (logic)."""
     if meta_store.exists('skills', name):
         skill_files = cast(
-            dict[str, str], meta_store.get_one('skills', name, ['name', 'files', 'uuid'])
+            dict[str, str],
+            meta_store.get_one('skills', name, ['name', 'files', 'uuid']).to_pylist()[0],
         )
         content = frontmatter.loads(file_store.load(f'skills/{name}/SKILL.md').decode('utf-8'))
         content.metadata['metadata'] = {'version': skill_files['uuid']}
@@ -191,7 +193,7 @@ def _skill_files(
         }
         for target_store_file in skill_files['files']:
             file = target_store_file.rsplit('/', 1)[-1]
-            ext = plb.Path(file).suffix
+            ext = os.path.splitext(file)[-1]
             if ext not in EXT_WHITELIST:
                 continue
             elif file.endswith('SKILL.md'):
@@ -211,8 +213,8 @@ def _skill_files(
 
 def _get_skill(
     name: str,
-    meta_store: Annotated[BaseMetaStore, Depends(get_meta_store_session)],
-    file_store: BaseFileStore = Depends(get_file_store),
+    meta_store: BaseMetaStore,
+    file_store: BaseFileStore,
 ) -> list[File]:
     """Get a skill by name (logic)."""
     results = []

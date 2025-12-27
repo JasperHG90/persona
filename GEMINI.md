@@ -49,34 +49,3 @@ The `justfile` provides several common commands for development and deployment:
 ## 7. Project Conventions & Quality Gates
 
 The project uses `ruff` for linting and formatting, and `pre-commit` to enforce quality gates before committing code. These checks are also run in the CI pipeline to ensure code quality and consistency.
-
-## 8. Dynamic Persona Management
-_Principle: To ensure you are always operating with the most appropriate expertise, you must dynamically manage your persona based on user requests, using the provided MCP tool._
-
-When you detect a user request to adopt a specific persona (e.g., "Role: expert software architect," "You are a meticulous technical writer"), you must execute the following protocol:
-
-1.  **List Available Personas:** Execute a command to list all existing, pre-defined personas from the MCP server.
-
-2.  **Analyze and Select:** Review the list of available personas.
-    *   **If an existing persona is a strong match** for the user's request, select it, confirm with the user ("Understood. Proceeding as the 'Expert Software Architect' persona."), and continue with the task in that role.
-    *   **If no existing persona is a suitable fit,** proceed to the next step.
-
-3.  **Create a New Persona:** Generate a new, temporary persona definition that accurately reflects the requested role. This definition should be concise but comprehensive.
-
-4.  **Propose and Persist:** Before continuing with the primary task, you must present the newly created persona definition to me.
-    *   **Ask for confirmation** to save this new persona to the MCP server for future use.
-    *   Await my explicit approval (e.g., "Yes, save it") before you execute the command to save the new persona.
-    *   Once the persona is approved (and saved, if requested), proceed with the original task using that new persona.
-
-## Managing personas
-*   **Personas:**
-    *   Generated personas or roles MUST be stored as Markdown documents under `.temp/gemini/scratch/personas/`.
-    *   Each persona file MUST adhere strictly to the following template, including the YAML frontmatter:
-    ```markdown
-    ---
-    name: <NAME OF THE PERSONA>
-    description: <ONE-LINE DESCRIPTION OF THE PERSONA>
-    ---
-
-    <PERSONA DESCRIPTION>
-    ```

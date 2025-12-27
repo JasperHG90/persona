@@ -1,3 +1,4 @@
+import os
 import uuid
 import logging
 import itertools
@@ -147,7 +148,10 @@ def reindex(ctx: typer.Context):
             name=cast(str, fm.metadata['name']),
             description=description,
             uuid=uuid.uuid4().hex,  # Random init
-            files=cast(list[str], target_file_store._fs.glob(fp)),  # All files in template
+            files=[
+                os.path.relpath(f, _path).replace('../', '').replace('.persona/', '')
+                for f in cast(list[str], target_file_store._fs.glob(fp))
+            ],  # All files in template
             embedding=embedder.encode(description).tolist(),
         )
         index[entry_type + 's'].append(entry.model_dump(exclude_none=True))

@@ -1,18 +1,13 @@
 import os
 import asyncio
-from typing import Annotated, cast
+from typing import Annotated
 import pathlib as plb
 import logging
 
 import aiofiles
-from fastmcp import FastMCP
-from fastmcp.dependencies import Depends
+from fastmcp import FastMCP, Context
 from fastmcp.utilities.logging import configure_logging
 from pydantic import Field
-
-from persona.storage import BaseMetaStore, BaseFileStore
-from persona.config import PersonaConfig
-from persona.embedder import FastEmbedder
 
 from .models import TemplateDetails
 from .utils import (
@@ -41,15 +36,17 @@ mcp = FastMCP('persona_mcp', instructions=context_template, version='0.1.0', lif
 
 
 @mcp.tool(description='List all available roles.')
-def list_roles(session=Depends(get_meta_store_session)) -> list[dict]:
+def list_roles(ctx: Context) -> list[dict]:
     """List all roles."""
-    return _list('roles', cast(BaseMetaStore, session))
+    with get_meta_store_session(ctx) as session:
+        return _list('roles', session)
 
 
 @mcp.tool(description='List all available skills.')
-def list_skills(session=Depends(get_meta_store_session)) -> list[dict]:
+def list_skills(ctx: Context) -> list[dict]:
     """List all skills."""
-    return _list('skills', cast(BaseMetaStore, session))
+    with get_meta_store_session(ctx) as session:
+        return _list('skills', session)
 
 
 # NB: this only works if the MCP is running locally so it can write files to disk
@@ -64,6 +61,7 @@ def list_skills(session=Depends(get_meta_store_session)) -> list[dict]:
     """,
 )
 def install_skill(
+    ctx: Context,
     name: Annotated[str, Field(description='Name of the skill to retrieve.')],
     local_skill_dir: Annotated[
         str,
@@ -80,13 +78,12 @@ def install_skill(
             ],
         ),
     ],
-    meta_store=Depends(get_meta_store_session),
-    file_store: BaseFileStore = Depends(get_file_store),
 ) -> str:
     """Get a skill by name."""
-    return _write_skill_files(
-        local_skill_dir, name, meta_store=cast(BaseMetaStore, meta_store), file_store=file_store
-    )
+    with get_meta_store_session(ctx) as meta_store:
+        return _write_skill_files(
+            local_skill_dir, name, meta_store=meta_store, file_store=get_file_store(ctx)
+        )
 
 
 @mcp.tool(
@@ -94,11 +91,12 @@ def install_skill(
     description='Get a skill version by name.',
 )
 def get_skill_version(
+    ctx: Context,
     name: Annotated[str, Field(description='Name of the skill to retrieve the version for.')],
-    meta_store=Depends(get_meta_store_session),
 ) -> str:
     """Get a skill version by name."""
-    return _get_skill_version(name, cast(BaseMetaStore, meta_store))
+    with get_meta_store_session(ctx) as meta_store:
+        return _get_skill_version(name, meta_store)
 
 
 @mcp.tool(
@@ -106,12 +104,12 @@ def get_skill_version(
     description='Get a role by name.',
 )
 def get_role(
+    ctx: Context,
     name: Annotated[str, Field(description='Name of the role to retrieve.')],
-    meta_store=Depends(get_meta_store_session),
-    file_store: BaseFileStore = Depends(get_file_store),
 ) -> TemplateDetails:
     """Get a role by name."""
-    return _get_persona(name, meta_store=cast(BaseMetaStore, meta_store), file_store=file_store)
+    with get_meta_store_session(ctx) as meta_store:
+        return _get_persona(name, meta_store=meta_store, file_store=get_file_store(ctx))
 
 
 @mcp.tool(
@@ -128,6 +126,7 @@ def get_role(
     for matches within the specified cosine distance threshold and a maximum number of results.""",
 )
 def match_role(
+    ctx: Context,
     query: Annotated[
         str, Field(description='Natural language description of the prompt or role needed.')
     ],
@@ -143,20 +142,18 @@ def match_role(
             description='Maximum cosine distance threshold for matches. If None, will be taken from configuration file.'
         ),
     ] = None,
-    meta_store=Depends(get_meta_store_session),
-    embedding_model: FastEmbedder = Depends(get_embedder),
-    config: PersonaConfig = Depends(get_config),
 ) -> list[dict]:
     """Match a role to the provided description."""
-    return _match(
-        type='roles',
-        query_string=query,
-        meta_store=cast(BaseMetaStore, meta_store),
-        embedding_model=embedding_model,
-        config=config,
-        limit=limit,
-        max_cosine_distance=max_cosine_distance,
-    )
+    with get_meta_store_session(ctx) as meta_store:
+        return _match(
+            type='roles',
+            query_string=query,
+            meta_store=meta_store,
+            embedding_model=get_embedder(ctx),
+            config=get_config(ctx),
+            limit=limit,
+            max_cosine_distance=max_cosine_distance,
+        )
 
 
 @mcp.tool(
@@ -169,6 +166,7 @@ def match_role(
     for matches within the specified cosine distance threshold and a maximum number of results.""",
 )
 def match_skill(
+    ctx: Context,
     query: Annotated[
         str, Field(description='Natural language description of the prompt or role needed.')
     ],
@@ -184,20 +182,18 @@ def match_skill(
             description='Maximum cosine distance threshold for matches. If None, will be taken from configuration file.'
         ),
     ] = None,
-    meta_store=Depends(get_meta_store_session),
-    embedding_model: FastEmbedder = Depends(get_embedder),
-    config: PersonaConfig = Depends(get_config),
 ) -> list[dict]:
     """Match a skill to the provided description."""
-    return _match(
-        type='roles',
-        query_string=query,
-        meta_store=cast(BaseMetaStore, meta_store),
-        embedding_model=embedding_model,
-        config=config,
-        limit=limit,
-        max_cosine_distance=max_cosine_distance,
-    )
+    with get_meta_store_session(ctx) as meta_store:
+        return _match(
+            type='skills',
+            query_string=query,
+            meta_store=meta_store,
+            embedding_model=get_embedder(ctx),
+            config=get_config(ctx),
+            limit=limit,
+            max_cosine_distance=max_cosine_distance,
+        )
 
 
 @mcp.prompt(
