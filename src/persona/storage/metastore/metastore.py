@@ -94,7 +94,7 @@ class BaseMetaStore(metaclass=ABCMeta):
         table_name: personaTypes,
         column_filter: list[str] | None = None,
         limit: int = 5,
-        max_cosine_distance: float | None = None,
+        max_cosine_distance: float = 0.8,
     ) -> pa.Table:
         """Search for records based on a query embedding
 
@@ -161,7 +161,7 @@ class CursorLikeMetaStore(BaseMetaStore):
         table_name: personaTypes,
         column_filter: list[str] | None = None,
         limit: int = 5,
-        max_cosine_distance: float | None = None,
+        max_cosine_distance: float = 0.8,
     ) -> pa.Table:
         columns = self._get_column_filter(column_filter)
         columns += ',array_cosine_distance(embedding, ?::FLOAT[384]) as score'
@@ -173,6 +173,6 @@ class CursorLikeMetaStore(BaseMetaStore):
         SELECT * FROM search_results
         """
         if max_cosine_distance is not None:
-            sql += f'WHERE score <= {max_cosine_distance}'
+            sql += 'WHERE score <= 0.8'
         sql += f' ORDER BY score ASC LIMIT {limit}'
         return self._cursor.execute(sql, [query]).fetch_arrow_table()

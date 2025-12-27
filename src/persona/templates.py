@@ -139,9 +139,10 @@ class Template(BaseModel):
             ValueError: raised if either the entry name or description is not set.
         """
         metadata = self.metadata or {}
-        entry.update(
-            'description', entry.description or cast(str, metadata.get('description', None))
-        )
+        entry_name = entry.name or cast(str, metadata.get('name', None))
+        entry_description = entry.description or cast(str, metadata.get('description', None))
+
+        entry.update('description', '%s - %s' % (entry_name, entry_description))
         entry.update('name', entry.name or cast(str, metadata.get('name', None)))
         entry.update('type', self.get_type())
 

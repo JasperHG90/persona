@@ -89,12 +89,13 @@ def main(
 
     overrides = box.to_dict()
     # NB: parse_persona_config reads from env vars if set
+    config_raw: dict = {}
     try:
         if not config.exists():
             config_parsed = parse_persona_config(overrides)
         else:
             with config.open('r') as f:
-                config_raw = yaml.safe_load(f) or {}
+                config_raw = cast(dict, yaml.safe_load(f) or {})
                 # NB: validate the raw config if it exists
                 # This also adds default values for optional fields
                 config_validated = PersonaConfig.model_validate(config_raw).model_dump()
@@ -106,7 +107,12 @@ def main(
         )
         raise
 
-    ctx.obj = {'config_path': config, 'config': config_parsed}
+    ctx.obj = {
+        'config_path': config,
+        'config': config_parsed,
+        'config_on_disk': config_raw,
+        'config_overrides': overrides,
+    }
 
 
 @app.command(help='Re-index personas and skills.')
@@ -165,8 +171,10 @@ def init(ctx: typer.Context):
     meta_store = get_meta_store_backend(_config.meta_store, read_only=False)
     config_path: plb.Path = ctx.obj['config_path']
     # NB: this writes any overrides back to the config file
+    # When doing an init, we don't want to get the validated values with defaults filled in
+    config_ = deep_update(ctx.obj['config_on_disk'], ctx.obj['config_overrides'])
     with config_path.open('w') as f:
-        yaml.safe_dump(_config.model_dump(), f)
+        yaml.safe_dump(parse_persona_config(config_).model_dump(), f)
     # NB: this needs to be refactored if the metadata store backend is not file-based
     typer.echo(f'Initialized Persona configuration file at {config_path}')
     target_storage._fs.mkdirs(_config.file_store.roles_dir, exist_ok=True)

@@ -37,11 +37,11 @@ FileStoreBackend = Annotated[Union[LocalFileStoreConfig], Field(discriminator='t
 
 
 class SimilaritySearchConfig(BaseModel):
-    model: Literal['sentence-transformers/all-MiniLM-L6-v2'] = (
-        'sentence-transformers/all-MiniLM-L6-v2'
+    model: Literal['sentence-transformers/all-MiniLM-L6-v2-quantized'] = (
+        'sentence-transformers/all-MiniLM-L6-v2-quantized'
     )
-    max_cosine_distance: float = 0.7
-    max_results: int = 5
+    max_cosine_distance: float = 0.8
+    max_results: int = 3
 
 
 class BaseMetaStoreConfig(BaseModel):
