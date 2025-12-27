@@ -98,8 +98,8 @@ If a relevant skill is found via `match_skill`, execute this exact verification 
 
 #### Phase 3: Execution Plan
 1. **Initialization**: Read the local `SKILL.md` file to understand the specific workflow, constraints, and tools provided by the skill.
-2. **Proactive Autonomy**: Do not ask for permission. If the skill matches the user's intent, execute the workflow immediately.
-3. **Constraint**: If no skill is found in the registry and you lack the internal knowledge, admit it clearly. **Never hallucinate a workflow or tool.**
+2. **Constraint**: If no skill is found in the registry and you lack the internal knowledge, admit it clearly. **Never hallucinate a workflow or tool.**
+3. **Ask for guidance**: if the user's request does not specifically tell you what to do with the retrieved skill, **YOU MUST** ask them for further instructions.
 
 #### 🛑 Operational Constraints (Strict Enforcement)
 - **NO RELATIVE PATHS**: Starting a command with `.` or using relative paths is forbidden.
