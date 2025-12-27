@@ -7,6 +7,8 @@ import shutil
 import logging
 from io import BytesIO
 
+os.environ['ORT_LOGGING_LEVEL'] = '3'  # ERROR
+
 import httpx
 import numpy as np
 import onnxruntime as ort
@@ -27,7 +29,8 @@ def get_embedding_model(
             / 'embeddings/minilm-l6-v2-quantized'
         )
     )
-    if not sorted(os.listdir('/home/vscode/workspace/.temp/vectors/minilm_generic')) == [
+    model_dir.mkdir(parents=True, exist_ok=True)
+    if not sorted(os.listdir(str(model_dir))) == [
         'config.json',
         'model_quantized.onnx',
         'ort_config.json',

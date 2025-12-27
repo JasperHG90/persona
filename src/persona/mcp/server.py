@@ -1,10 +1,13 @@
+import os
 import asyncio
-from typing import Annotated
+from typing import Annotated, cast
 import pathlib as plb
+import logging
 
 import aiofiles
 from fastmcp import FastMCP
 from fastmcp.dependencies import Depends
+from fastmcp.utilities.logging import configure_logging
 from pydantic import Field
 
 from persona.storage import BaseMetaStore, BaseFileStore
@@ -27,22 +30,26 @@ from .utils import (
 
 prompts_dir = plb.Path(__file__).parent / 'prompts'
 
-with prompts_dir / 'context.md' as f:
-    context_template = f.read_text().strip()
+context_template = (prompts_dir / 'context.md').read_text().strip()
+
+configure_logging(level='DEBUG')
+
+persona_logger = logging.getLogger('persona')
+persona_logger.setLevel(os.getenv('PERSONA_LOG_LEVEL', 'INFO'))
 
 mcp = FastMCP('persona_mcp', instructions=context_template, version='0.1.0', lifespan=lifespan)
 
 
 @mcp.tool(description='List all available roles.')
-def list_roles(session: Annotated[BaseMetaStore, Depends(get_meta_store_session)]) -> list[dict]:
+def list_roles(session=Depends(get_meta_store_session)) -> list[dict]:
     """List all roles."""
-    return _list('roles', session)
+    return _list('roles', cast(BaseMetaStore, session))
 
 
 @mcp.tool(description='List all available skills.')
-def list_skills(session: Annotated[BaseMetaStore, Depends(get_meta_store_session)]) -> list[dict]:
+def list_skills(session=Depends(get_meta_store_session)) -> list[dict]:
     """List all skills."""
-    return _list('skills', session)
+    return _list('skills', cast(BaseMetaStore, session))
 
 
 # NB: this only works if the MCP is running locally so it can write files to disk
@@ -73,11 +80,13 @@ def install_skill(
             ],
         ),
     ],
-    meta_store: Annotated[BaseMetaStore, Depends(get_meta_store_session)],
+    meta_store=Depends(get_meta_store_session),
     file_store: BaseFileStore = Depends(get_file_store),
 ) -> str:
     """Get a skill by name."""
-    return _write_skill_files(local_skill_dir, name, meta_store=meta_store, file_store=file_store)
+    return _write_skill_files(
+        local_skill_dir, name, meta_store=cast(BaseMetaStore, meta_store), file_store=file_store
+    )
 
 
 @mcp.tool(
@@ -86,10 +95,10 @@ def install_skill(
 )
 def get_skill_version(
     name: Annotated[str, Field(description='Name of the skill to retrieve the version for.')],
-    meta_store: Annotated[BaseMetaStore, Depends(get_meta_store_session)],
+    meta_store=Depends(get_meta_store_session),
 ) -> str:
     """Get a skill version by name."""
-    return _get_skill_version(name, meta_store)
+    return _get_skill_version(name, cast(BaseMetaStore, meta_store))
 
 
 @mcp.tool(
@@ -98,11 +107,11 @@ def get_skill_version(
 )
 def get_role(
     name: Annotated[str, Field(description='Name of the role to retrieve.')],
-    meta_store: Annotated[BaseMetaStore, Depends(get_meta_store_session)],
+    meta_store=Depends(get_meta_store_session),
     file_store: BaseFileStore = Depends(get_file_store),
 ) -> TemplateDetails:
     """Get a role by name."""
-    return _get_persona(name, meta_store=meta_store, file_store=file_store)
+    return _get_persona(name, meta_store=cast(BaseMetaStore, meta_store), file_store=file_store)
 
 
 @mcp.tool(
@@ -122,7 +131,6 @@ def match_role(
     query: Annotated[
         str, Field(description='Natural language description of the prompt or role needed.')
     ],
-    meta_store: Annotated[BaseMetaStore, Depends(get_meta_store_session)],
     limit: Annotated[
         int | None,
         Field(
@@ -135,6 +143,7 @@ def match_role(
             description='Maximum cosine distance threshold for matches. If None, will be taken from configuration file.'
         ),
     ] = None,
+    meta_store=Depends(get_meta_store_session),
     embedding_model: FastEmbedder = Depends(get_embedder),
     config: PersonaConfig = Depends(get_config),
 ) -> list[dict]:
@@ -142,7 +151,7 @@ def match_role(
     return _match(
         type='roles',
         query_string=query,
-        meta_store=meta_store,
+        meta_store=cast(BaseMetaStore, meta_store),
         embedding_model=embedding_model,
         config=config,
         limit=limit,
@@ -163,7 +172,6 @@ def match_skill(
     query: Annotated[
         str, Field(description='Natural language description of the prompt or role needed.')
     ],
-    meta_store: Annotated[BaseMetaStore, Depends(get_meta_store_session)],
     limit: Annotated[
         int | None,
         Field(
@@ -176,6 +184,7 @@ def match_skill(
             description='Maximum cosine distance threshold for matches. If None, will be taken from configuration file.'
         ),
     ] = None,
+    meta_store=Depends(get_meta_store_session),
     embedding_model: FastEmbedder = Depends(get_embedder),
     config: PersonaConfig = Depends(get_config),
 ) -> list[dict]:
@@ -183,7 +192,7 @@ def match_skill(
     return _match(
         type='roles',
         query_string=query,
-        meta_store=meta_store,
+        meta_store=cast(BaseMetaStore, meta_store),
         embedding_model=embedding_model,
         config=config,
         limit=limit,

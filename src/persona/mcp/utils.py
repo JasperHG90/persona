@@ -78,7 +78,8 @@ async def lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
     if persona_config_path.exists():
         with persona_config_path.open('r') as f:
             config_raw = yaml.safe_load(f) or {}
-        config = parse_persona_config(config_raw)
+        config_validated = PersonaConfig.model_validate(config_raw).model_dump()
+        config = parse_persona_config(config_validated)
     else:
         config = parse_persona_config({})  # Will be read from env vars
     file_store = get_file_store_backend(config.file_store)
