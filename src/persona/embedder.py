@@ -1,3 +1,4 @@
+import os
 from typing import cast
 import pathlib as plb
 import tempfile
@@ -11,22 +12,30 @@ import numpy as np
 import onnxruntime as ort
 from tokenizers import Tokenizer
 from pathlib import Path
-from platformdirs import user_data_dir
+from platformdirs import user_data_path
 
 logger = logging.getLogger('persona.embedder')
 
 
 def get_embedding_model(
-    model_dir: str | plb.Path | None = None, model_name: str = 'model.onnx'
+    model_dir: str | plb.Path | None = None, model_name: str = 'model_quantized.onnx'
 ) -> 'FastEmbedder':
     model_dir = plb.Path(
         model_dir
         or (
-            plb.Path(user_data_dir('persona', 'jasper_ginn', ensure_exists=True))
+            user_data_path('persona', 'jasper_ginn', ensure_exists=True)
             / 'embeddings/minilm-l6-v2-quantized'
         )
     )
-    if not model_dir.exists():
+    if not sorted(os.listdir('/home/vscode/workspace/.temp/vectors/minilm_generic')) == [
+        'config.json',
+        'model_quantized.onnx',
+        'ort_config.json',
+        'special_tokens_map.json',
+        'tokenizer.json',
+        'tokenizer_config.json',
+        'vocab.txt',
+    ]:
         logger.info('Embedding model not found. Downloading...')
         downloader = EmbeddingDownloader()
         downloader.download()
@@ -37,9 +46,7 @@ def get_embedding_model(
 class EmbeddingDownloader:
     def __init__(self):
         self._logger = logging.getLogger('persona.embedder.EmbeddingDownloader')
-        self._persona_data_dir = plb.Path(
-            user_data_dir('persona', 'jasper_ginn', ensure_exists=True)
-        )
+        self._persona_data_dir = user_data_path('persona', 'jasper_ginn', ensure_exists=True)
         self._model_dir = 'embeddings/minilm-l6-v2-quantized'
         self._model_url = ''
 

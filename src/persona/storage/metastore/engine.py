@@ -57,9 +57,10 @@ class CursorLikeMetaStoreEngine(Generic[T], metaclass=ABCMeta):
     def open(self, bootstrap: bool = False) -> Generator[Self, None, None]:
         """Connect to a metastore backend and close the connection gracefully"""
         try:
-            yield self.connect()
+            self.connect()
             if bootstrap:
                 self.bootstrap()
+            yield self
         finally:
             self.close()
 
@@ -121,9 +122,9 @@ class DuckDBMetaStoreEngine(CursorLikeMetaStoreEngine[DuckDBMetaStoreConfig]):
             try:
                 self._logger.debug(f'Loading existing {table} index from disk ...')
                 self._conn.execute(f"INSERT INTO {table} SELECT * FROM read_parquet('{path_}');")
-            except Exception as e:
+            except Exception:
                 self._logger.warning(
-                    f'No existing {table} index found at {path_}: {e}. Table initialized empty ...'
+                    f'No existing {table} index found at {path_}: Table initialized empty ...'
                 )
 
     def _export_tables(self):
@@ -133,7 +134,7 @@ class DuckDBMetaStoreEngine(CursorLikeMetaStoreEngine[DuckDBMetaStoreConfig]):
         for table in ['roles', 'skills']:
             path_ = getattr(self._config, f'{table}_index_path')
             self._logger.debug(f'Exporting {table} index to disk at: {path_} ...')
-            self._conn.execute(f'COPY "{table}" TO "{path_}" (FORMAT PARQUET);')
+            self._conn.execute(f"""COPY "{table}" TO '{path_}' (FORMAT PARQUET);""")
 
     def connect(self) -> Self:
         if self._conn is not None:

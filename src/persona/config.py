@@ -1,4 +1,5 @@
 import os
+import pathlib as plb
 from typing import Literal, Union
 from typing_extensions import Annotated
 import copy
@@ -109,6 +110,11 @@ class PersonaConfig(BaseSettings):
         description='Configuration for the metadata storage backend. Defaults to a DuckDB metadata '
         'store that stores indexes as parquet files in the user data directory.',
     )
+
+    @property
+    def root_normalized(self) -> str:
+        """Get the normalized root path."""
+        return str(plb.Path(self.root).expanduser().resolve())
 
     @model_validator(mode='after')
     def sync_root_paths(self) -> 'PersonaConfig':

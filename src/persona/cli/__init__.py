@@ -16,6 +16,7 @@ from .roles import app as roles_app
 from .skills import app as skills_app
 from .cache import app as cache_app
 from .mcp import app as mcp_app
+from .config import app as config_app
 from persona.storage import IndexEntry, get_file_store_backend, get_meta_store_backend
 from persona.config import parse_persona_config, PersonaConfig
 from persona.embedder import get_embedding_model
@@ -40,6 +41,7 @@ app.add_typer(roles_app, name='roles', help='Manage roles.')
 app.add_typer(skills_app, name='skills', help='Manage skills.')
 app.add_typer(cache_app, name='cache', help='Manage the cache.')
 app.add_typer(mcp_app, name='mcp', help='Manage the MCP server.')
+app.add_typer(config_app, name='config', help='Show configuration information.')
 
 
 @app.callback(invoke_without_command=True)
@@ -94,8 +96,9 @@ def main(
             with config.open('r') as f:
                 config_raw = yaml.safe_load(f) or {}
                 # NB: validate the raw config if it exists
-                PersonaConfig.model_validate(config_raw)
-            config_updated = deep_update(config_raw, overrides)
+                # This also adds default values for optional fields
+                config_validated = PersonaConfig.model_validate(config_raw).model_dump()
+            config_updated = deep_update(config_validated, overrides)
             config_parsed = parse_persona_config(config_updated)
     except Exception:
         print(
@@ -171,6 +174,10 @@ def init(ctx: typer.Context):
     target_storage._fs.mkdirs(_config.file_store.skills_dir, exist_ok=True)
     typer.echo(f'Created skills directory at {_config.file_store.skills_dir}')
     persona_index = _config.meta_store.index_path
+    # NB: if a metastore backend has a root, then the index path needs to be created on
+    #  the target storage file system.
+    if hasattr(_config.meta_store, 'root'):
+        target_storage._fs.mkdirs(persona_index, exist_ok=True)
     typer.echo('Configuring vector database...')
     with meta_store.open() as connected:
         connected.bootstrap()

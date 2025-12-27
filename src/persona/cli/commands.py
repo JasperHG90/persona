@@ -91,7 +91,7 @@ def copy_template(
     """
     config: PersonaConfig = ctx.obj['config']
     target_file_store = get_file_store_backend(config.file_store)
-    meta_store = get_meta_store_backend(config.meta_store)
+    meta_store = get_meta_store_backend(config.meta_store, read_only=False)
     embedder = get_embedding_model()
     template: Template = TemplateFile.validate_python({'path': path, 'type': type})
     with Transaction(target_file_store, meta_store):
@@ -116,7 +116,7 @@ def remove_template(ctx: typer.Context, name: str, type: personaTypes):
     """
     config: PersonaConfig = ctx.obj['config']
     target_file_store = get_file_store_backend(config.file_store)
-    meta_store = get_meta_store_backend(config.meta_store)
+    meta_store = get_meta_store_backend(config.meta_store, read_only=False)
 
     with Transaction(target_file_store, meta_store):
         # NB: connection is re-used later since we've already opened it

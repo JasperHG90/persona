@@ -89,7 +89,7 @@ def create_cli(name: str, template_type: personaTypes, help_string: str, descrip
 
     @app.command(
         'match',
-        help=f'Match a {name} to available {name}s.',
+        help=f'Match a query to available {name}.',
         no_args_is_help=True,
     )
     def match(
