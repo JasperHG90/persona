@@ -1,6 +1,0 @@
-name = "persona_matcher"
-description = "An agent that matches personas based on descriptions."
-[prompts]
-system_prompt = "Use the provided description to find the best matching persona using the persona MCP."
-[models]
-model = "gemini-2.5-flash"
