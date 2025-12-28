@@ -1,7 +1,6 @@
 {
   "name": "persona",
   "version": "1.0.0",
-  "contextFileName": "CONTEXT.md",
   "mcpServers": {
     "Persona": {
       "command": "uvx",

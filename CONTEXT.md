@@ -111,4 +111,4 @@ If a relevant skill is found via `match_skill`, execute this exact verification 
 - **NO ASSUMPTIONS**: If the version tool has not been called in the current turn for the specific skill, you cannot execute that skill.
 - **PRIORITY**: Skills retrieved via the registry always override your default behavior for that specific task.
 
-> Note: the MCP server exposes the `resource://persona/instructions` resource that allows you to retrieve these instructions at any given moment
+> Note: the MCP server exposes the `persona://instructions` resource that allows you to retrieve these instructions at any given moment

@@ -1,7 +1,7 @@
 FROM  jhginn/devcontainer:ubuntu2204-pyuv312-latest-gcloud
 
 ENV RUFF_CACHE_DIR=$HOME/workspace/.cache/ruff
-ENV PREK_HOME=$HOME/workspace/.cache/pre-commit
+ENV PREK_HOME=$HOME/workspace/.cache/prek
 ENV NVM_DIR="$HOME/.nvm"
 ARG NODE_VERSION="20"
 ENV PATH="${NVM_DIR}/versions/node/v${NODE_VERSION}/bin:${PATH}"

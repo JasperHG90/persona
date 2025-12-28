@@ -33,7 +33,12 @@ configure_logging(level='DEBUG')
 persona_logger = logging.getLogger('persona')
 persona_logger.setLevel(os.getenv('PERSONA_LOG_LEVEL', 'INFO'))
 
-mcp = FastMCP('persona_mcp', version='0.1.0', lifespan=lifespan)
+mcp = FastMCP(
+    'persona_mcp',
+    instructions='On startup, call `list_roles` to get all available roles',
+    version='0.1.0',
+    lifespan=lifespan,
+)
 
 
 @mcp.tool(description='List all available roles.')
@@ -198,8 +203,9 @@ def match_skill(
 
 
 @mcp.resource(
-    uri='resource://persona/instructions',
+    uri='persona://instructions',
     name='instructions',
+    mime_type='application/text',
     description='Retrieve the Persona instructions file with clear instructions on how to use the library.',
 )
 async def get_instructions() -> str:
