@@ -72,7 +72,7 @@ cache_dir = "/home/vscode/workspace/.cache/pytest"
 [dependency-groups]
 dev = [
     "nest-asyncio>=1.6.0",
-    "pre-commit>=3.8.0",
+    "prek>=0.2.25",
     "ipykernel>=6.29.5",
     "pytest>=8.4.2",
     "pytest-asyncio>=1.2.0",

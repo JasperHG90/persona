@@ -1,21 +1,21 @@
 alias s := setup
 alias t := test
-alias p := pre_commit
+alias p := prek
 
 # Install python dependencies
 install:
   uv sync --all-groups --all-extras
 
 # Install pre-commit hooks
-pre_commit_setup:
-  uv run pre-commit install
+prek_setup:
+  uv run prek install
 
 # Install python dependencies and pre-commit hooks
-setup: install pre_commit_setup
+setup: install prek_setup
 
 # Run pre-commit
-pre_commit:
- uv run pre-commit run -a
+prek:
+ uv run prek run -a
 
 # Run pytest
 test:
