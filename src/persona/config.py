@@ -50,8 +50,7 @@ class BaseMetaStoreConfig(BaseModel):
     )
 
 
-class DuckDBMetaStoreConfig(BaseMetaStoreConfig, ConfigWithRoot):
-    type: Literal['duckdb'] = 'duckdb'
+class FileStoreBasedMetaStoreConfig(BaseMetaStoreConfig, ConfigWithRoot):
     root: str | None = Field(
         default=None,
         description='The root directory for storing DuckDB index files. If not set, '
@@ -84,6 +83,10 @@ class DuckDBMetaStoreConfig(BaseMetaStoreConfig, ConfigWithRoot):
         if not self.root:
             raise ValueError('Root path is not set.')
         return os.path.join(self.index_path, 'skills.parquet')
+
+
+class DuckDBMetaStoreConfig(FileStoreBasedMetaStoreConfig, ConfigWithRoot):
+    type: Literal['duckdb'] = 'duckdb'
 
 
 MetaStoreBackend = Annotated[Union[DuckDBMetaStoreConfig], Field(discriminator='type')]
@@ -125,6 +128,7 @@ class PersonaConfig(BaseSettings):
         if self.file_store.root is None:
             self.file_store.root = self.root
         # NB: if this is an attribute and None, then propage the root value
+        #  this only happens for file-store-based meta stores
         if hasattr(self.meta_store, 'root'):
             if self.meta_store.root is None:
                 self.meta_store.root = self.root

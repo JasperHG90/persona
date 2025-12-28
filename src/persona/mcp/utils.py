@@ -1,9 +1,9 @@
 import os
 import pathlib as plb
-from contextlib import asynccontextmanager
+import logging
+from contextlib import asynccontextmanager, contextmanager
 from typing import AsyncIterator, cast, Generator
 from collections import defaultdict
-from contextlib import contextmanager
 
 import yaml
 import frontmatter
@@ -23,6 +23,8 @@ from persona.embedder import get_embedding_model, FastEmbedder
 from persona.types import personaTypes
 
 from .models import AppContext, TemplateDetails, SkillFile
+
+logger = logging.getLogger('persona.mcp.utils')
 
 EXT_WHITELIST = [
     '.md',
@@ -64,6 +66,22 @@ def _get_builtin_skills() -> dict[str, dict[str, SkillFile]]:
 library_skills = _get_builtin_skills()
 
 
+# async def watch_changes(config: FileStoreBasedMetaStoreConfig, file_store: BaseFileStore, meta_store: BaseMetaStore):
+#     """
+#     Checks the metastore for changes every 60 seconds and reloads the metastore if needed.
+
+#     This is experimental.
+
+#     The assumption is that the metastore is always stored on the file store backend.
+#     """
+#     roles_index_path = config.roles_index_path
+#     skills_index_path = config.skills_index_path
+
+#     while True:
+#         try:
+#             checksum = file_store._fs.ukey(roles_index_path)
+
+
 @asynccontextmanager
 async def lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
     """
@@ -84,9 +102,9 @@ async def lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
         config = parse_persona_config({})  # Will be read from env vars
     file_store = get_file_store_backend(config.file_store)
     # NB: read_only prevents changes from being persisted
-    meta_store_engine = get_meta_store_backend(config.meta_store, read_only=True)
-    meta_store_engine.connect()
-    meta_store_engine.bootstrap()
+    meta_store_engine = (
+        get_meta_store_backend(config.meta_store, read_only=True).connect().bootstrap()
+    )
     app_context = AppContext(config=config)
     app_context._file_store = file_store
     app_context._meta_store_engine = meta_store_engine

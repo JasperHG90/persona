@@ -34,7 +34,7 @@ class CursorLikeMetaStoreEngine(Generic[T], metaclass=ABCMeta):
         self._transaction: Transaction | None = None
 
     @abstractmethod
-    def bootstrap(self):
+    def bootstrap(self) -> Self:
         """Bootstraps the metastore backend, creating necessary tables or structures."""
         ...
 
@@ -126,6 +126,7 @@ class DuckDBMetaStoreEngine(CursorLikeMetaStoreEngine[DuckDBMetaStoreConfig]):
                 self._logger.warning(
                     f'No existing {table} index found at {path_}: Table initialized empty ...'
                 )
+        return self
 
     def _export_tables(self):
         """Exports the in-memory database tables to disk."""

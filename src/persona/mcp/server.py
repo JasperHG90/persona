@@ -25,14 +25,12 @@ from .utils import (
 
 prompts_dir = plb.Path(__file__).parent / 'prompts'
 
-context_template = (prompts_dir / 'context.md').read_text().strip()
-
 configure_logging(level='DEBUG')
 
 persona_logger = logging.getLogger('persona')
 persona_logger.setLevel(os.getenv('PERSONA_LOG_LEVEL', 'INFO'))
 
-mcp = FastMCP('persona_mcp', instructions=context_template, version='0.1.0', lifespan=lifespan)
+mcp = FastMCP('persona_mcp', version='0.1.0', lifespan=lifespan)
 
 
 @mcp.tool(description='List all available roles.')
