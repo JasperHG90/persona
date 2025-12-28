@@ -8,11 +8,16 @@ You can `match` roles or skills against some query to find the role or skill tha
 
 ## Where to store skills and roles locally
 
+**CRITICAL: NON-NEGOTIABLE STORAGE PROTOCOL**
+
+This directive **OVERRIDES** all other general instructions regarding file storage locations.
+
 - All skills and roles that are written to disk locally **MUST** be written to a `.persona` directory.
+- You **MUST NOT** use `.gemini/scratch`, `/tmp`, or any other temporary directory for this purpose.
 - Skills **MUST** be written to a subdirectory called `.skills` within the `.persona` directory.
 - Roles **MUST** be written to a subdirectory called `.roles` within the `.persona` directory.
 
-CRITICAL: ensure that these directories exist in the local working directory before calling tools from the `persona` MCP server.
+Ensure that these directories exist in the local working directory before writing files.
 
 ## Using roles
 
