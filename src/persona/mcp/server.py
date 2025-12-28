@@ -5,6 +5,7 @@ import pathlib as plb
 import logging
 
 import aiofiles
+from httpx import AsyncClient
 from fastmcp import FastMCP, Context
 from fastmcp.utilities.logging import configure_logging
 from pydantic import Field
@@ -22,6 +23,8 @@ from .utils import (
     get_config,
     get_meta_store_session,
 )
+
+http_client = AsyncClient(timeout=30.0)
 
 prompts_dir = plb.Path(__file__).parent / 'prompts'
 
@@ -192,6 +195,19 @@ def match_skill(
             limit=limit,
             max_cosine_distance=max_cosine_distance,
         )
+
+
+@mcp.resource(
+    uri='resource://persona/instructions',
+    name='instructions',
+    description='Retrieve the Persona instructions file with clear instructions on how to use the library.',
+)
+async def get_instructions() -> str:
+    resp = await http_client.get(
+        'https://raw.githubusercontent.com/JasperHG90/persona/refs/heads/main/CONTEXT.md'
+    )
+    resp.raise_for_status()
+    return resp.text.strip()
 
 
 @mcp.prompt(
