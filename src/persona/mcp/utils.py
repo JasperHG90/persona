@@ -268,17 +268,12 @@ def _match(
     type: personaTypes,
     query_string: str,
     embedding_model: FastEmbedder,
-    config: PersonaConfig,
     meta_store: BaseMetaStoreSession,
     limit: int | None = None,
     max_cosine_distance: float | None = None,
 ) -> list[dict[str, str]]:
     """Match a persona to the provided description (logic)."""
     query = embedding_model.encode(query_string).tolist()
-    if limit is None:
-        limit = config.meta_store.similarity_search.max_results
-    if max_cosine_distance is None:
-        max_cosine_distance = config.meta_store.similarity_search.max_cosine_distance
     return meta_store.search(
         query=query,
         table_name=type,

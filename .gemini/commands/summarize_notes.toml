@@ -35,4 +35,5 @@ If your summary contains new todos or action items, then you should append them 
 - <directive>You **MUST** extract all to-dos and action items from the notes. Missing any is not acceptable.</directive>
 - <directive>Todo items **MUST** be stored in the format `- [ ] <todo_item> (See: [note](<note_link>))`</directive>
 - <directive>Todo items **MUST** be sorted by date in descending order. The note name should contain the date in YYYYMMDD.md format (e.g. `20250615.md`).</directive>
+- <directive>Todo items that are strikethrough should be included in the todos.md file and the strikethrough formatting preserved.</directive>
 """

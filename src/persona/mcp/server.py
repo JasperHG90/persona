@@ -150,15 +150,16 @@ def match_role(
     ] = None,
 ) -> list[dict]:
     """Match a role to the provided description."""
+    config = get_config(ctx)
     with get_meta_store_session(ctx) as meta_store:
         return _match(
             type='roles',
             query_string=query,
             meta_store=meta_store,
             embedding_model=get_embedder(ctx),
-            config=get_config(ctx),
-            limit=limit,
-            max_cosine_distance=max_cosine_distance,
+            limit=limit or config.meta_store.similarity_search.max_results,
+            max_cosine_distance=max_cosine_distance
+            or config.meta_store.similarity_search.max_cosine_distance,
         )
 
 
@@ -190,15 +191,16 @@ def match_skill(
     ] = None,
 ) -> list[dict]:
     """Match a skill to the provided description."""
+    config = get_config(ctx)
     with get_meta_store_session(ctx) as meta_store:
         return _match(
             type='skills',
             query_string=query,
             meta_store=meta_store,
             embedding_model=get_embedder(ctx),
-            config=get_config(ctx),
-            limit=limit,
-            max_cosine_distance=max_cosine_distance,
+            limit=limit or config.meta_store.similarity_search.max_results,
+            max_cosine_distance=max_cosine_distance
+            or config.meta_store.similarity_search.max_cosine_distance,
         )
 
 
