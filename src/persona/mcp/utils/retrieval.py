@@ -13,7 +13,7 @@ from persona.storage import (
 )
 from persona.embedder import FastEmbedder
 from persona.types import personaTypes
-from persona.mcp.models import TemplateDetails, SkillFile
+from persona.mcp.models import TemplateDetails, SkillFile, TemplateMatch
 from persona.mcp.utils.const import EXT_WHITELIST
 from persona.mcp.utils.lib import library_skills
 
@@ -170,13 +170,16 @@ def _match(
     meta_store: BaseMetaStoreSession,
     limit: int | None = None,
     max_cosine_distance: float | None = None,
-) -> list[dict[str, str]]:
+) -> list[TemplateMatch]:
     """Match a persona to the provided description (logic)."""
     query = embedding_model.encode(query_string).tolist()
-    return meta_store.search(
-        query=query,
-        table_name=type,
-        limit=cast(int, limit),
-        column_filter=['uuid', 'name', 'description'],
-        max_cosine_distance=cast(float, max_cosine_distance),
-    ).to_pylist()
+    return [
+        TemplateMatch(**item)
+        for item in meta_store.search(
+            query=query,
+            table_name=type,
+            limit=cast(int, limit),
+            column_filter=['uuid', 'name', 'description'],
+            max_cosine_distance=cast(float, max_cosine_distance),
+        ).to_pylist()
+    ]

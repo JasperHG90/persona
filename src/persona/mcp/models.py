@@ -84,3 +84,13 @@ class SkillFile(BaseModel):
         description='The file extension of the skill file, if applicable.',
         examples=['.py', '.ipynb', '.md'],
     )
+
+
+class TemplateMatch(BaseModel):
+    name: str = Field(description='The unique identifier/name of the skill or role.')
+    description: str = Field(
+        description="A brief summary of the skill or role's purpose and behavior."
+    )
+    distance: float = Field(
+        description='The cosine distance; lower values indicate a closer match.'
+    )
