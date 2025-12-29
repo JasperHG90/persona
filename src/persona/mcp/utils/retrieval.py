@@ -82,7 +82,8 @@ def _get_skill_version(name: str, meta_store: BaseMetaStoreSession) -> str:
     """Get a skill version by name (logic)."""
     if meta_store.exists('skills', name):
         skill_files = cast(
-            dict[str, str], meta_store.get_one('skills', name, ['name', 'files', 'uuid'])
+            dict[str, str],
+            meta_store.get_one('skills', name, ['name', 'files', 'uuid']).to_pylist()[0],
         )
         return skill_files['uuid']
     else:
