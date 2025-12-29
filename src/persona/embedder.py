@@ -14,12 +14,24 @@ from tokenizers import Tokenizer
 from pathlib import Path
 from platformdirs import user_data_path
 
+options = ort.SessionOptions()
+options.log_severity_level = 3
+
 logger = logging.getLogger('persona.embedder')
 
 
 def get_embedding_model(
     model_dir: str | plb.Path | None = None, model_name: str = 'model_quantized.onnx'
 ) -> 'FastEmbedder':
+    """Get the embedding model
+
+    Args:
+        model_dir (str | plb.Path | None, optional): Location of the model directory. Defaults to None.
+        model_name (str, optional): Name of the model file. Defaults to 'model_quantized.onnx'.
+
+    Returns:
+        FastEmbedder: Embedding model instance.
+    """
     model_dir = plb.Path(
         model_dir
         or (
@@ -46,6 +58,7 @@ def get_embedding_model(
 
 class EmbeddingDownloader:
     def __init__(self):
+        """If not present, will download the model to the data directory"""
         self._logger = logging.getLogger('persona.embedder.EmbeddingDownloader')
         self._persona_data_dir = user_data_path('persona', 'jasper_ginn', ensure_exists=True)
         self._model_dir = 'embeddings/minilm-l6-v2-quantized'
@@ -56,6 +69,7 @@ class EmbeddingDownloader:
         return self._persona_data_dir / self._model_dir
 
     def _download_and_unzip(self, url: str, dest: plb.Path) -> None:
+        """Download and unzip the model from the given URL to the destination directory."""
         try:
             response = httpx.get(url, follow_redirects=True)
             response.raise_for_status()
@@ -81,6 +95,7 @@ class EmbeddingDownloader:
             raise
 
     def download(self, force_download: bool = False) -> None:
+        """Download the model to the model directory."""
         if not self.model_dir.exists() or force_download:
             self.model_dir.mkdir(parents=True, exist_ok=True)
         self._download_and_unzip(self._model_url, self.model_dir)
@@ -88,15 +103,31 @@ class EmbeddingDownloader:
 
 class FastEmbedder:
     def __init__(self, model_dir: str | plb.Path, model_name: str = 'model.onnx'):
+        """Retrieve an embedder instance
+
+        Args:
+            model_dir (str | plb.Path): Directory in which the downloaded model is stored.
+            model_name (str, optional): Name of the model file. Defaults to 'model.onnx'.
+        """
         self.tokenizer: Tokenizer = Tokenizer.from_file(str(Path(model_dir) / 'tokenizer.json'))
         self.tokenizer.enable_padding(pad_id=0, pad_token='[PAD]')
         self.tokenizer.enable_truncation(max_length=512)
 
         self.session = ort.InferenceSession(
-            str(Path(model_dir) / model_name), providers=['CPUExecutionProvider']
+            str(Path(model_dir) / model_name),
+            providers=['CPUExecutionProvider'],
+            sess_options=options,
         )
 
     def encode(self, text: str) -> np.ndarray:
+        """Retrieve the embedding for a text query.
+
+        Args:
+            text (str): Input text
+
+        Returns:
+            np.ndarray: Array containing the embedding for the input text.
+        """
         enc = self.tokenizer.encode(text)
         inputs = {
             'input_ids': np.array([enc.ids], dtype=np.int64),

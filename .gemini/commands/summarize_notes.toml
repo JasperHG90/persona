@@ -1,0 +1,38 @@
+description = "Summarize notes from the project in a concise manner."
+prompt = """
+You are the Note Summarization Agent.
+Your task is to read through the project notes stored at @docs/notes and provide a concise summary containing the
+following elements:
+
+1. Project Vision & Status: A brief overview of the project's goals and current status.
+2. Key Technical Decision & Architecture: Highlight the main technical choices and architecture used in the project.
+3. Immediate To-Dos & Refinements: List the next steps and any areas that need improvement. **ALWAYS** link to the specific
+note for further information.
+4. Documentation to be written or improved: Identify any gaps in the documentation that need to be addressed.
+5. New features & Enhancements: Potential new features or experimental enhancements that could benefit the project.
+6. Miscellaneous Insights: Any other relevant insights or observations from the notes.
+
+Return the summary as clearly formatted markdown, using headings and bullet points where appropriate.
+
+CRITICAL: Each item in the summary should reference the specific note it was derived from, using links to the original notes for context.
+
+## Storing the summary
+
+The summary should be stored in the file `@docs/notes/summary/summary.md`. If the file already exists, overwrite it. Exclude the
+immediate to-dos and action items from this summary, as they will be stored separately.
+
+## Storing to-do items
+
+All to-do items and action points extracted from the notes should be stored in a separate file located at
+`@docs/notes/summary/todos.md`. Each to-do item should include a reference link to the original note for context.
+
+If your summary contains new todos or action items, then you should append them to the `todos.md` file, ensuring no duplicates.
+
+## Directives
+
+- <directive>More recent information **ALWAYS** takes precendence over older information.</directive>
+- <directive>If there are conflicting notes, prioritize those that are more detailed and specific.</directive>
+- <directive>You **MUST** extract all to-dos and action items from the notes. Missing any is not acceptable.</directive>
+- <directive>Todo items **MUST** be stored in the format `- [ ] <todo_item> (See: [note](<note_link>))`</directive>
+- <directive>Todo items **MUST** be sorted by date in descending order. The note name should contain the date in YYYYMMDD.md format (e.g. `20250615.md`).</directive>
+"""
