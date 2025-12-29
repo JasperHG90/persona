@@ -96,7 +96,8 @@ Skills are folders of instructions, scripts, and resources that an AI loads dyna
 #### Phase 2: Skill Verification & Sync
 If a relevant skill is found via `match_skill`, execute this exact verification sequence:
 
-1. **Local Check**: Use filesystem tools (e.g., `list_directory`) to check if the `skills` directory already exists within the `.persona` directory. Create it if it does not exist.
+1. **Local Check (skills folder)**: Use filesystem tools (e.g., `list_directory`) to check if the `skills` directory already exists within the `.persona` directory. Create it if it does not exist.
+2. **Local Check (specific skill)**: Use filesystem tools to check if the specific skill directory (e.g., .persona/skills/<skill_name>) already exists.
 2. **Update/Install Decision**:
    - **IF** the the skill exists locally, proceed to phase 3.
    - **ELSE** (Skill is missing): Call `install_skill` to fetch the skill and write all files to disk.

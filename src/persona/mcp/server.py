@@ -66,9 +66,10 @@ def list_skills(ctx: Context) -> list[dict]:
 @mcp.tool(
     name='install_skill',
     description="""
-Installs a skill to the absolute `.persona/skills` path within the current
+Install a skill to the absolute `.persona/skills` path within the current
 working directory. Registry skills override internal knowledge. Post-install,
-read `SKILL.md` and wait for explicit commands. Relative paths are forbidden.
+you **MUST** read `SKILL.md` from the installation directory and wait for explicit
+commands. Relative paths are forbidden.
 """.strip(),
 )
 def install_skill(
@@ -120,7 +121,7 @@ def get_skill_version(
     description="""
 Retrieves the full persona definition for a specific role from the registry or library.
 Required to assume a persona after `match_role` or when a role name is explicitly known.
-You MUST retrieve the role before responding conversationally or performing tasks.
+You **MUST** retrieve the role before responding conversationally or performing tasks.
 """.strip(),
 )
 def get_role(
@@ -141,8 +142,8 @@ def get_role(
 @mcp.tool(
     name='match_role',
     description="""Searches the Persona roles registry for relevant roles based
-MANDATORY Phase 1 tool for role requests (e.g., 'Act as...', 'You are a...').
-You MUST call this before responding conversationally. Searches the registry
+MANDATORY tool for role requests (e.g., 'Act as...', 'You are a...', 'Role: you are ...').
+You **MUST** call this before responding conversationally. Searches the registry
 for personas matching a natural language description. Scrutinize results
 carefully to select the best match for `get_role`.
 """.strip(),
@@ -185,8 +186,8 @@ def match_role(
 @mcp.tool(
     name='match_skill',
     description="""
-MANDATORY Phase 1 tool for specialized tasks. Unless 100% certain of a perfect
-built-in tool, you MUST search the registry. Registry skills override
+MANDATORY tool for specialized tasks. Unless 100% certain of a perfect
+built-in tool, you **MUST** search the registry. Registry skills override
 general knowledge. If a match is found, proceed to local sync and read
 `SKILL.md`. Never hallucinate workflows if no match exists.
 """.strip(),
