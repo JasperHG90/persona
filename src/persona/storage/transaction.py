@@ -8,7 +8,7 @@ from pydantic import RootModel, Field
 
 if TYPE_CHECKING:
     from persona.storage.filestore import BaseFileStore
-    from persona.storage.metastore import CursorLikeMetaStoreEngine, BaseMetaStore
+    from persona.storage.metastore import CursorLikeMetaStoreEngine, BaseMetaStoreSession
 
 
 class TemplateHashValues(RootModel[dict[str, str]]):
@@ -46,7 +46,7 @@ class Transaction:
     def _add_file_hash(self, file: str, content: bytes) -> None:
         self._hashes.add(file, content)
 
-    def _update_index(self, meta_store: 'BaseMetaStore') -> None:
+    def _update_index(self, meta_store: 'BaseMetaStoreSession') -> None:
         """Update the index with the new or updated template entry."""
         types: list[str] = []
         deletes: list[str] = []

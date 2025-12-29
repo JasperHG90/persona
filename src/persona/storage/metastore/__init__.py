@@ -3,6 +3,6 @@ from .engine import (
     DuckDBMetaStoreEngine as DuckDBMetaStoreEngine,
 )
 from .metastore import (
-    BaseMetaStore as BaseMetaStore,
-    CursorLikeMetaStore as CursorLikeMetaStore,
+    BaseMetaStoreSession as BaseMetaStoreSession,
+    CursorLikeMetaStoreSession as CursorLikeMetaStoreSession,
 )

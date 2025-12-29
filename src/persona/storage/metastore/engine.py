@@ -16,7 +16,7 @@ from platformdirs import user_cache_dir
 from persona.config import BaseMetaStoreConfig, DuckDBMetaStoreConfig
 from persona.storage.models import IndexEntry
 from persona.storage.metastore.utils import CursorLike
-from persona.storage.metastore.metastore import CursorLikeMetaStore
+from persona.storage.metastore.metastore import CursorLikeMetaStoreSession
 
 if TYPE_CHECKING:
     from persona.storage.transaction import Transaction
@@ -65,7 +65,7 @@ class CursorLikeMetaStoreEngine(Generic[T], metaclass=ABCMeta):
             self.close()
 
     @contextmanager
-    def session(self) -> Generator[CursorLikeMetaStore, None, None]:
+    def session(self) -> Generator[CursorLikeMetaStoreSession, None, None]:
         """Start a new session returning a cursor, and commit / close it upon exiting the context manager
 
         Yields:
@@ -75,7 +75,7 @@ class CursorLikeMetaStoreEngine(Generic[T], metaclass=ABCMeta):
         cursor = self.get_cursor()
         cursor.begin()
         try:
-            yield CursorLikeMetaStore(cursor)
+            yield CursorLikeMetaStoreSession(cursor)
             cursor.commit()
         except Exception as e:
             self._logger.error(f'Session error: {e}. Rolling back transaction.')

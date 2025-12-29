@@ -16,7 +16,7 @@ from persona.config import parse_persona_config, PersonaConfig
 from persona.storage import (
     get_file_store_backend,
     get_meta_store_backend,
-    BaseMetaStore,
+    BaseMetaStoreSession,
     BaseFileStore,
 )
 from persona.embedder import get_embedding_model, FastEmbedder
@@ -114,7 +114,7 @@ async def lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
 
 
 @contextmanager
-def get_meta_store_session(ctx: Context) -> Generator[BaseMetaStore, None, None]:
+def get_meta_store_session(ctx: Context) -> Generator[BaseMetaStoreSession, None, None]:
     app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
     meta_store = app_context._meta_store_engine
     with meta_store.session() as session:
@@ -136,7 +136,7 @@ def get_config(ctx: Context) -> PersonaConfig:
     return app_context.config
 
 
-def _list(type: personaTypes, session: BaseMetaStore) -> list[dict]:
+def _list(type: personaTypes, session: BaseMetaStoreSession) -> list[dict]:
     """List all personas (logic)."""
     return session.get_many(
         table_name=type,
@@ -147,7 +147,7 @@ def _list(type: personaTypes, session: BaseMetaStore) -> list[dict]:
 def _write_skill_files(
     local_skill_dir: str,
     name: str,
-    meta_store: BaseMetaStore,
+    meta_store: BaseMetaStoreSession,
     file_store: BaseFileStore,
 ):
     """Write skill files to a local directory where the LLM can access them."""
@@ -179,7 +179,7 @@ def _write_skill_files(
     return skill_file
 
 
-def _get_skill_version(name: str, meta_store: BaseMetaStore) -> str:
+def _get_skill_version(name: str, meta_store: BaseMetaStoreSession) -> str:
     """Get a skill version by name (logic)."""
     if meta_store.exists('skills', name):
         skill_files = cast(
@@ -191,7 +191,7 @@ def _get_skill_version(name: str, meta_store: BaseMetaStore) -> str:
 
 
 def _skill_files(
-    file_store: BaseFileStore, meta_store: BaseMetaStore, name: str
+    file_store: BaseFileStore, meta_store: BaseMetaStoreSession, name: str
 ) -> dict[str, SkillFile]:
     """Get a skill by name (logic)."""
     if meta_store.exists('skills', name):
@@ -231,7 +231,7 @@ def _skill_files(
 
 def _get_skill(
     name: str,
-    meta_store: BaseMetaStore,
+    meta_store: BaseMetaStoreSession,
     file_store: BaseFileStore,
 ) -> list[File]:
     """Get a skill by name (logic)."""
@@ -249,7 +249,7 @@ def _get_skill(
 
 def _get_persona(
     name: str,
-    meta_store: BaseMetaStore,
+    meta_store: BaseMetaStoreSession,
     file_store: BaseFileStore,
 ) -> TemplateDetails:
     """Get a persona by name (logic)."""
@@ -269,7 +269,7 @@ def _match(
     query_string: str,
     embedding_model: FastEmbedder,
     config: PersonaConfig,
-    meta_store: BaseMetaStore,
+    meta_store: BaseMetaStoreSession,
     limit: int | None = None,
     max_cosine_distance: float | None = None,
 ) -> list[dict[str, str]]:

@@ -3,8 +3,8 @@ from persona.storage.filestore import (
     LocalFileStore as LocalFileStore,
 )
 from persona.storage.metastore import (
-    BaseMetaStore as BaseMetaStore,
-    CursorLikeMetaStore as CursorLikeMetaStore,
+    BaseMetaStoreSession as BaseMetaStoreSession,
+    CursorLikeMetaStoreSession as CursorLikeMetaStoreSession,
     CursorLikeMetaStoreEngine as CursorLikeMetaStoreEngine,
     DuckDBMetaStoreEngine as DuckDBMetaStoreEngine,
 )

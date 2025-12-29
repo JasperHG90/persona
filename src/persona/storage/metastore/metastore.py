@@ -7,7 +7,7 @@ from persona.types import personaTypes
 from persona.storage.metastore.utils import CursorLike
 
 
-class BaseMetaStore(metaclass=ABCMeta):
+class BaseMetaStoreSession(metaclass=ABCMeta):
     def __init__(self, cursor: CursorLike):
         self._cursor = cursor
         self._logger = logging.getLogger(
@@ -110,7 +110,7 @@ class BaseMetaStore(metaclass=ABCMeta):
         ...
 
 
-class CursorLikeMetaStore(BaseMetaStore):
+class CursorLikeMetaStoreSession(BaseMetaStoreSession):
     @staticmethod
     def _get_column_filter(column_filter: list[str] | None) -> str:
         if column_filter is not None:
