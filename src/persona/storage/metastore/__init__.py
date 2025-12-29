@@ -2,7 +2,7 @@ from .engine import (
     CursorLikeMetaStoreEngine as CursorLikeMetaStoreEngine,
     DuckDBMetaStoreEngine as DuckDBMetaStoreEngine,
 )
-from .metastore import (
+from .session import (
     BaseMetaStoreSession as BaseMetaStoreSession,
     CursorLikeMetaStoreSession as CursorLikeMetaStoreSession,
 )

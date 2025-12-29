@@ -16,7 +16,7 @@ from platformdirs import user_cache_dir
 from persona.config import BaseMetaStoreConfig, DuckDBMetaStoreConfig
 from persona.storage.models import IndexEntry
 from persona.storage.metastore.utils import CursorLike
-from persona.storage.metastore.metastore import CursorLikeMetaStoreSession
+from persona.storage.metastore.session import CursorLikeMetaStoreSession
 
 if TYPE_CHECKING:
     from persona.storage.transaction import Transaction
