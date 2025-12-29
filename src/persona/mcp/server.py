@@ -35,7 +35,14 @@ persona_logger.setLevel(os.getenv('PERSONA_LOG_LEVEL', 'INFO'))
 
 mcp = FastMCP(
     'persona_mcp',
-    instructions='On startup, call `list_roles` to get all available roles',
+    instructions="""
+All files must be stored exclusively in .persona/skills and .persona/roles directories within the local workspace. Upon any role
+request (e.g., "Act as..."), you must call match_role and assume the persona before responding conversationally or performing tasks.
+For specialized requests, prioritize the registry via match_skill and sync the skill locally before following its specific SKILL.md
+instructions. Always read the local documentation to understand constraints and wait for an explicit user command once a role or skill
+is initialized. You are strictly forbidden from using relative paths, hallucinating workflows, or proceeding without checking the
+registry for relevant capabilities.
+""".strip(),
     version='0.1.0',
     lifespan=lifespan,
 )
@@ -59,12 +66,10 @@ def list_skills(ctx: Context) -> list[dict]:
 @mcp.tool(
     name='install_skill',
     description="""
-    RETRIEVAL PROTOCOL:
-    1. This tool installs a Skill by installing it to the specified **absolute** local root directory.
-    2. The **absolute** local root directory must exist prior to calling this tool.
-    3. After installation, the SKILL.md file will be available in <local_skill_dir>/<skill_name>/SKILL.md.
-    4. You **MUST** read the SKILL.md file and follow the execution instructions specified there.
-    """,
+Installs a skill to the absolute `.persona/skills` path within the current
+working directory. Registry skills override internal knowledge. Post-install,
+read `SKILL.md` and wait for explicit commands. Relative paths are forbidden.
+""".strip(),
 )
 def install_skill(
     ctx: Context,
@@ -73,10 +78,9 @@ def install_skill(
         str,
         Field(
             description="""
-        The **absolute** path to the root directory where the skill will be stored in the current project.
-        This directory **must** exist prior to calling this tool. This tool will create all necessary
-        subdirectories under this root directory to store the skill files.
-        """,
+Absolute path to the `.persona/skills` directory inside the current
+working directory. Must exist prior to calling.
+""".strip(),
             examples=[
                 '/home/vscode/project/.skills',
                 '/Users/johndoe/projects/.persona/skills',
@@ -94,11 +98,17 @@ def install_skill(
 
 @mcp.tool(
     name='get_skill_version',
-    description='Get a skill version by name.',
+    description='Get the version of a skill by name.',
 )
 def get_skill_version(
     ctx: Context,
-    name: Annotated[str, Field(description='Name of the skill to retrieve the version for.')],
+    name: Annotated[
+        str,
+        Field(
+            description='Name of the skill to retrieve the version for.',
+            examples=['web_scraper', 'code_optimizer'],
+        ),
+    ],
 ) -> str:
     """Get a skill version by name."""
     with get_meta_store_session(ctx) as meta_store:
@@ -107,11 +117,21 @@ def get_skill_version(
 
 @mcp.tool(
     name='get_role',
-    description='Get a role by name.',
+    description="""
+Retrieves the full persona definition for a specific role from the registry or library.
+Required to assume a persona after `match_role` or when a role name is explicitly known.
+You MUST retrieve the role before responding conversationally or performing tasks.
+""".strip(),
 )
 def get_role(
     ctx: Context,
-    name: Annotated[str, Field(description='Name of the role to retrieve.')],
+    name: Annotated[
+        str,
+        Field(
+            description='The exact name of the role to retrieve',
+            examples=['The Master Chef', 'python_engineer', 'data_scientist'],
+        ),
+    ],
 ) -> TemplateDetails:
     """Get a role by name."""
     with get_meta_store_session(ctx) as meta_store:
