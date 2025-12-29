@@ -12,7 +12,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class ConfigWithRoot(BaseModel):
     """Settings shared by a root folder."""
 
-    root: str | None = None
+    root: str | None = Field(
+        default=None,
+        description='The root directory for storing data. If not set, '
+        'will default to the top-level PersonaConfig root path.',
+    )
 
 
 class BaseFileStoreConfig(ConfigWithRoot):
@@ -40,13 +44,20 @@ class SimilaritySearchConfig(BaseModel):
     model: Literal['sentence-transformers/all-MiniLM-L6-v2-quantized'] = (
         'sentence-transformers/all-MiniLM-L6-v2-quantized'
     )
-    max_cosine_distance: float = 0.8
-    max_results: int = 3
+    max_cosine_distance: float = Field(
+        default=0.8,
+        description='Maximum cosine distance threshold for similarity search.',
+    )
+    max_results: int = Field(
+        default=3,
+        description='Maximum number of results to return from similarity search.',
+    )
 
 
 class BaseMetaStoreConfig(BaseModel):
     similarity_search: SimilaritySearchConfig = Field(
-        default_factory=lambda: SimilaritySearchConfig()
+        default_factory=lambda: SimilaritySearchConfig(),
+        description='Configuration for similarity search in the meta store.',
     )
 
 
