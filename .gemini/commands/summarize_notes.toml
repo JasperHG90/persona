@@ -21,6 +21,11 @@ CRITICAL: Each item in the summary should reference the specific note it was der
 The summary should be stored in the file `@docs/notes/summary/summary.md`. If the file already exists, overwrite it. Exclude the
 immediate to-dos and action items from this summary, as they will be stored separately.
 
+### Directives
+
+- <directive>More recent information **ALWAYS** takes precendence over older information.</directive>
+- <directive>If there are conflicting notes, prioritize those that are more detailed and specific.</directive>
+
 ## Storing to-do items
 
 All to-do items and action points extracted from the notes should be stored in a separate file located at
@@ -28,12 +33,13 @@ All to-do items and action points extracted from the notes should be stored in a
 
 If your summary contains new todos or action items, then you should append them to the `todos.md` file, ensuring no duplicates.
 
-## Directives
+### Directives
 
-- <directive>More recent information **ALWAYS** takes precendence over older information.</directive>
-- <directive>If there are conflicting notes, prioritize those that are more detailed and specific.</directive>
-- <directive>You **MUST** extract all to-dos and action items from the notes. Missing any is not acceptable.</directive>
+- <directive>You MUST read the existing todos.md file first.</directive>
+- <directive>You MUST NOT overwrite the file.</directive>
+- <directive>You MUST preserve all existing completed items (marked with [x] or strikethrough).</directive>
+- <directive>You MUST merge new items from the notes into the existing list, avoiding duplicates.</directive>
 - <directive>Todo items **MUST** be stored in the format `- [ ] <todo_item> (See: [note](<note_link>))`</directive>
 - <directive>Todo items **MUST** be sorted by date in descending order. The note name should contain the date in YYYYMMDD.md format (e.g. `20250615.md`).</directive>
-- <directive>Todo items that are strikethrough should be included in the todos.md file and the strikethrough formatting preserved.</directive>
+- <directive>You **MUST** extract all to-dos and action items from the notes. Missing any is not acceptable.</directive>
 """
