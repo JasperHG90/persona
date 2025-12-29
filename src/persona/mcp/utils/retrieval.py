@@ -1,70 +1,23 @@
 import os
 import pathlib as plb
 import logging
-from contextlib import asynccontextmanager, contextmanager
-from typing import AsyncIterator, cast, Generator
-from collections import defaultdict
+from typing import cast
 
-import yaml
 import frontmatter
-from fastmcp import FastMCP, Context
 from fastmcp.exceptions import ToolError
 from fastmcp.utilities.types import File
-from mcp.shared.context import RequestContext
 
-from persona.config import parse_persona_config, PersonaConfig
 from persona.storage import (
-    get_file_store_backend,
-    get_meta_store_backend,
     BaseMetaStoreSession,
     BaseFileStore,
 )
-from persona.embedder import get_embedding_model, FastEmbedder
+from persona.embedder import FastEmbedder
 from persona.types import personaTypes
+from persona.mcp.models import TemplateDetails, SkillFile
+from persona.mcp.utils.const import EXT_WHITELIST
+from persona.mcp.utils.lib import library_skills
 
-from .models import AppContext, TemplateDetails, SkillFile
-
-logger = logging.getLogger('persona.mcp.utils')
-
-EXT_WHITELIST = [
-    '.md',
-    '.txt',
-    '.json',
-    '.yaml',
-    '.yml',
-    '.cfg',
-    '.ini',
-    '.py',
-    '.js',
-    '.ts',
-    '.html',
-    '.css',
-]
-
-library_skills_path = plb.Path(__file__).parent / 'assets' / 'skills'
-
-
-def _get_builtin_skills() -> dict[str, dict[str, SkillFile]]:
-    """Get all skills that are part of this MCP library."""
-    skills = defaultdict(dict)
-    for skill_path in library_skills_path.glob('*/SKILL.md'):
-        skill_name = skill_path.parent.name
-        for fn in skill_path.parent.glob('**/*'):
-            if fn.is_dir():
-                continue
-            ext = fn.suffix
-            name = fn.name
-            skills[skill_name][name] = SkillFile(
-                content=fn.read_bytes(),
-                name=name,
-                storage_file_path=str(fn.relative_to(library_skills_path)),
-                extension=ext,
-            )
-    return skills
-
-
-library_skills = _get_builtin_skills()
-
+logger = logging.getLogger('persona.mcp.utils.retrieval')
 
 # async def watch_changes(config: FileStoreBasedMetaStoreConfig, file_store: BaseFileStore, meta_store: BaseMetaStore):
 #     """
@@ -80,60 +33,6 @@ library_skills = _get_builtin_skills()
 #     while True:
 #         try:
 #             checksum = file_store._fs.ukey(roles_index_path)
-
-
-@asynccontextmanager
-async def lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
-    """
-    Lifespan context manager for the the persona MCP server. Loads storage backend, configuration
-    and index.
-    """
-    persona_config_path = (
-        plb.Path.home() / '.persona.config.yaml'
-        if not os.environ.get('PERSONA_CONFIG_PATH', None)
-        else plb.Path(os.environ['PERSONA_CONFIG_PATH'])
-    )
-    if persona_config_path.exists():
-        with persona_config_path.open('r') as f:
-            config_raw = yaml.safe_load(f) or {}
-        config_validated = PersonaConfig.model_validate(config_raw).model_dump()
-        config = parse_persona_config(config_validated)
-    else:
-        config = parse_persona_config({})  # Will be read from env vars
-    file_store = get_file_store_backend(config.file_store)
-    # NB: read_only prevents changes from being persisted
-    meta_store_engine = (
-        get_meta_store_backend(config.meta_store, read_only=True).connect().bootstrap()
-    )
-    app_context = AppContext(config=config)
-    app_context._file_store = file_store
-    app_context._meta_store_engine = meta_store_engine
-    app_context._embedding_model = get_embedding_model()
-    yield app_context
-    meta_store_engine.close()
-
-
-@contextmanager
-def get_meta_store_session(ctx: Context) -> Generator[BaseMetaStoreSession, None, None]:
-    app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
-    meta_store = app_context._meta_store_engine
-    with meta_store.session() as session:
-        yield session
-
-
-def get_file_store(ctx: Context) -> BaseFileStore:
-    app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
-    return app_context._file_store
-
-
-def get_embedder(ctx: Context) -> FastEmbedder:
-    app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
-    return app_context._embedding_model
-
-
-def get_config(ctx: Context) -> PersonaConfig:
-    app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
-    return app_context.config
 
 
 def _list(type: personaTypes, session: BaseMetaStoreSession) -> list[dict]:
