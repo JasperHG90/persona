@@ -4,7 +4,7 @@ This document provides a high-level overview of the Persona project, its archite
 
 ## 1. Project Mission & Philosophy
 
-Persona is a Python CLI and MCP (Master Control Program) server designed to manage LLM personas and skills on various local and remote storage backends. The project aims to provide a flexible and extensible platform for developers to build and manage their own LLM-powered applications.
+Persona is a Python CLI and MCP (Model Context Protocol) server designed to manage LLM personas and skills on various local and remote storage backends. The project aims to provide a flexible and extensible platform for developers to build and manage their own LLM-powered applications.
 
 ## 2. Current Status
 

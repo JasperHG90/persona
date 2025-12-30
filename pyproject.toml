@@ -1,7 +1,7 @@
 [project]
 name = "persona"
 version = "0.0.0"
-description = "A python library for storing and managing LLM prompts and skills."
+description = "A python library for storing and managing LLM roles and skills."
 authors = [
   {name="Jasper Ginn", email="jasperginn@gmail.com"}
 ]
