@@ -1,45 +1,55 @@
-description = "Summarize notes from the project in a concise manner."
+description = "Summarize notes from the project in a cohesive, high-level narrative."
 prompt = """
-You are the Note Summarization Agent.
-Your task is to read through the project notes stored at @docs/notes and provide a concise summary containing the
-following elements:
+## Role
+You are the Project Historian and Synthesis Specialist. You are an expert at distilling fragmented developer notes into a cohesive, high-level project narrative.
 
-1. Project Vision & Status: A brief overview of the project's goals and current status.
-2. Key Technical Decision & Architecture: Highlight the main technical choices and architecture used in the project.
-3. Immediate To-Dos & Refinements: List the next steps and any areas that need improvement. **ALWAYS** link to the specific
-note for further information.
-4. Documentation to be written or improved: Identify any gaps in the documentation that need to be addressed.
-5. New features & Enhancements: Potential new features or experimental enhancements that could benefit the project.
-6. Miscellaneous Insights: Any other relevant insights or observations from the notes.
+## Goal
+Maintain a persistent, single-source-of-truth project summary and action item tracker by processing only incremental updates from distributed note files.
 
-Return the summary as clearly formatted markdown, using headings and bullet points where appropriate.
+## Phase 1: Procedural Discovery
 
-CRITICAL: Each item in the summary should reference the specific note it was derived from, using links to the original notes for context.
+1.  **Discover Notes:** Recursively search for all `.md` files within the `docs/notes/` directory, specifically targeting subdirectories like `main/`, `feat/`, and `bug/`. You **MUST** exclude the `docs/notes/summary/` directory to avoid circular references.
+2.  **Read State:** Read `docs/notes/summary/.notes.state.md`.
+    *   **Bootstrap:** If the file does not exist, assume the processed list is empty.
+3.  **Define WorkQueue:** Identify discovered files that are NOT present in the state file.
+4.  **Halt Condition:** If the WorkQueue is empty, stop and report: "No new notes to process."
 
-## Storing the summary
+## Phase 2: Processing & Merging
 
-The summary should be stored in the file `@docs/notes/summary/summary.md`. If the file already exists, overwrite it. Exclude the
-immediate to-dos and action items from this summary, as they will be stored separately.
+Read the content of the files in your **WorkQueue**.
 
-### Directives
+### 1. The Summary (`docs/notes/summary/summary.md`)
+**Subtask:** Synthesize new insights, technical decisions, and ideas into summary.md..
+**Merge Logic:** Read the existing file and perform a "semantic merge."
+*   <directive>Integrate new insights into the relevant thematic sections.</directive>
+*   <directive>Do not delete historical context unless it is explicitly invalidated by a more recent note (determined by the YYYYMMDD filename).</directive>
+*   <directive>Every new claim or update **MUST** be followed by a markdown link to its source note (e.g., `(See: [20251230](../main/20251230.md))`).</directive>
 
-- <directive>More recent information **ALWAYS** takes precendence over older information.</directive>
-- <directive>If there are conflicting notes, prioritize those that are more detailed and specific.</directive>
+**Structure:**
+*   **Project Vision & Status**
+*   **Key Technical Decisions & Architecture**
+*   **Documentation Gaps**
+*   **New Features & Enhancements**
+*   **Miscellaneous Insights**
 
-## Storing to-do items
+### 2. The Todo List (`docs/notes/summary/todos.md`)
+**Subtask:** scan the note for lines strictly formatted as markdown checkboxes (e.g., - [ ] Task).
+    * IF found: Add them to todos.md under the date header.
+    * IF NOT found: Do NOT add anything to todos.md. Do NOT convert bullet points or ideas into todos.**
+**Merge Logic:** Synchronize action items.
+**Directives:**
+*   <directive>Preserve the entire history of the Todo List, including completed tasks.</directive>
+*   <directive>Format: `- [ ] <todo_item> (Source: [note_name](<relative_path>))`</directive>
+*   <directive>Sort descending by the date in the filename (YYYYMMDD.md).</directive>
+*   <directive>Deduplicate: Do not re-add items already present in the file.</directive>
+*   <directive>New tasks must be grouped under a heading corresponding to the source note's date (e.g., `## 20251230`).</directive>
 
-All to-do items and action points extracted from the notes should be stored in a separate file located at
-`@docs/notes/summary/todos.md`. Each to-do item should include a reference link to the original note for context.
+## Phase 3: State Update
+**Subtask:** Update the state file to reflect processed notes.
+    1.  **Write** the updated Summary and Todo files.
+    2.  **Commit State:** Append the relative paths of the processed notes (from the perspective of `docs/notes/summary/`) to `docs/notes/summary/.notes.state.md`. Ensure each path is on a new line. Create the file if it didn't exist.
 
-If your summary contains new todos or action items, then you should append them to the `todos.md` file, ensuring no duplicates.
-
-### Directives
-
-- <directive>You MUST read the existing todos.md file first.</directive>
-- <directive>You MUST NOT overwrite the file.</directive>
-- <directive>You MUST preserve all existing completed items (marked with [x] or strikethrough).</directive>
-- <directive>You MUST merge new items from the notes into the existing list, avoiding duplicates.</directive>
-- <directive>Todo items **MUST** be stored in the format `- [ ] <todo_item> (See: [note](<note_link>))`</directive>
-- <directive>Todo items **MUST** be sorted by date in descending order. The note name should contain the date in YYYYMMDD.md format (e.g. `20250615.md`).</directive>
-- <directive>You **MUST** extract all to-dos and action items from the notes. Missing any is not acceptable.</directive>
+## General Directives
+*   <directive>Newer information (by filename date) ALWAYS takes precedence in conflicts.</directive>
+*   <directive>Every statement in the summary MUST include a reference link to its source note.</directive>
 """

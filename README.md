@@ -2,93 +2,120 @@
 
 **A developer-friendly toolkit for managing and deploying LLM personas and skills across any environment.**
 
-Persona provides a robust Python CLI and a high-performance MCP (Master Control Program) server to give you a flexible, extensible platform for your LLM applications. Manage your AI's identity and capabilities, from your local machine to the cloud.
+Persona provides a robust Python CLI and a high-performance MCP server to give you a flexible, extensible platform for your LLM applications. Manage your AI's identity (Roles) and capabilities (Skills), from your local machine to the cloud.
 
-## What can you do with Persona?
+---
 
-- **Standardize Personas:** Define and manage consistent personas for your LLM applications.
-- **Decouple Skills:** Treat LLM skills as independent, manageable components.
-- **Flexible Storage:** Use local filesystems, or extend Persona to support any backend via `fsspec`.
-- **Remote Management:** Interact with your personas and skills from anywhere using the `fastmcp`-based server.
+## 📚 What is Persona?
 
-## Key Features
+Persona is a system designed to standardize how Large Language Models (LLMs) adopt roles and utilize tools.
 
-- **Command-Line Interface:** A powerful CLI built with Typer for intuitive management of personas and skills.
-- **MCP Server:** A high-performance, async-capable server that exposes a remote API.
-- **Extensible Storage:** A storage abstraction layer that currently supports local storage, with the flexibility to add more backends.
-- **Modern Tech Stack:** Built with Python 3.12, tested with `pytest`, and formatted with `ruff`.
+-   **Roles** are carefully curated prompts that tell the LLM *how* to behave (e.g., "Python Expert", "Master Chef").
+-   **Skills** are packages of instructions and scripts that give the LLM the *ability* to perform specific tasks (e.g., "Web Scraper", "Data Analysis").
 
-## Getting Started in 5 Minutes
+By decoupling these from your application logic, Persona allows you to:
+-   **Standardize** interactions across different LLM providers.
+-   **Manage** prompts and tools as code.
+-   **Deploy** these capabilities via a standardized MCP server.
 
-Get the Persona CLI up and running on your local machine.
+### Philosophy
 
-### 1. Set up the environment
+Persona is built on the belief that **prompt engineering is software engineering**. The "who" (Role) and the "how" (Skills) of an AI should be decoupled from the application logic.
 
-Clone the repository and use the `justfile` to install all dependencies and pre-commit hooks.
+*   **Standardization:** Managing personas and skills as consistent, versioned artifacts (code) rather than scattered strings.
+*   **Extensibility:** Storing these resources anywhere (local files, cloud storage) via a robust abstraction layer.
+*   **Remote Management:** Separating the "brain" management from the client application via a standardized API (MCP).
+
+---
+
+## 🚀 Getting Started
+
+Follow this guide to get Persona up and running on your local machine in minutes.
+
+### 1. Installation
+
+Clone the repository and set up the environment.
 
 ```sh
 git clone https://github.com/your-repo/persona.git
 cd persona
+# Uses 'uv' for dependency management
 just setup
 ```
 
-### 2. Run the tests
+### 2. Initialization
 
-Verify that everything is set up correctly by running the test suite.
+Before using Persona, initialize the configuration and local storage directories. This will create a `.persona` folder in your user data directory (or configured root) to store roles and skills.
+
+```sh
+persona init
+```
+
+### 3. Verify Installation
+
+Run the test suite to ensure everything is working correctly.
 
 ```sh
 just test
 ```
 
-## How to Use the CLI
+---
 
-Ready to dive in? Our [Quickstart Guide](./docs/quickstart.md) walks you through registering, listing, and removing personas and skills, plus how to get the MCP server up and running.
+## 📖 How-To Guides
 
-Here are a few examples of how you can use the Persona CLI to manage your resources.
+### Manage Roles
 
-**List all available personas:**
+Roles define the personality and expertise of your LLM.
+
+**List available roles:**
 ```sh
-persona list-personas
+persona roles list
 ```
 
-**Register a new persona from a file:**
+**Register a new role from a local file:**
 ```sh
-persona register-persona --name "my-persona" --source-file "/path/to/persona.yaml"
+persona roles register /path/to/my-role.yaml
 ```
 
-**List all available skills:**
+**Register a role from GitHub:**
 ```sh
-persona list-skills
+persona roles register path/to/role.yaml --github-url https://github.com/user/repo/tree/main
 ```
 
-## Developer Workflow
-
-The `justfile` contains all the commands you need for development:
-
-- `just setup`: Set up the development environment.
-- `just test`: Run the test suite.
-- `just pre_commit`: Run pre-commit checks on all files.
-- `just build_mcp`: Build the MCP server Docker image.
-
-## Contributing
-
-We're open to contributions! If you have an idea, please open an issue on GitHub to start the discussion.
-
-## License
-
-This project is licensed under the [MIT License](./LICENSE.txt).
-
-## Building and running the dockerfile
-
-Build the dockerfile using e.g.
-
-```shell
-docker build -t persona .
+**Match a role based on a description:**
+```sh
+persona roles match "Expert Python programmer"
 ```
 
-Run the dockerfile using e.g.
+### Manage Skills
 
-```shell
+Skills provide executable capabilities to your LLM.
+
+**List available skills:**
+```sh
+persona skills list
+```
+
+**Register a new skill:**
+```sh
+persona skills register /path/to/skill-directory
+```
+
+### Run the MCP Server
+
+The MCP server allows external applications (like Gemini, Claude, or IDE extensions) to interact with your Persona registry.
+
+**Start the server (Stdio mode):**
+```sh
+persona mcp start
+```
+
+**Run via Docker:**
+```sh
+# Build the image
+just build_mcp
+
+# Run the container
 docker run \
     -v ~/.persona:/app/.persona \
     -e PERSONA_STORAGE_ROOT=/app/.persona \
@@ -96,11 +123,24 @@ docker run \
     persona mcp start
 ```
 
-## Configuring the MCP Server
+---
 
-The `.gemini/settings.json` file configures how Gemini connects to the MCP (Master Control Program) server. This setup allows Gemini to interact with your LLM personas and skills.
+## ⚙️ Configuration Reference
 
-Here's the structure of the `settings.json` file:
+Persona is configured via a `config.yaml` file (usually in `~/.persona/config.yaml`) or environment variables.
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PERSONA_ROOT` | Root directory for file storage. | User data dir (e.g. `~/.local/share/persona`) |
+| `PERSONA_FILE_STORE__TYPE` | Storage backend type. | `local` |
+| `PERSONA_META_STORE__TYPE` | Metadata/Index backend type. | `duckdb` |
+| `PERSONA_LOG_LEVEL` | Logging verbosity. | `INFO` |
+
+### MCP Client Configuration
+
+To use Persona with an MCP client (like Gemini), add this to your client's settings file (e.g., `.gemini/settings.json`):
 
 ```json
 {
@@ -118,3 +158,24 @@ Here's the structure of the `settings.json` file:
     }
 }
 ```
+
+---
+
+## 🛠️ Developer Workflow
+
+We use `just` to manage development tasks.
+
+-   `just setup`: Install dependencies and pre-commit hooks.
+-   `just test`: Run the full test suite.
+-   `just pre_commit`: Run linting and formatting checks.
+-   `just build_mcp`: Build the Docker image.
+
+---
+
+## Contributing
+
+We welcome contributions! Please open an issue on GitHub to discuss your ideas before submitting a Pull Request.
+
+## License
+
+This project is licensed under the [MIT License](./LICENSE.txt).
