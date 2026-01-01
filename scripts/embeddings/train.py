@@ -1,3 +1,16 @@
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#     "accelerate>=0.26.0",
+#     "datasets>=4.4.2",
+#     "jsonlines>=4.0.0",
+#     "onnxscript>=0.5.7",
+#     "rich>=14.2.0",
+#     "sentence-transformers>=5.2.0",
+#     "torchao>=0.15.0",
+#     "typer>=0.21.0",
+# ]
+# ///
 """
 Fine-tunes the all-MiniLM-L6-v2 model using a small dataset to optimizes
 for skills and roles matching.
