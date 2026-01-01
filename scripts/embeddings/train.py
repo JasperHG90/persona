@@ -33,9 +33,9 @@ from torchao.quantization.qat import QATConfig, QATStep
 from sentence_transformers.evaluation import InformationRetrievalEvaluator
 from sentence_transformers import SentenceTransformerTrainer, SentenceTransformerTrainingArguments
 from sentence_transformers.losses import MultipleNegativesRankingLoss
-
 from rich.table import Table
 from rich.console import Console
+import typer
 
 MODEL_ID = 'sentence-transformers/all-MiniLM-L6-v2'
 OUTPUT_DIR = plb.Path('./minilm-l6-v2-persona-ft-q8')
@@ -46,6 +46,15 @@ if OUTPUT_DIR.exists():
 OUTPUT_DIR.mkdir(parents=True)
 
 console = Console()
+
+app = typer.Typer(
+    name='train',
+    help='Train the all-MiniLM-L6-v2 model for skills and roles matching.',
+    no_args_is_help=True,
+    pretty_exceptions_show_locals=False,
+    pretty_exceptions_enable=True,
+    pretty_exceptions_short=True,
+)
 
 
 def load_dataset(file_path: plb.Path):
@@ -217,3 +226,13 @@ def main():
     tokenizer.save_pretrained(OUTPUT_DIR)
     cast(Module, transformer_model).config.save_pretrained(OUTPUT_DIR)  # type: ignore
     console.print('Conversion complete.')
+
+
+@app.command()
+def run():
+    """Train the all-MiniLM-L6-v2 model for skills and roles matching."""
+    main()
+
+
+if __name__ == '__main__':
+    app()
