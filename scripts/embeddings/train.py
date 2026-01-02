@@ -28,7 +28,10 @@ from transformers import AutoTokenizer
 from sentence_transformers import SentenceTransformer, models
 import jsonlines
 from datasets import Dataset
-from torchao.quantization import quantize_, Int8DynamicActivationIntxWeightConfig
+from torchao.quantization import (
+    quantize_,
+    Int8DynamicActivationIntxWeightConfig as Int8DynamicActivationInt4WeightConfig,
+)  #  Int8DynamicActivationInt4WeightConfig
 from torchao.quantization.qat import QATConfig, QATStep
 from sentence_transformers.evaluation import InformationRetrievalEvaluator
 from sentence_transformers import SentenceTransformerTrainer, SentenceTransformerTrainingArguments
@@ -64,10 +67,9 @@ def load_dataset(file_path: plb.Path):
     return Dataset.from_list(data).shuffle()
 
 
-def quantize_transformer(model: Module):
-    base_config = Int8DynamicActivationIntxWeightConfig()
+def quantize_transformer(model: Module, config: Int8DynamicActivationInt4WeightConfig):
     console.print('Applying QAT Config (Prepare)...')
-    quantize_(cast(Module, model), QATConfig(base_config, step=QATStep.PREPARE))
+    quantize_(cast(Module, model), QATConfig(config, step=QATStep.PREPARE))
 
 
 def construct_quantized_model(model_id: str, transformer: Module) -> SentenceTransformer:
@@ -176,7 +178,9 @@ def print_metrics(trainer: SentenceTransformerTrainer, ds: Dataset | None = None
     console.print(table)
 
 
-def save_model_to_onnx(model: OnnxWrapper, output_path: plb.Path):
+def save_model_to_onnx(
+    model: OnnxWrapper, output_path: plb.Path, config: Int8DynamicActivationInt4WeightConfig
+):
     batch = Dim('batch', min=2, max=1024)
     seq = Dim('seq', min=2, max=512)
 
@@ -189,6 +193,8 @@ def save_model_to_onnx(model: OnnxWrapper, output_path: plb.Path):
 
     onnx_path = OUTPUT_DIR / 'model.onnx'
 
+    quantize_(cast(Module, model), QATConfig(config, step=QATStep.CONVERT))
+
     console.print(f'Exporting model to {output_path}...')
     torch.onnx.export(
         model,
@@ -198,30 +204,32 @@ def save_model_to_onnx(model: OnnxWrapper, output_path: plb.Path):
         output_names=['sentence_embedding'],
         dynamic_shapes=dynamic_shapes,
         opset_version=18,
+        dynamo=True,
     )
 
 
 def main():
     console.print('Loading pre-trained model and tokenizer...')
     model = SentenceTransformer(MODEL_ID).to(device=DEVICE)
+    base_config = Int8DynamicActivationInt4WeightConfig()
     console.print('Loading datasets...')
     train_ds = load_dataset(plb.Path('data/train_100.jsonl'))
     eval_ds = load_dataset(plb.Path('data/eval_40.jsonl'))
     transformer_model = cast(Module, model[0].auto_model)
     tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
-    quantize_transformer(model)
+    quantize_transformer(model, config=base_config)
     console.print('Constructing quantized model...')
     quantized_model = construct_quantized_model(MODEL_ID, transformer_model).to(device=DEVICE)
     console.print('Preparing evaluator...')
     evaluator = get_evaluator(eval_ds)
     console.print('Preparing trainer...')
-    trainer = get_trainer(quantized_model, train_ds, eval_ds, evaluator, epochs=8, lr=5e-6)
+    trainer = get_trainer(quantized_model, train_ds, eval_ds, evaluator, epochs=10, lr=5e-6)
     console.print('Baseline evaluation on eval set:')
     print_metrics(trainer)
     console.print('Starting training...')
     trainer.train()
     console.print('Converting model to ONNX format...')
-    save_model_to_onnx(OnnxWrapper(transformer_model), OUTPUT_DIR)
+    save_model_to_onnx(OnnxWrapper(transformer_model), OUTPUT_DIR, config=base_config)
     console.print('Save tokenizer and config')
     tokenizer.save_pretrained(OUTPUT_DIR)
     cast(Module, transformer_model).config.save_pretrained(OUTPUT_DIR)  # type: ignore
