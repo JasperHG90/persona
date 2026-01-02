@@ -119,29 +119,26 @@ class FastEmbedder:
             sess_options=options,
         )
 
-    def encode(self, text: str) -> np.ndarray:
+    def encode(self, text: list[str]) -> np.ndarray[tuple[int, int], np.dtype[np.float32]]:
         """Retrieve the embedding for a text query.
 
         Args:
-            text (str): Input text
+            text (list[str]): Input texts to be embedded.
 
         Returns:
             np.ndarray: Array containing the embedding for the input text.
         """
-        enc = self.tokenizer.encode(text)
+        input_ids = []
+        attention_mask = []
+        for e in self.tokenizer.encode_batch(text):
+            input_ids.append(np.array(e.ids, dtype=np.int64))
+            attention_mask.append(np.array(e.attention_mask, dtype=np.int64))
+
         inputs = {
-            'input_ids': np.array([enc.ids], dtype=np.int64),
-            'attention_mask': np.array([enc.attention_mask], dtype=np.int64),
+            'input_ids': np.vstack(input_ids),
+            'attention_mask': np.vstack(attention_mask),
         }
 
-        outputs = self.session.run(None, inputs)
+        outputs = cast(list[np.ndarray], self.session.run(None, inputs))
 
-        # NB: mean pooling is standard for sentence transformers I believe
-        token_embeddings = cast(np.ndarray, outputs[0])
-        mask = np.expand_dims(inputs['attention_mask'], -1)
-        embeddings = cast(
-            np.ndarray, np.sum(token_embeddings * mask, 1) / np.maximum(mask.sum(1), 1e-9)
-        )
-
-        norm = cast(np.ndarray, np.linalg.norm(embeddings, axis=1, keepdims=True))
-        return (embeddings / norm).flatten()
+        return outputs[0]
