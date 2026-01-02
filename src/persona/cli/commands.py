@@ -9,7 +9,7 @@ from persona.config import PersonaConfig
 from persona.storage import get_file_store_backend, get_meta_store_backend, IndexEntry, Transaction
 from persona.templates import TemplateFile, Template
 from persona.embedder import get_embedding_model
-from persona.api import get_templates_data, search_templates_data
+from persona.utils import get_templates_data, search_templates_data
 from persona.types import personaTypes
 
 console = Console()

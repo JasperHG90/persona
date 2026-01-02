@@ -5,7 +5,7 @@ from textual.containers import Horizontal
 from textual.widgets import DataTable, Input, Markdown, Static
 from textual import work
 from persona.types import personaTypes
-from persona.api import get_templates_data, search_templates_data
+from persona.utils import get_templates_data, search_templates_data
 from persona.storage import CursorLikeMetaStoreEngine
 from persona.embedder import FastEmbedder
 
@@ -40,6 +40,8 @@ class BrowserScreen(Static):
                     meta_store_session,
                     config.root,
                     'roles' if self.type == 'roles' else 'skills',
+                    limit=config.meta_store.similarity_search.max_results,
+                    max_cosine_distance=config.meta_store.similarity_search.max_cosine_distance,
                 )
             else:
                 results = get_templates_data(
@@ -60,7 +62,8 @@ class BrowserScreen(Static):
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         # For now, just show the description in the Markdown view
-        # In a real app, you'd load the ROLE.md or SKILL.md content
+        # But it'd be cool to fetch the actual template file and render it
+        #  NB: this probably needs (1) async, (2) caching
         row_data = event.data_table.get_row(event.row_key)
         name, description, uuid = row_data
         md = self.query_one(Markdown)
