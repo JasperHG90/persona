@@ -54,7 +54,7 @@ async def lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
 def get_meta_store_session(ctx: Context) -> Generator[BaseMetaStoreSession, None, None]:
     app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
     meta_store = app_context._meta_store_engine
-    with meta_store.session() as session:
+    with meta_store.read_session() as session:
         yield session
 
 

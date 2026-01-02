@@ -1,0 +1,29 @@
+Screen {
+    background: $surface;
+}
+
+BrowserScreen {
+    height: 1fr;
+}
+
+DataTable {
+    height: 1fr;
+    width: 60%;
+    border: tall $primary;
+}
+
+Markdown {
+    height: 1fr;
+    width: 40%;
+    border: tall $secondary;
+    padding: 1;
+}
+
+Input {
+    margin: 1 0;
+    border: solid $accent;
+}
+
+TabbedContent {
+    height: 1fr;
+}

@@ -190,5 +190,15 @@ def init(ctx: typer.Context):
     _ = get_embedding_model()
 
 
+@app.command(help='Start the interactive TUI.')
+def tui(ctx: typer.Context):
+    """Start the interactive TUI."""
+    from persona.tui.app import PersonaApp
+
+    _config: PersonaConfig = ctx.obj['config']
+    app = PersonaApp(_config)
+    app.run()
+
+
 def entrypoint():
     app()

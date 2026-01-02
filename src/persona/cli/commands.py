@@ -9,6 +9,7 @@ from persona.config import PersonaConfig
 from persona.storage import get_file_store_backend, get_meta_store_backend, IndexEntry, Transaction
 from persona.templates import TemplateFile, Template
 from persona.embedder import get_embedding_model
+from persona.api import get_templates_data, search_templates_data
 from persona.types import personaTypes
 
 console = Console()
@@ -23,25 +24,27 @@ def match_query(ctx: typer.Context, query: str, type: personaTypes):
         type (personaTypes): type of template to search in
     """
     config: PersonaConfig = ctx.obj['config']
-    meta_store = get_meta_store_backend(config.meta_store)
+    meta_store = get_meta_store_backend(config.meta_store, read_only=True)
     embedder = get_embedding_model()
-    table = Table('Name', 'Path', 'Description', 'Distance', 'UUID')
-    query_vector = embedder.encode([query]).squeeze().tolist()
     with meta_store.open(bootstrap=True) as connected:
-        with connected.session() as session:
-            results = session.search(
-                query=query_vector,
-                table_name=type,
+        with connected.read_session() as session:
+            results = search_templates_data(
+                query,
+                embedder,
+                session,
+                config.root,
+                type,
                 limit=config.meta_store.similarity_search.max_results,
-                column_filter=['name', 'description', 'uuid'],
                 max_cosine_distance=config.meta_store.similarity_search.max_cosine_distance,
             )
-    for result in results.to_pylist():
+    table = Table('Name', 'Path', 'Description', 'Distance', 'UUID')
+
+    for result in results:
         table.add_row(
             result['name'],
-            '%s/%s/%s' % (config.root, type, result['name']),
+            result['path'],
             result['description'],
-            str(round(result['score'], 2)),
+            str(round(result['distance'], 2)),
             result['uuid'],
         )
     console.print(table)
@@ -55,18 +58,15 @@ def list_templates(ctx: typer.Context, type: personaTypes):
         type (personaTypes): type of template to list
     """
     config: PersonaConfig = ctx.obj['config']
-    meta_store = get_meta_store_backend(config.meta_store)
+    meta_store = get_meta_store_backend(config.meta_store, read_only=True)
     table = Table('Name', 'Path', 'Description', 'UUID')
     with meta_store.open(bootstrap=True) as connected:
         with connected.session() as session:
-            results = session.get_many(
-                table_name=type,
-                column_filter=['name', 'description', 'uuid'],
-            )
-    for result in results.to_pylist():
+            results = get_templates_data(session, config.root, type)
+    for result in results:
         table.add_row(
             result['name'],
-            '%s/%s/%s' % (config.root, type, result['name']),
+            result['path'],
             result['description'],
             result['uuid'],
         )

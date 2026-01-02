@@ -65,6 +65,24 @@ class CursorLikeMetaStoreEngine(Generic[T], metaclass=ABCMeta):
             self.close()
 
     @contextmanager
+    def read_session(self) -> Generator[CursorLikeMetaStoreSession, None, None]:
+        """Start a new read-only session returning a cursor, and close it upon exiting the context manager.
+
+        Note: the read-only session pertains only to the in-memory duckdb database. This avoids the overhead of beginning/committing transactions
+        for read-only in-memory operations.
+
+        Yields:
+            Generator[CursorLikeMetaStore, None, None]: a cursor-like object containing methods like: execute(), fetchone(), fetchall()
+        """
+        self._logger.debug('Starting new read-only metastore session ...')
+        cursor = self.get_cursor()
+        try:
+            yield CursorLikeMetaStoreSession(cursor)
+        finally:
+            self._logger.debug('Closing read-only session ...')
+            cursor.close()
+
+    @contextmanager
     def session(self) -> Generator[CursorLikeMetaStoreSession, None, None]:
         """Start a new session returning a cursor, and commit / close it upon exiting the context manager
 

@@ -173,6 +173,6 @@ class CursorLikeMetaStoreSession(BaseMetaStoreSession):
         SELECT * FROM search_results
         """
         if max_cosine_distance is not None:
-            sql += 'WHERE score <= 0.8'
+            sql += f'WHERE score <= {max_cosine_distance}'
         sql += f' ORDER BY score ASC LIMIT {limit}'
         return self._cursor.execute(sql, [query]).fetch_arrow_table()
