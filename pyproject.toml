@@ -30,7 +30,6 @@ mcp = [
     "aiofiles>=25.1.0",
     "fastmcp>=2.14.0",
     "httpx>=0.28.1",
-    "watchfiles>=1.1.1",
 ]
 
 [project.scripts]

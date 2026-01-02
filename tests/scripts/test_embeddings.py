@@ -8,11 +8,12 @@ import duckdb
 import numpy as np
 from persona.embedder import FastEmbedder
 
-embeddings_dir = plb.Path(__file__).parent
+embeddings_dir = plb.Path(__file__).parent.parent.parent.joinpath('scripts', 'embeddings')
 
 if not embeddings_dir.joinpath('minilm-l6-v2-persona-ft-q8').exists():
-    raise RuntimeError(
-        'Embeddings not found. Please run the training script `scripts/embeddings/train.py` first.'
+    pytest.skip(
+        'Embeddings not found. Please run the training script `scripts/embeddings/train.py` first. Skipping tests.',
+        allow_module_level=True,
     )
 
 
