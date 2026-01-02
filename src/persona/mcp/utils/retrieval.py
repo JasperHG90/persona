@@ -19,21 +19,6 @@ from persona.mcp.utils.lib import library_skills
 
 logger = logging.getLogger('persona.mcp.utils.retrieval')
 
-# async def watch_changes(config: FileStoreBasedMetaStoreConfig, file_store: BaseFileStore, meta_store: BaseMetaStore):
-#     """
-#     Checks the metastore for changes every 60 seconds and reloads the metastore if needed.
-
-#     This is experimental.
-
-#     The assumption is that the metastore is always stored on the file store backend.
-#     """
-#     roles_index_path = config.roles_index_path
-#     skills_index_path = config.skills_index_path
-
-#     while True:
-#         try:
-#             checksum = file_store._fs.ukey(roles_index_path)
-
 
 def _list(type: personaTypes, session: BaseMetaStoreSession) -> list[dict]:
     """List all personas (logic)."""
@@ -173,7 +158,7 @@ def _match(
     max_cosine_distance: float | None = None,
 ) -> list[TemplateMatch]:
     """Match a persona to the provided description (logic)."""
-    query = embedding_model.encode(query_string).tolist()
+    query = embedding_model.encode([query_string]).squeeze().tolist()
     return [
         TemplateMatch(**item)
         for item in meta_store.search(

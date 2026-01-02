@@ -152,7 +152,7 @@ def reindex(ctx: typer.Context):
                 os.path.relpath(f, _path).replace('../', '').replace('.persona/', '')
                 for f in cast(list[str], target_file_store._fs.glob(fp))
             ],  # All files in template
-            embedding=embedder.encode(description).tolist(),
+            embedding=embedder.encode([description]).squeeze().tolist(),
         )
         index[entry_type + 's'].append(entry.model_dump(exclude_none=True))
     logger.info('Dropping and recreating index tables...')

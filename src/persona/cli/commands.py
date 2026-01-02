@@ -26,7 +26,7 @@ def match_query(ctx: typer.Context, query: str, type: personaTypes):
     meta_store = get_meta_store_backend(config.meta_store)
     embedder = get_embedding_model()
     table = Table('Name', 'Path', 'Description', 'Distance', 'UUID')
-    query_vector = embedder.encode(query).tolist()
+    query_vector = embedder.encode([query]).squeeze().tolist()
     with meta_store.open(bootstrap=True) as connected:
         with connected.session() as session:
             results = session.search(
