@@ -21,13 +21,13 @@ logger = logging.getLogger('persona.embedder')
 
 
 def get_embedding_model(
-    model_dir: str | plb.Path | None = None, model_name: str = 'model_quantized.onnx'
+    model_dir: str | plb.Path | None = None, model_name: str = 'model.onnx'
 ) -> 'FastEmbedder':
     """Get the embedding model
 
     Args:
         model_dir (str | plb.Path | None, optional): Location of the model directory. Defaults to None.
-        model_name (str, optional): Name of the model file. Defaults to 'model_quantized.onnx'.
+        model_name (str, optional): Name of the model file. Defaults to 'model.onnx'.
 
     Returns:
         FastEmbedder: Embedding model instance.
@@ -36,14 +36,14 @@ def get_embedding_model(
         model_dir
         or (
             user_data_path('persona', 'jasper_ginn', ensure_exists=True)
-            / 'embeddings/minilm-l6-v2-quantized'
+            / 'embeddings/minilm-l6-v2-persona-ft-q8'
         )
     )
     model_dir.mkdir(parents=True, exist_ok=True)
     if not sorted(os.listdir(str(model_dir))) == [
         'config.json',
-        'model_quantized.onnx',
-        'ort_config.json',
+        'model.onnx',
+        'model.onnx.data',
         'special_tokens_map.json',
         'tokenizer.json',
         'tokenizer_config.json',
@@ -61,8 +61,8 @@ class EmbeddingDownloader:
         """If not present, will download the model to the data directory"""
         self._logger = logging.getLogger('persona.embedder.EmbeddingDownloader')
         self._persona_data_dir = user_data_path('persona', 'jasper_ginn', ensure_exists=True)
-        self._model_dir = 'embeddings/minilm-l6-v2-quantized'
-        self._model_url = 'https://github.com/JasperHG90/persona/raw/refs/heads/main/assets/minilm-l6-v2-quantized.zip'
+        self._model_dir = 'embeddings/minilm-l6-v2-persona-ft-q8'
+        self._model_url = 'https://github.com/JasperHG90/persona/raw/refs/heads/main/assets/minilm-l6-v2-persona-ft-q8.zip'
 
     @property
     def model_dir(self) -> plb.Path:

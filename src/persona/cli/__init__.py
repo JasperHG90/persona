@@ -1,24 +1,25 @@
-import os
-import uuid
+import asyncio
 import logging
-import itertools
 from typing import cast
 from typing_extensions import Annotated
 import pathlib as plb
 
 import typer
 import yaml
-import frontmatter
 from box import Box
 from rich import print
 from pydantic.v1.utils import deep_update
+from fsspec.implementations.asyn_wrapper import AsyncFileSystemWrapper
+from fsspec.implementations.local import LocalFileSystem
+from fsspec.asyn import AsyncFileSystem
 
 from .roles import app as roles_app
 from .skills import app as skills_app
 from .cache import app as cache_app
 from .mcp import app as mcp_app
 from .config import app as config_app
-from persona.storage import IndexEntry, get_file_store_backend, get_meta_store_backend
+from .utils import _template_producer, _embedding_consumer
+from persona.storage import get_file_store_backend, get_meta_store_backend
 from persona.config import parse_persona_config, PersonaConfig
 from persona.embedder import get_embedding_model
 
@@ -124,42 +125,33 @@ def reindex(ctx: typer.Context):
     meta_store = get_meta_store_backend(_config.meta_store, read_only=False)
     embedder = get_embedding_model()
     _path = _config.root
-    index = {
-        'skills': [],
-        'roles': [],
-    }
-    logger.info(f'Re-indexing templates from path: {_path}')
-    for template in itertools.chain(
-        target_file_store._fs.glob(f'{_path}/**/SKILL.md'),
-        target_file_store._fs.glob(f'{_path}/**/ROLE.md'),
-    ):
-        if target_file_store._fs.isdir(template):
-            continue
-        _template = cast(str, template)
-        content = target_file_store.load(_template).decode('utf-8')
-        fm = frontmatter.loads(content)
-        entry_type = 'skill' if _template.split('/')[-1] == 'SKILL.md' else 'role'
-        fp = _template.rsplit('/', 1)[0] + '/**/*'
-        description = '%s - %s' % (
-            cast(str, fm.metadata['name']),
-            cast(str, fm.metadata['description']),
+
+    async def run_pipeline():
+        # NB: reindexing would gain from async ffspec interface, so we re-init it
+        #  here from the file store backend config instead of implementing an async version
+        #  this batches template frontmatter in an async queue so we can get embeddings in a
+        #  somewhat efficient manner.
+        # NB: Local file system has no async implementation, so we use the async file system wrapper
+        afs = cast(
+            AsyncFileSystem,
+            type(target_file_store._fs)(**target_file_store._fs.storage_options, asynchronous=True),
         )
-        entry = IndexEntry(
-            name=cast(str, fm.metadata['name']),
-            description=description,
-            uuid=uuid.uuid4().hex,  # Random init
-            files=[
-                os.path.relpath(f, _path).replace('../', '').replace('.persona/', '')
-                for f in cast(list[str], target_file_store._fs.glob(fp))
-            ],  # All files in template
-            embedding=embedder.encode([description]).squeeze().tolist(),
-        )
-        index[entry_type + 's'].append(entry.model_dump(exclude_none=True))
+        if isinstance(target_file_store._fs, LocalFileSystem):
+            afs = AsyncFileSystemWrapper(afs)
+        queue = asyncio.Queue(maxsize=128)
+        producer_task = asyncio.create_task(_template_producer(afs, _path, queue))
+        consumer_task = asyncio.create_task(_embedding_consumer(queue, embedder, batch_size=32))
+        await asyncio.gather(producer_task)
+        results = await consumer_task
+        return results
+
+    index = asyncio.run(run_pipeline())
+
     logger.info('Dropping and recreating index tables...')
     with meta_store.open(bootstrap=True) as connected:
         with connected.session() as session:
             session.truncate_tables()
-            # NB: will be persisted to storage when _connection_ is closed
+            # NB: will be persisted to storage when **connection** is closed
             # for duckdb, since session-based database is memory
             for k, v in index.items():
                 logger.info(f'Updating table: {k} with {len(v)} entries.')

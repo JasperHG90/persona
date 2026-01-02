@@ -3,9 +3,19 @@ from typing_extensions import Annotated
 
 import typer
 from rich.console import Console
+import asyncio
+import os
+import uuid
+import itertools
+from typing import cast
 
-from persona.cache import download_and_cache_github_repo
+import frontmatter
+from fsspec.asyn import AsyncFileSystem
+
+from persona.storage import IndexEntry
+from persona.embedder import FastEmbedder
 from persona.types import personaTypes
+from persona.cache import download_and_cache_github_repo
 from persona.cli.commands import copy_template, list_templates, remove_template, match_query
 
 console = Console()
@@ -104,3 +114,88 @@ def create_cli(name: str, template_type: personaTypes, help_string: str, descrip
         match_query(ctx, query, template_type)
 
     return app
+
+
+async def _template_producer(afs: AsyncFileSystem, root: str, queue: asyncio.Queue):
+    """Async read templates from the storage backend and process frontmatter
+
+    Args:
+        afs (AsyncFileSystem): Async file system (ffspec)
+        root (str): Root path to search for templates
+        queue (asyncio.Queue): Queue to put processed templates into
+    """
+    patterns = [f'{root}/**/SKILL.md', f'{root}/**/ROLE.md']
+    glob_results = await asyncio.gather(*(afs._glob(p) for p in patterns))
+    for template in list(itertools.chain(*glob_results)):
+        if await afs._isdir(template):
+            continue
+        _template = cast(str, template)
+        # NB: this is always text content
+        content = cast(bytes, await afs._cat_file(_template)).decode('utf-8')
+        fm = await asyncio.to_thread(frontmatter.loads, content)
+        entry_type = 'skills' if _template.split('/')[-1] == 'SKILL.md' else 'roles'
+        fp = _template.rsplit('/', 1)[0] + '/**/*'
+        description = '%s - %s' % (
+            cast(str, fm.metadata['name']),
+            cast(str, fm.metadata['description']),
+        )
+        related_files_raw = cast(list[str], await afs._glob(fp))
+        cleaned_files = [
+            os.path.relpath(f, root).replace('../', '').replace('.persona/', '')
+            for f in related_files_raw
+        ]
+        entry = IndexEntry(
+            name=cast(str, fm.metadata['name']),
+            description=description,
+            uuid=uuid.uuid4().hex,  # Random init
+            type=entry_type,
+            files=cleaned_files,
+        )
+        await queue.put(entry)
+    await queue.put(None)
+
+
+async def _embedding_consumer(
+    queue: asyncio.Queue,
+    embedder: FastEmbedder,
+    batch_size: int = 32,
+) -> dict[str, list[dict]]:
+    """Consume template frontmatter and embed them in batches of size 32
+
+    Args:
+        queue (asyncio.Queue): Queue to get processed templates from
+        embedder (FastEmbedder): Embedder to encode descriptions
+        batch_size (int, optional): Batch size for embedding. Defaults to 32.
+
+    Returns:
+        dict[str, list[dict]]: Dictionary with keys 'skills' and 'roles' containing lists of embedded templates.
+    """
+    index = {
+        'skills': [],
+        'roles': [],
+    }
+    batch: list[IndexEntry] = []
+
+    async def process_batch(current_batch: list[IndexEntry]):
+        if not current_batch:
+            return
+        descriptions = [cast(str, entry.description) for entry in current_batch]
+        embeddings = await asyncio.to_thread(embedder.encode, descriptions)
+        for item, embedding in zip(current_batch, embeddings):
+            item.update('embedding', embedding.tolist())
+            index_type = cast(personaTypes, item.type)
+            index[index_type].append(item.model_dump(exclude_none=True, exclude={'type'}))
+
+    while True:
+        item = await queue.get()
+        if item is None:
+            # Process any remaining items in the batch
+            await process_batch(batch)
+            break
+        batch.append(item)
+        if len(batch) >= batch_size:
+            await process_batch(batch)
+            batch = []
+
+        queue.task_done()
+    return index
