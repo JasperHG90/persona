@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field
+import datetime as dt
+
+from pydantic import BaseModel, Field, field_serializer
 
 
 class IndexEntry(BaseModel):
@@ -27,9 +29,22 @@ class IndexEntry(BaseModel):
         default=None,
         description='The embedding vector representing the template for similarity searches',
     )
+    tags: list[str] | None = Field(
+        default=None,
+        description='List of tags associated with the template',
+        examples=[['assistant', 'helpful', 'task-management']],
+    )
     type: str | None = Field(
         default=None, description='The type of the template', examples=['roles', 'skills']
     )
+    date_created: dt.datetime = Field(
+        default_factory=lambda: dt.datetime.now(dt.timezone.utc),
+        description='The timestamp when the template was created',
+    )
+
+    @field_serializer('date_created')
+    def serialize_date_created(self, date_created: dt.datetime) -> str:
+        return date_created.isoformat()
 
     def update(self, key: str, value: list[float] | list[str] | str | None):
         setattr(self, key, value)

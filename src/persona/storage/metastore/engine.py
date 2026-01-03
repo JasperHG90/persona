@@ -123,7 +123,9 @@ class CursorLikeMetaStoreEngine(Generic[T], metaclass=ABCMeta):
 
 
 class DuckDBMetaStoreEngine(CursorLikeMetaStoreEngine[DuckDBMetaStoreConfig]):
-    def __init__(self, config: DuckDBMetaStoreConfig, read_only: bool = True):
+    def __init__(
+        self, config: DuckDBMetaStoreConfig, read_only: bool = True, tables: list[str] | None = None
+    ):
         super().__init__(config=config)
 
         self._conn: duckdb.DuckDBPyConnection | None = None
@@ -131,14 +133,18 @@ class DuckDBMetaStoreEngine(CursorLikeMetaStoreEngine[DuckDBMetaStoreConfig]):
             f'Engine is in {"read only" if read_only else "write"} mode. Updates {"will not" if read_only else "will"} be persisted ...'
         )
         self._read_only = read_only
+        if tables is None:
+            self._tables = ['roles', 'skills']
+        else:
+            self._tables = tables
 
     def bootstrap(self):
         """Bootstraps the in-memory database using existing indexes if available."""
         if self._conn is None:
             raise RuntimeError('No database connection; call connect() first.')
-        for table in ['roles', 'skills']:
+        for table in self._tables:
             self._conn.execute(
-                f'CREATE TABLE {table} (name VARCHAR PRIMARY KEY, description VARCHAR, uuid VARCHAR(32), files VARCHAR[], embedding FLOAT[384])'
+                f'CREATE TABLE {table} (name VARCHAR PRIMARY KEY, date_created TIMESTAMP, description VARCHAR, uuid VARCHAR(32), files VARCHAR[], embedding FLOAT[384])'
             )
             path_ = getattr(self._config, f'{table}_index_path')
             try:
@@ -154,7 +160,7 @@ class DuckDBMetaStoreEngine(CursorLikeMetaStoreEngine[DuckDBMetaStoreConfig]):
         """Exports the in-memory database tables to disk."""
         if self._conn is None:
             raise RuntimeError('No database connection; call connect() first.')
-        for table in ['roles', 'skills']:
+        for table in self._tables:
             path_ = getattr(self._config, f'{table}_index_path')
             self._logger.debug(f'Exporting {table} index to disk at: {path_} ...')
             self._conn.execute(f"""COPY "{table}" TO '{path_}' (FORMAT PARQUET);""")
