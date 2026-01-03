@@ -22,7 +22,7 @@ from persona.cli.commands import copy_template, list_templates, remove_template,
 console = Console()
 
 
-def create_cli(name: str, template_type: personaTypes, help_string: str, description_string: str):
+def create_cli(name: str, template_type: str, help_string: str, description_string: str):
     app = typer.Typer(
         name=name,
         help=help_string,
@@ -131,7 +131,7 @@ async def _template_producer(afs: AsyncFileSystem, root: str, queue: asyncio.Que
         if await afs._isdir(template):
             continue
         _template = cast(str, template)
-        entry_type = 'skills' if _template.split('/')[-1] == 'SKILL.md' else 'roles'
+        entry_type = f'{_template.split("/")[-1].replace(".md", "").lower()}s'
         # Check for a manifest file and read that first
         manifest_path = os.path.join(_template.rsplit('/', 1)[0], '.manifest.json')
         if await afs._exists(manifest_path):

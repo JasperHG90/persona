@@ -1,12 +1,11 @@
 from typing import Any
 
 from persona.embedder import FastEmbedder
-from persona.types import personaTypes
 from persona.storage import BaseMetaStoreSession
 
 
 def get_templates_data(
-    meta_store_session: BaseMetaStoreSession, root: str, type: personaTypes
+    meta_store_session: BaseMetaStoreSession, root: str, type: str
 ) -> list[dict[str, Any]]:
     """Get the templates currently available for a type as a list of dictionaries.
 
@@ -37,7 +36,7 @@ def search_templates_data(
     embedder: FastEmbedder,
     meta_store_session: BaseMetaStoreSession,
     root: str,
-    type: personaTypes,
+    type: str,
     limit: int = 3,
     max_cosine_distance: float = 0.8,
 ) -> list[dict[str, Any]]:
@@ -46,7 +45,7 @@ def search_templates_data(
     Args:
         config (PersonaConfig): Persona configuration
         query (str): query string to match
-        type (personaTypes): type of template to search in
+        type (str): type of template to search in
     """
     query_vector = embedder.encode([query]).squeeze().tolist()
     results = meta_store_session.search(

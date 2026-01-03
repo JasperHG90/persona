@@ -39,14 +39,12 @@ class BrowserScreen(Static):
                     cast(FastEmbedder, getattr(self.app, 'embedder')),
                     meta_store_session,
                     config.root,
-                    'roles' if self.type == 'roles' else 'skills',
+                    self.type,
                     limit=config.meta_store.similarity_search.max_results,
                     max_cosine_distance=config.meta_store.similarity_search.max_cosine_distance,
                 )
             else:
-                results = get_templates_data(
-                    meta_store_session, config.root, 'roles' if self.type == 'roles' else 'skills'
-                )
+                results = get_templates_data(meta_store_session, config.root, self.type)
 
         self.app.call_from_thread(self.update_table, results)
 

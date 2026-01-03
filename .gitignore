@@ -166,3 +166,5 @@ logs
 !src/persona/mcp/prompts
 
 .persona
+
+!src/persona/data

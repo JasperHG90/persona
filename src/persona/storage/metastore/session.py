@@ -3,7 +3,6 @@ from abc import abstractmethod, ABCMeta
 
 import pyarrow as pa
 
-from persona.types import personaTypes
 from persona.storage.metastore.utils import CursorLike
 
 
@@ -15,11 +14,11 @@ class BaseMetaStoreSession(metaclass=ABCMeta):
         )
 
     @abstractmethod
-    def upsert(self, table_name: personaTypes, data: list[dict[str, str | list[str]]]):
+    def upsert(self, table_name: str, data: list[dict[str, str | list[str]]]):
         """Insert or update a record
 
         Args:
-            table_name (personaTypes): table in which to upsert the record
+            table_name (str): table in which to upsert the record. Should be one of persona.types.personaTypes
             data (list[dict[str, str  |  list[str]]]): either a single record or a list of records to upsert
         """
         ...
@@ -30,21 +29,21 @@ class BaseMetaStoreSession(metaclass=ABCMeta):
         ...
 
     @abstractmethod
-    def remove(self, table_name: personaTypes, keys: list[str]) -> None:
+    def remove(self, table_name: str, keys: list[str]) -> None:
         """Deletes one or multiple records from the metastore
 
         Args:
-            table_name (personaTypes): table from which to delete the records
+            table_name (str): table from which to delete the records. Should be one of persona.types.personaTypes
             keys (list[str]): list of keys ('names') identifying the records to delete
         """
         ...
 
     @abstractmethod
-    def exists(self, table_name: personaTypes, key: str) -> bool:
+    def exists(self, table_name: str, key: str) -> bool:
         """Checks if a records exists
 
         Args:
-            table_name (personaTypes): table in which to check for existence
+            table_name (str): table in which to check for existence. Should be one of persona.types.personaTypes
             key (str): key ('name' field) of the record to check for existence
 
         Returns:
@@ -54,12 +53,12 @@ class BaseMetaStoreSession(metaclass=ABCMeta):
 
     @abstractmethod
     def get_one(
-        self, table_name: personaTypes, key: str, column_filter: list[str] | None = None
+        self, table_name: str, key: str, column_filter: list[str] | None = None
     ) -> pa.Table:
         """Retrieve a single record
 
         Args:
-            table_name (personaTypes): name of the table from which to retrieve the record
+            table_name (str): name of the table from which to retrieve the record. Should be one of persona.types.personaTypes
             key (str): key ('name' field) of the record to retrieve
             column_filter (list[str] | None, optional): list of columns to retrieve. Defaults to None.
 
@@ -71,14 +70,14 @@ class BaseMetaStoreSession(metaclass=ABCMeta):
     @abstractmethod
     def get_many(
         self,
-        table_name: personaTypes,
+        table_name: str,
         row_filter: list[str] | None = None,
         column_filter: list[str] | None = None,
     ) -> pa.Table:
         """Retrieve multiple records
 
         Args:
-            table_name (personaTypes): name of the table from which to retrieve the records
+            table_name (str): name of the table from which to retrieve the records. Should be one of persona.types.personaTypes
             row_filter (list[str] | None, optional): list of keys ('name' fields) of the records to retrieve. Defaults to None.
             column_filter (list[str] | None, optional): list of columns to retrieve. Defaults to None.
 
@@ -91,7 +90,7 @@ class BaseMetaStoreSession(metaclass=ABCMeta):
     def search(
         self,
         query: list[float],
-        table_name: personaTypes,
+        table_name: str,
         column_filter: list[str] | None = None,
         limit: int = 5,
         max_cosine_distance: float = 0.8,
@@ -100,7 +99,7 @@ class BaseMetaStoreSession(metaclass=ABCMeta):
 
         Args:
             query (list[float]): query embedding vector
-            table_name (personaTypes): name of the table to search in
+            table_name (str): name of the table to search in. Should be one of persona.types.personaTypes
             limit (int, optional): maximum number of results to return. Defaults to 5.
             max_cosine_distance (float | None, optional): maximum cosine distance for filtering results. Defaults to None.
 
@@ -119,7 +118,7 @@ class CursorLikeMetaStoreSession(BaseMetaStoreSession):
             columns = '*'
         return columns
 
-    def upsert(self, table_name: personaTypes, data: list[dict[str, str | list[str]]]):
+    def upsert(self, table_name: str, data: list[dict[str, str | list[str]]]):
         sql = f'INSERT OR REPLACE INTO "{table_name}" (name, description, uuid, files, embedding) VALUES ($name, $description, $uuid, $files, $embedding)'
         self._cursor.executemany(sql, data)
 
@@ -127,24 +126,24 @@ class CursorLikeMetaStoreSession(BaseMetaStoreSession):
         sql = 'TRUNCATE roles; TRUNCATE skills;'
         self._cursor.execute(sql)
 
-    def remove(self, table_name: personaTypes, keys: list[str]) -> None:
+    def remove(self, table_name: str, keys: list[str]) -> None:
         sql = f'DELETE FROM "{table_name}" WHERE name = ANY(?)'
         self._cursor.execute(sql, [keys])
 
-    def exists(self, table_name: personaTypes, key: str) -> bool:
+    def exists(self, table_name: str, key: str) -> bool:
         sql = f'SELECT 1 FROM "{table_name}" WHERE name = ? LIMIT 1'
         result = self._cursor.execute(sql, [key]).fetchone()
         return result is not None
 
     def get_one(
-        self, table_name: personaTypes, key: str, column_filter: list[str] | None = None
+        self, table_name: str, key: str, column_filter: list[str] | None = None
     ) -> pa.Table:
         sql = f'SELECT {self._get_column_filter(column_filter)} FROM "{table_name}" WHERE name = ?'
         return self._cursor.execute(sql, [key]).fetch_arrow_table()
 
     def get_many(
         self,
-        table_name: personaTypes,
+        table_name: str,
         row_filter: list[str] | None = None,
         column_filter: list[str] | None = None,
     ) -> pa.Table:
@@ -158,7 +157,7 @@ class CursorLikeMetaStoreSession(BaseMetaStoreSession):
     def search(
         self,
         query: list[float],
-        table_name: personaTypes,
+        table_name: str,
         column_filter: list[str] | None = None,
         limit: int = 5,
         max_cosine_distance: float = 0.8,

@@ -10,18 +10,17 @@ from persona.storage import get_file_store_backend, get_meta_store_backend, Inde
 from persona.templates import TemplateFile, Template
 from persona.embedder import get_embedding_model
 from persona.utils import get_templates_data, search_templates_data
-from persona.types import personaTypes
 
 console = Console()
 
 
-def match_query(ctx: typer.Context, query: str, type: personaTypes):
+def match_query(ctx: typer.Context, query: str, type: str):
     """Match a query based on the description of a template
 
     Args:
         ctx (typer.Context): Typer context
         query (str): query string to match
-        type (personaTypes): type of template to search in
+        type (str): type of template to search in
     """
     config: PersonaConfig = ctx.obj['config']
     meta_store = get_meta_store_backend(config.meta_store, read_only=True)
@@ -50,12 +49,12 @@ def match_query(ctx: typer.Context, query: str, type: personaTypes):
     console.print(table)
 
 
-def list_templates(ctx: typer.Context, type: personaTypes):
+def list_templates(ctx: typer.Context, type: str):
     """List the templates currently available for a type
 
     Args:
         ctx (typer.Context): Typer context
-        type (personaTypes): type of template to list
+        type (str): type of template to list
     """
     config: PersonaConfig = ctx.obj['config']
     meta_store = get_meta_store_backend(config.meta_store, read_only=True)
@@ -78,7 +77,7 @@ def copy_template(
     path: plb.Path,
     name: str | None,
     description: str | None,
-    type: personaTypes,
+    type: str,
 ):
     """Copy a template from a local path to the target file store.
 
@@ -87,7 +86,7 @@ def copy_template(
         path (plb.Path): Path to the template directory
         name (str | None): Name of the template. Defaults to None. If None, then we try to infer it from the template frontmatter.
         description (str | None): Description of the template. Defaults to None. If None, then we try to infer it from the template frontmatter.
-        type (personaTypes): Type of the template
+        type (str): Type of the template
     """
     config: PersonaConfig = ctx.obj['config']
     target_file_store = get_file_store_backend(config.file_store)
@@ -103,13 +102,13 @@ def copy_template(
         )
 
 
-def remove_template(ctx: typer.Context, name: str, type: personaTypes):
+def remove_template(ctx: typer.Context, name: str, type: str):
     """Remove an existing template
 
     Args:
         ctx (typer.Context): Typer context
         name (str): Name of the template to remove
-        type (personaTypes): Type of the template to remove
+        type (str): Type of the template to remove
 
     Raises:
         typer.Exit: If the template does not exist

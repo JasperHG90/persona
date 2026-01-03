@@ -1,0 +1,630 @@
+{"name": "Python", "facet": "Hard Skill", "context": "Technical skill: Python programming language and scripting"}
+{"name": "Data Engineering", "facet": "Hard Skill", "context": "Technical skill: Data engineering and pipeline architecture"}
+{"name": "Machine Learning", "facet": "Hard Skill", "context": "Technical skill: Machine learning and predictive modeling"}
+{"name": "Fintech", "facet": "Domain", "context": "Industry vertical: Financial technology and digital banking"}
+{"name": "Senior", "facet": "Seniority", "context": "Job seniority level: Senior professional experience"}
+{"name": "Lead", "facet": "Seniority", "context": "Job seniority level: Team lead or technical lead"}
+{"name": "Project Management", "facet": "Hard Skill", "context": "Technical skill: Project management and coordination"}
+{"name": "Healthcare", "facet": "Domain", "context": "Industry vertical: Healthcare and medical services"}
+{"name": "Cloud Computing", "facet": "Hard Skill", "context": "Technical skill: Cloud computing and infrastructure"}
+{"name": "AWS", "facet": "Hard Skill", "context": "Technical skill: Amazon Web Services cloud platform"}
+{"name": "Mentorship", "facet": "Soft Skill", "context": "Professional competency: Mentorship and coaching"}
+{"name": "Strategic Planning", "facet": "Soft Skill", "context": "Professional competency: Strategic planning and vision"}
+{"name": "SQL", "facet": "Hard Skill", "context": "Technical skill: SQL database querying and management"}
+{"name": "React", "facet": "Hard Skill", "context": "Technical skill: React.js frontend development"}
+{"name": "Cybersecurity", "facet": "Domain", "context": "Industry vertical: Cybersecurity and information security"}
+{"name": "Full Stack", "facet": "Role", "context": "Professional role: Full stack software developer"}
+{"name": "DevOps", "facet": "Hard Skill", "context": "Technical skill: DevOps and continuous integration"}
+{"name": "Agile", "facet": "Soft Skill", "context": "Professional competency: Agile methodology and scrum"}
+{"name": "Artificial Intelligence", "facet": "Hard Skill", "context": "Technical skill: Artificial intelligence and neural networks"}
+{"name": "Natural Language Processing", "facet": "Hard Skill", "context": "Technical skill: Natural language processing and text analysis"}
+{"name": "E-commerce", "facet": "Domain", "context": "Industry vertical: E-commerce and online retail"}
+{"name": "Product Manager", "facet": "Role", "context": "Professional role: Product management and strategy"}
+{"name": "UX Design", "facet": "Hard Skill", "context": "Technical skill: User experience design and wireframing"}
+{"name": "Director", "facet": "Seniority", "context": "Job seniority level: Director or executive management"}
+{"name": "SaaS", "facet": "Domain", "context": "Industry vertical: Software as a Service business model"}
+{"name": "Docker", "facet": "Hard Skill", "context": "Technical skill: Docker containerization"}
+{"name": "Kubernetes", "facet": "Hard Skill", "context": "Technical skill: Kubernetes orchestration"}
+{"name": "Public Speaking", "facet": "Soft Skill", "context": "Professional competency: Public speaking and presentation"}
+{"name": "Data Visualization", "facet": "Hard Skill", "context": "Technical skill: Data visualization and dashboarding"}
+{"name": "Tableau", "facet": "Hard Skill", "context": "Technical skill: Tableau analytics software"}
+{"name": "Digital Marketing", "facet": "Domain", "context": "Industry vertical: Digital marketing and advertising"}
+{"name": "SEO", "facet": "Hard Skill", "context": "Technical skill: Search engine optimization"}
+{"name": "Java", "facet": "Hard Skill", "context": "Technical skill: Java programming language"}
+{"name": "C++", "facet": "Hard Skill", "context": "Technical skill: C plus plus systems programming"}
+{"name": "Go", "facet": "Hard Skill", "context": "Technical skill: Go programming language (Golang)"}
+{"name": "Rust", "facet": "Hard Skill", "context": "Technical skill: Rust systems programming"}
+{"name": "TypeScript", "facet": "Hard Skill", "context": "Technical skill: TypeScript web development"}
+{"name": "Blockchain", "facet": "Hard Skill", "context": "Technical skill: Blockchain technology and smart contracts"}
+{"name": "Crypto", "facet": "Domain", "context": "Industry vertical: Cryptocurrency and decentralized finance"}
+{"name": "Staff Engineer", "facet": "Seniority", "context": "Job seniority level: Staff or principal engineer"}
+{"name": "Sustainability", "facet": "Domain", "context": "Industry vertical: Environmental sustainability and green energy"}
+{"name": "Renewable Energy", "facet": "Domain", "context": "Industry vertical: Renewable energy and solar power"}
+{"name": "Biotechnology", "facet": "Domain", "context": "Industry vertical: Biotechnology and life sciences"}
+{"name": "Pharmacy", "facet": "Domain", "context": "Industry vertical: Pharmacy and pharmaceutical industry"}
+{"name": "Logistics", "facet": "Domain", "context": "Industry vertical: Logistics and supply chain management"}
+{"name": "Aerospace", "facet": "Domain", "context": "Industry vertical: Aerospace and aviation engineering"}
+{"name": "Robotics", "facet": "Hard Skill", "context": "Technical skill: Robotics and automation"}
+{"name": "Embedded Systems", "facet": "Hard Skill", "context": "Technical skill: Embedded systems and firmware"}
+{"name": "Mobile Development", "facet": "Hard Skill", "context": "Technical skill: Mobile application development"}
+{"name": "iOS", "facet": "Hard Skill", "context": "Technical skill: iOS and Apple mobile development"}
+{"name": "Android", "facet": "Hard Skill", "context": "Technical skill: Android mobile development"}
+{"name": "Salesforce", "facet": "Hard Skill", "context": "Technical skill: Salesforce CRM management"}
+{"name": "Customer Success", "facet": "Role", "context": "Professional role: Customer success and relationship management"}
+{"name": "HR Business Partner", "facet": "Role", "context": "Professional role: Human resources business partner"}
+{"name": "Talent Acquisition", "facet": "Hard Skill", "context": "Technical skill: Talent acquisition and recruiting"}
+{"name": "Financial Analysis", "facet": "Hard Skill", "context": "Technical skill: Financial analysis and modeling"}
+{"name": "Risk Management", "facet": "Hard Skill", "context": "Technical skill: Risk management and mitigation"}
+{"name": "Compliance", "facet": "Hard Skill", "context": "Technical skill: Regulatory compliance and legal standards"}
+{"name": "Accounting", "facet": "Hard Skill", "context": "Technical skill: Accounting and bookkeeping"}
+{"name": "Auditing", "facet": "Hard Skill", "context": "Technical skill: Internal and external auditing"}
+{"name": "Real Estate", "facet": "Domain", "context": "Industry vertical: Real estate and property management"}
+{"name": "Construction", "facet": "Domain", "context": "Industry vertical: Construction and civil engineering"}
+{"name": "Interior Design", "facet": "Hard Skill", "context": "Technical skill: Interior design and space planning"}
+{"name": "Content Strategy", "facet": "Hard Skill", "context": "Technical skill: Content strategy and copywriting"}
+{"name": "Growth Hacking", "facet": "Hard Skill", "context": "Technical skill: Growth hacking and user acquisition"}
+{"name": "Event Planning", "facet": "Hard Skill", "context": "Technical skill: Event planning and coordination"}
+{"name": "Journalism", "facet": "Domain", "context": "Industry vertical: Journalism and news media"}
+{"name": "Video Editing", "facet": "Hard Skill", "context": "Technical skill: Video editing and post-production"}
+{"name": "Adobe Creative Cloud", "facet": "Hard Skill", "context": "Technical skill: Adobe Creative Cloud and graphic design"}
+{"name": "Figma", "facet": "Hard Skill", "context": "Technical skill: Figma interface design"}
+{"name": "Conflict Resolution", "facet": "Soft Skill", "context": "Professional competency: Conflict resolution and mediation"}
+{"name": "Negotiation", "facet": "Soft Skill", "context": "Professional competency: Negotiation and bargaining"}
+{"name": "Critical Thinking", "facet": "Soft Skill", "context": "Professional competency: Critical thinking and analysis"}
+{"name": "Emotional Intelligence", "facet": "Soft Skill", "context": "Professional competency: Emotional intelligence and empathy"}
+{"name": "Microservices", "facet": "Hard Skill", "context": "Technical skill: Microservices architecture"}
+{"name": "Serverless", "facet": "Hard Skill", "context": "Technical skill: Serverless computing and FaaS"}
+{"name": "GraphQL", "facet": "Hard Skill", "context": "Technical skill: GraphQL API design"}
+{"name": "NoSQL", "facet": "Hard Skill", "context": "Technical skill: NoSQL databases and MongoDB"}
+{"name": "ETL Pipelines", "facet": "Hard Skill", "context": "Technical skill: ETL data pipelines"}
+{"name": "Data Warehousing", "facet": "Hard Skill", "context": "Technical skill: Data warehousing and Snowflake"}
+{"name": "Apache Spark", "facet": "Hard Skill", "context": "Technical skill: Apache Spark big data processing"}
+{"name": "Kafka", "facet": "Hard Skill", "context": "Technical skill: Apache Kafka stream processing"}
+{"name": "Terraform", "facet": "Hard Skill", "context": "Technical skill: Terraform infrastructure as code"}
+{"name": "Ansible", "facet": "Hard Skill", "context": "Technical skill: Ansible configuration management"}
+{"name": "Unity", "facet": "Hard Skill", "context": "Technical skill: Unity game engine development"}
+{"name": "Unreal Engine", "facet": "Hard Skill", "context": "Technical skill: Unreal Engine development"}
+{"name": "AR/VR", "facet": "Domain", "context": "Industry vertical: Augmented and virtual reality"}
+{"name": "EdTech", "facet": "Domain", "context": "Industry vertical: Education technology"}
+{"name": "HealthTech", "facet": "Domain", "context": "Industry vertical: Health technology"}
+{"name": "PropTech", "facet": "Domain", "context": "Industry vertical: Property technology"}
+{"name": "InsurTech", "facet": "Domain", "context": "Industry vertical: Insurance technology"}
+{"name": "LegalTech", "facet": "Domain", "context": "Industry vertical: Legal technology"}
+{"name": "AdTech", "facet": "Domain", "context": "Industry vertical: Advertising technology"}
+{"name": "B2B Sales", "facet": "Hard Skill", "context": "Technical skill: B2B sales and business development"}
+{"name": "Account Management", "facet": "Hard Skill", "context": "Technical skill: Key account management"}
+{"name": "Partnerships", "facet": "Hard Skill", "context": "Technical skill: Strategic partnerships and alliances"}
+{"name": "Venture Capital", "facet": "Domain", "context": "Industry vertical: Venture capital and private equity"}
+{"name": "Investment Banking", "facet": "Domain", "context": "Industry vertical: Investment banking"}
+{"name": "Quantitative Trading", "facet": "Domain", "context": "Industry vertical: Quantitative trading and finance"}
+{"name": "Data Privacy", "facet": "Hard Skill", "context": "Technical skill: Data privacy and GDPR compliance"}
+{"name": "Quality Assurance", "facet": "Hard Skill", "context": "Technical skill: Quality assurance and testing"}
+{"name": "Site Reliability", "facet": "Role", "context": "Professional role: Site reliability engineer (SRE)"}
+{"name": "Database Admin", "facet": "Role", "context": "Professional role: Database administrator"}
+{"name": "Network Engineer", "facet": "Role", "context": "Professional role: Network engineer"}
+{"name": "Solutions Architect", "facet": "Role", "context": "Professional role: Solutions architect"}
+{"name": "Technical Writer", "facet": "Role", "context": "Professional role: Technical writer"}
+{"name": "Scrum Master", "facet": "Role", "context": "Professional role: Scrum master"}
+{"name": "Creative Director", "facet": "Role", "context": "Professional role: Creative director"}
+{"name": "Marketing Executive", "facet": "Role", "context": "Professional role: Marketing executive"}
+{"name": "Chief Technology Officer", "facet": "Role", "context": "Professional role: Chief Technology Officer (CTO)"}
+{"name": "Founder", "facet": "Role", "context": "Professional role: Startup founder"}
+{"name": "Public Relations", "facet": "Hard Skill", "context": "Technical skill: Public relations and media management"}
+{"name": "Copywriting", "facet": "Hard Skill", "context": "Technical skill: Copywriting and content creation"}
+{"name": "User Research", "facet": "Hard Skill", "context": "Technical skill: User research and testing"}
+{"name": "A/B Testing", "facet": "Hard Skill", "context": "Technical skill: A/B testing and experimentation"}
+{"name": "Google Analytics", "facet": "Hard Skill", "context": "Technical skill: Google Analytics and web tracking"}
+{"name": "HubSpot", "facet": "Hard Skill", "context": "Technical skill: HubSpot marketing automation"}
+{"name": "Social Media Management", "facet": "Hard Skill", "context": "Technical skill: Social media management"}
+{"name": "Influence Marketing", "facet": "Hard Skill", "context": "Technical skill: Influencer marketing"}
+{"name": "Supply Chain", "facet": "Domain", "context": "Industry vertical: Supply chain and logistics"}
+{"name": "E-Learning", "facet": "Domain", "context": "Industry vertical: Online learning and education"}
+{"name": "Fine Art", "facet": "Domain", "context": "Industry vertical: Fine art and museums"}
+{"name": "Hospitality", "facet": "Domain", "context": "Industry vertical: Hospitality and tourism"}
+{"name": "Automotive", "facet": "Domain", "context": "Industry vertical: Automotive industry"}
+{"name": "Telecommunications", "facet": "Domain", "context": "Industry vertical: Telecommunications"}
+{"name": "Semiconductors", "facet": "Domain", "context": "Industry vertical: Semiconductor manufacturing"}
+{"name": "Robotics Engineering", "facet": "Domain", "context": "Industry vertical: Robotics engineering"}
+{"name": "Chemical Engineering", "facet": "Domain", "context": "Industry vertical: Chemical engineering"}
+{"name": "Civil Engineering", "facet": "Domain", "context": "Industry vertical: Civil engineering and infrastructure"}
+{"name": "Mechanical Engineering", "facet": "Domain", "context": "Industry vertical: Mechanical engineering"}
+{"name": "Electrical Engineering", "facet": "Domain", "context": "Industry vertical: Electrical engineering"}
+{"name": "Deep Learning", "facet": "Hard Skill", "context": "Technical skill: Deep learning and neural networks"}
+{"name": "PyTorch", "facet": "Hard Skill", "context": "Technical skill: PyTorch deep learning framework"}
+{"name": "TensorFlow", "facet": "Hard Skill", "context": "Technical skill: TensorFlow machine learning"}
+{"name": "Large Language Models", "facet": "Hard Skill", "context": "Technical skill: Large language models and generative AI"}
+{"name": "Prompt Engineering", "facet": "Hard Skill", "context": "Technical skill: AI prompt engineering"}
+{"name": "OpenAI API", "facet": "Hard Skill", "context": "Technical skill: OpenAI API integration"}
+{"name": "Hugging Face", "facet": "Hard Skill", "context": "Technical skill: Hugging Face transformers library"}
+{"name": "Computer Vision", "facet": "Hard Skill", "context": "Technical skill: Computer vision and image processing"}
+{"name": "Speech Recognition", "facet": "Hard Skill", "context": "Technical skill: Speech recognition and audio analysis"}
+{"name": "Pandas", "facet": "Hard Skill", "context": "Technical skill: Pandas data manipulation"}
+{"name": "NumPy", "facet": "Hard Skill", "context": "Technical skill: NumPy scientific computing"}
+{"name": "R Programming", "facet": "Hard Skill", "context": "Technical skill: R programming for statistics"}
+{"name": "SAS", "facet": "Hard Skill", "context": "Technical skill: SAS statistical analysis"}
+{"name": "MATLAB", "facet": "Hard Skill", "context": "Technical skill: MATLAB numerical computing"}
+{"name": "Biostatistics", "facet": "Hard Skill", "context": "Technical skill: Biostatistics and clinical trials"}
+{"name": "Clinical Trials", "facet": "Hard Skill", "context": "Technical skill: Clinical trial management"}
+{"name": "Regulatory Affairs", "facet": "Hard Skill", "context": "Technical skill: Regulatory affairs in healthcare"}
+{"name": "Patent Law", "facet": "Hard Skill", "context": "Technical skill: Patent law and IP strategy"}
+{"name": "M&A", "facet": "Hard Skill", "context": "Technical skill: Mergers and acquisitions"}
+{"name": "IPO", "facet": "Hard Skill", "context": "Technical skill: Initial public offering process"}
+{"name": "Private Equity", "facet": "Domain", "context": "Industry vertical: Private equity"}
+{"name": "Wealth Management", "facet": "Domain", "context": "Industry vertical: Wealth and asset management"}
+{"name": "Personal Finance", "facet": "Domain", "context": "Industry vertical: Personal finance and investing"}
+{"name": "Mortgage", "facet": "Domain", "context": "Industry vertical: Mortgage and lending"}
+{"name": "Credit Risk", "facet": "Hard Skill", "context": "Technical skill: Credit risk analysis"}
+{"name": "Underwriting", "facet": "Hard Skill", "context": "Technical skill: Insurance and loan underwriting"}
+{"name": "Actuarial Science", "facet": "Hard Skill", "context": "Technical skill: Actuarial science and statistics"}
+{"name": "Claims Adjusting", "facet": "Hard Skill", "context": "Technical skill: Insurance claims adjusting"}
+{"name": "Undergraduate", "facet": "Seniority", "context": "Job seniority level: Undergraduate student"}
+{"name": "Postgraduate", "facet": "Seniority", "context": "Job seniority level: Postgraduate or PhD student"}
+{"name": "Junior Developer", "facet": "Role", "context": "Professional role: Junior software developer"}
+{"name": "Mid-Level Developer", "facet": "Role", "context": "Professional role: Mid-level software developer"}
+{"name": "VP of Engineering", "facet": "Role", "context": "Professional role: Vice President of Engineering"}
+{"name": "Managing Director", "facet": "Role", "context": "Professional role: Managing director"}
+{"name": "Account Executive", "facet": "Role", "context": "Professional role: Account executive in sales"}
+{"name": "Sales Representative", "facet": "Role", "context": "Professional role: Sales representative"}
+{"name": "Brand Ambassador", "facet": "Role", "context": "Professional role: Brand ambassador"}
+{"name": "Office Manager", "facet": "Role", "context": "Professional role: Office manager"}
+{"name": "Executive Assistant", "facet": "Role", "context": "Professional role: Executive assistant"}
+{"name": "Virtual Assistant", "facet": "Role", "context": "Professional role: Virtual assistant"}
+{"name": "Freelancer", "facet": "Role", "context": "Professional role: Freelancer or independent contractor"}
+{"name": "Consultant", "facet": "Role", "context": "Professional role: Management or technical consultant"}
+{"name": "Strategy Consultant", "facet": "Role", "context": "Professional role: Strategy consultant"}
+{"name": "IT Consultant", "facet": "Role", "context": "Professional role: IT consultant"}
+{"name": "Business Development", "facet": "Hard Skill", "context": "Technical skill: Business development and growth"}
+{"name": "Fundraising", "facet": "Hard Skill", "context": "Technical skill: Fundraising and capital raising"}
+{"name": "Grant Writing", "facet": "Hard Skill", "context": "Technical skill: Grant writing for non-profits"}
+{"name": "Non-profit", "facet": "Domain", "context": "Industry vertical: Non-profit and NGO"}
+{"name": "Government", "facet": "Domain", "context": "Industry vertical: Government and public sector"}
+{"name": "Defense", "facet": "Domain", "context": "Industry vertical: Defense and national security"}
+{"name": "Space Tech", "facet": "Domain", "context": "Industry vertical: Space technology and exploration"}
+{"name": "Climate Tech", "facet": "Domain", "context": "Industry vertical: Climate technology"}
+{"name": "Food Tech", "facet": "Domain", "context": "Industry vertical: Food technology and innovation"}
+{"name": "Agriculture", "facet": "Domain", "context": "Industry vertical: Agriculture and farming"}
+{"name": "AgTech", "facet": "Domain", "context": "Industry vertical: Agricultural technology"}
+{"name": "Oceanography", "facet": "Domain", "context": "Industry vertical: Oceanography and marine biology"}
+{"name": "Geology", "facet": "Domain", "context": "Industry vertical: Geology and mining"}
+{"name": "Petroleum", "facet": "Domain", "context": "Industry vertical: Petroleum and gas"}
+{"name": "Metallurgy", "facet": "Domain", "context": "Industry vertical: Metallurgy and materials science"}
+{"name": "Quantum Computing", "facet": "Hard Skill", "context": "Technical skill: Quantum computing and algorithms"}
+{"name": "Nanotechnology", "facet": "Domain", "context": "Industry vertical: Nanotechnology"}
+{"name": "Genomics", "facet": "Hard Skill", "context": "Technical skill: Genomics and DNA sequencing"}
+{"name": "Bioinformatics", "facet": "Hard Skill", "context": "Technical skill: Bioinformatics and data analysis"}
+{"name": "Medical Imaging", "facet": "Hard Skill", "context": "Technical skill: Medical imaging and radiology"}
+{"name": "Psychology", "facet": "Domain", "context": "Industry vertical: Psychology and mental health"}
+{"name": "Counseling", "facet": "Role", "context": "Professional role: Mental health counselor"}
+{"name": "Therapist", "facet": "Role", "context": "Professional role: Physical or mental therapist"}
+{"name": "Nutrition", "facet": "Domain", "context": "Industry vertical: Nutrition and dietetics"}
+{"name": "Fitness", "facet": "Domain", "context": "Industry vertical: Fitness and wellness"}
+{"name": "Sports Management", "facet": "Domain", "context": "Industry vertical: Sports management"}
+{"name": "E-sports", "facet": "Domain", "context": "Industry vertical: Electronic sports (E-sports)"}
+{"name": "Game Design", "facet": "Hard Skill", "context": "Technical skill: Game design and mechanics"}
+{"name": "Level Design", "facet": "Hard Skill", "context": "Technical skill: Level design in video games"}
+{"name": "3D Modeling", "facet": "Hard Skill", "context": "Technical skill: 3D modeling and rendering"}
+{"name": "Blender", "facet": "Hard Skill", "context": "Technical skill: Blender 3D software"}
+{"name": "Maya", "facet": "Hard Skill", "context": "Technical skill: Autodesk Maya 3D software"}
+{"name": "ZBrush", "facet": "Hard Skill", "context": "Technical skill: ZBrush digital sculpting"}
+{"name": "VFX", "facet": "Hard Skill", "context": "Technical skill: Visual effects (VFX)"}
+{"name": "Compositing", "facet": "Hard Skill", "context": "Technical skill: Video compositing"}
+{"name": "Color Grading", "facet": "Hard Skill", "context": "Technical skill: Video color grading"}
+{"name": "Sound Design", "facet": "Hard Skill", "context": "Technical skill: Sound design and audio engineering"}
+{"name": "Mixing", "facet": "Hard Skill", "context": "Technical skill: Audio mixing"}
+{"name": "Mastering", "facet": "Hard Skill", "context": "Technical skill: Audio mastering"}
+{"name": "Music Production", "facet": "Hard Skill", "context": "Technical skill: Music production and DAW"}
+{"name": "Ableton Live", "facet": "Hard Skill", "context": "Technical skill: Ableton Live music production"}
+{"name": "Logic Pro", "facet": "Hard Skill", "context": "Technical skill: Logic Pro audio workstation"}
+{"name": "Pro Tools", "facet": "Hard Skill", "context": "Technical skill: Pro Tools audio software"}
+{"name": "Photography", "facet": "Hard Skill", "context": "Technical skill: Professional photography"}
+{"name": "Cinematography", "facet": "Hard Skill", "context": "Technical skill: Cinematography and camera operation"}
+{"name": "Directing", "facet": "Hard Skill", "context": "Technical skill: Film and theater directing"}
+{"name": "Screenwriting", "facet": "Hard Skill", "context": "Technical skill: Screenwriting and scriptwriting"}
+{"name": "Acting", "facet": "Role", "context": "Professional role: Actor or performer"}
+{"name": "Voiceover", "facet": "Role", "context": "Professional role: Voiceover artist"}
+{"name": "Broadcasting", "facet": "Domain", "context": "Industry vertical: Broadcasting and radio"}
+{"name": "Podcasting", "facet": "Domain", "context": "Industry vertical: Podcasting and digital audio"}
+{"name": "Library Science", "facet": "Domain", "context": "Industry vertical: Library and information science"}
+{"name": "Archiving", "facet": "Hard Skill", "context": "Technical skill: Archiving and records management"}
+{"name": "Museum Studies", "facet": "Domain", "context": "Industry vertical: Museum studies and curation"}
+{"name": "Art History", "facet": "Domain", "context": "Industry vertical: Art history"}
+{"name": "Linguistics", "facet": "Domain", "context": "Industry vertical: Linguistics"}
+{"name": "Translation", "facet": "Hard Skill", "context": "Technical skill: Language translation"}
+{"name": "Interpretation", "facet": "Hard Skill", "context": "Technical skill: Simultaneous interpretation"}
+{"name": "ESL", "facet": "Hard Skill", "context": "Technical skill: English as a second language teaching"}
+{"name": "K-12 Education", "facet": "Domain", "context": "Industry vertical: K-12 primary and secondary education"}
+{"name": "Higher Education", "facet": "Domain", "context": "Industry vertical: Higher education and universities"}
+{"name": "Special Education", "facet": "Domain", "context": "Industry vertical: Special education"}
+{"name": "Curriculum Development", "facet": "Hard Skill", "context": "Technical skill: Curriculum development"}
+{"name": "Instructional Design", "facet": "Hard Skill", "context": "Technical skill: Instructional design"}
+{"name": "Corporate Training", "facet": "Hard Skill", "context": "Technical skill: Corporate training and workshops"}
+{"name": "Public Policy", "facet": "Domain", "context": "Industry vertical: Public policy"}
+{"name": "Political Science", "facet": "Domain", "context": "Industry vertical: Political science"}
+{"name": "International Relations", "facet": "Domain", "context": "Industry vertical: International relations"}
+{"name": "Sociology", "facet": "Domain", "context": "Industry vertical: Sociology"}
+{"name": "Anthropology", "facet": "Domain", "context": "Industry vertical: Anthropology"}
+{"name": "Archaeology", "facet": "Domain", "context": "Industry vertical: Archaeology"}
+{"name": "Geography", "facet": "Domain", "context": "Industry vertical: Geography and GIS"}
+{"name": "GIS", "facet": "Hard Skill", "context": "Technical skill: Geographic information systems (GIS)"}
+{"name": "Remote Sensing", "facet": "Hard Skill", "context": "Technical skill: Remote sensing and satellite imagery"}
+{"name": "Cartography", "facet": "Hard Skill", "context": "Technical skill: Cartography and map making"}
+{"name": "Urban Planning", "facet": "Domain", "context": "Industry vertical: Urban planning and development"}
+{"name": "Transportation Planning", "facet": "Domain", "context": "Industry vertical: Transportation planning"}
+{"name": "Hydrology", "facet": "Domain", "context": "Industry vertical: Hydrology and water management"}
+{"name": "Meteorology", "facet": "Domain", "context": "Industry vertical: Meteorology and weather forecasting"}
+{"name": "Climatology", "facet": "Domain", "context": "Industry vertical: Climatology"}
+{"name": "Forestry", "facet": "Domain", "context": "Industry vertical: Forestry and conservation"}
+{"name": "Ecology", "facet": "Domain", "context": "Industry vertical: Ecology"}
+{"name": "Zoology", "facet": "Domain", "context": "Industry vertical: Zoology"}
+{"name": "Botany", "facet": "Domain", "context": "Industry vertical: Botany"}
+{"name": "Marine Biology", "facet": "Domain", "context": "Industry vertical: Marine biology"}
+{"name": "Microbiology", "facet": "Domain", "context": "Industry vertical: Microbiology"}
+{"name": "Genetics", "facet": "Domain", "context": "Industry vertical: Genetics"}
+{"name": "Immunology", "facet": "Domain", "context": "Industry vertical: Immunology"}
+{"name": "Virology", "facet": "Domain", "context": "Industry vertical: Virology"}
+{"name": "Oncology", "facet": "Domain", "context": "Industry vertical: Oncology"}
+{"name": "Cardiology", "facet": "Domain", "context": "Industry vertical: Cardiology"}
+{"name": "Neurology", "facet": "Domain", "context": "Industry vertical: Neurology"}
+{"name": "Pediatrics", "facet": "Domain", "context": "Industry vertical: Pediatrics"}
+{"name": "Geriatrics", "facet": "Domain", "context": "Industry vertical: Geriatrics"}
+{"name": "Surgery", "facet": "Domain", "context": "Industry vertical: Surgery"}
+{"name": "Anesthesiology", "facet": "Domain", "context": "Industry vertical: Anesthesiology"}
+{"name": "Radiology", "facet": "Domain", "context": "Industry vertical: Radiology"}
+{"name": "Dermatology", "facet": "Domain", "context": "Industry vertical: Dermatology"}
+{"name": "Ophthalmology", "facet": "Domain", "context": "Industry vertical: Ophthalmology"}
+{"name": "Dentistry", "facet": "Domain", "context": "Industry vertical: Dentistry"}
+{"name": "Veterinary Medicine", "facet": "Domain", "context": "Industry vertical: Veterinary medicine"}
+{"name": "Occupational Therapy", "facet": "Domain", "context": "Industry vertical: Occupational therapy"}
+{"name": "Physical Therapy", "facet": "Domain", "context": "Industry vertical: Physical therapy"}
+{"name": "Speech Therapy", "facet": "Domain", "context": "Industry vertical: Speech therapy"}
+{"name": "Nursing Care", "facet": "Hard Skill", "context": "Technical skill: Nursing care and patient support"}
+{"name": "Emergency Medicine", "facet": "Domain", "context": "Industry vertical: Emergency medicine and ER"}
+{"name": "Critical Care", "facet": "Domain", "context": "Industry vertical: Critical care and ICU"}
+{"name": "Midwifery", "facet": "Domain", "context": "Industry vertical: Midwifery"}
+{"name": "Social Work", "facet": "Domain", "context": "Industry vertical: Social work"}
+{"name": "Community Outreach", "facet": "Hard Skill", "context": "Technical skill: Community outreach and engagement"}
+{"name": "Advocacy", "facet": "Hard Skill", "context": "Technical skill: Advocacy and campaigning"}
+{"name": "Philanthropy", "facet": "Domain", "context": "Industry vertical: Philanthropy"}
+{"name": "Human Rights", "facet": "Domain", "context": "Industry vertical: Human rights"}
+{"name": "International Development", "facet": "Domain", "context": "Industry vertical: International development"}
+{"name": "Disaster Relief", "facet": "Domain", "context": "Industry vertical: Disaster relief"}
+{"name": "Peacebuilding", "facet": "Domain", "context": "Industry vertical: Peacebuilding"}
+{"name": "Criminology", "facet": "Domain", "context": "Industry vertical: Criminology"}
+{"name": "Criminal Justice", "facet": "Domain", "context": "Industry vertical: Criminal justice"}
+{"name": "Law Enforcement", "facet": "Domain", "context": "Industry vertical: Law enforcement"}
+{"name": "Corrections", "facet": "Domain", "context": "Industry vertical: Corrections and prisons"}
+{"name": "Firefighting", "facet": "Domain", "context": "Industry vertical: Firefighting"}
+{"name": "Paramedic", "facet": "Role", "context": "Professional role: Paramedic"}
+{"name": "Search and Rescue", "facet": "Domain", "context": "Industry vertical: Search and rescue"}
+{"name": "Hospitality Management", "facet": "Hard Skill", "context": "Technical skill: Hospitality management"}
+{"name": "Hotel Management", "facet": "Hard Skill", "context": "Technical skill: Hotel management"}
+{"name": "Restaurant Management", "facet": "Hard Skill", "context": "Technical skill: Restaurant management"}
+{"name": "Culinary Arts", "facet": "Domain", "context": "Industry vertical: Culinary arts"}
+{"name": "Pastry Arts", "facet": "Hard Skill", "context": "Technical skill: Pastry arts"}
+{"name": "Sommelier", "facet": "Role", "context": "Professional role: Sommelier"}
+{"name": "Mixology", "facet": "Hard Skill", "context": "Technical skill: Mixology and bartending"}
+{"name": "Tourism", "facet": "Domain", "context": "Industry vertical: Tourism"}
+{"name": "Travel Agency", "facet": "Domain", "context": "Industry vertical: Travel agency"}
+{"name": "Tour Guiding", "facet": "Hard Skill", "context": "Technical skill: Tour guiding"}
+{"name": "Aviation", "facet": "Domain", "context": "Industry vertical: Aviation"}
+{"name": "Pilot", "facet": "Role", "context": "Professional role: Aircraft pilot"}
+{"name": "Flight Attendant", "facet": "Role", "context": "Professional role: Flight attendant"}
+{"name": "Air Traffic Control", "facet": "Role", "context": "Professional role: Air traffic controller"}
+{"name": "Maritime", "facet": "Domain", "context": "Industry vertical: Maritime and shipping"}
+{"name": "Merchant Marine", "facet": "Domain", "context": "Industry vertical: Merchant marine"}
+{"name": "Naval Architecture", "facet": "Domain", "context": "Industry vertical: Naval architecture"}
+{"name": "Shipping", "facet": "Domain", "context": "Industry vertical: Shipping and freight"}
+{"name": "Freight Forwarding", "facet": "Hard Skill", "context": "Technical skill: Freight forwarding"}
+{"name": "Warehousing", "facet": "Domain", "context": "Industry vertical: Warehousing and inventory"}
+{"name": "Inventory Management", "facet": "Hard Skill", "context": "Technical skill: Inventory management"}
+{"name": "Procurement", "facet": "Hard Skill", "context": "Technical skill: Procurement and sourcing"}
+{"name": "Strategic Sourcing", "facet": "Hard Skill", "context": "Technical skill: Strategic sourcing"}
+{"name": "Vendor Management", "facet": "Hard Skill", "context": "Technical skill: Vendor management"}
+{"name": "Contract Management", "facet": "Hard Skill", "context": "Technical skill: Contract management"}
+{"name": "E-procurement", "facet": "Hard Skill", "context": "Technical skill: E-procurement"}
+{"name": "Operations Management", "facet": "Hard Skill", "context": "Technical skill: Operations management"}
+{"name": "Quality Control", "facet": "Hard Skill", "context": "Technical skill: Quality control"}
+{"name": "Lean Manufacturing", "facet": "Hard Skill", "context": "Technical skill: Lean manufacturing"}
+{"name": "Six Sigma", "facet": "Hard Skill", "context": "Technical skill: Six Sigma methodology"}
+{"name": "Total Quality Management", "facet": "Hard Skill", "context": "Technical skill: Total Quality Management (TQM)"}
+{"name": "Industrial Engineering", "facet": "Domain", "context": "Industry vertical: Industrial engineering"}
+{"name": "Maintenance Engineering", "facet": "Domain", "context": "Industry vertical: Maintenance engineering"}
+{"name": "Reliability Engineering", "facet": "Domain", "context": "Industry vertical: Reliability engineering"}
+{"name": "Safety Engineering", "facet": "Domain", "context": "Industry vertical: Safety engineering"}
+{"name": "Environmental Engineering", "facet": "Domain", "context": "Industry vertical: Environmental engineering"}
+{"name": "Geotechnical Engineering", "facet": "Domain", "context": "Industry vertical: Geotechnical engineering"}
+{"name": "Structural Engineering", "facet": "Domain", "context": "Industry vertical: Structural engineering"}
+{"name": "Bridge Engineering", "facet": "Domain", "context": "Industry vertical: Bridge engineering"}
+{"name": "Highway Engineering", "facet": "Domain", "context": "Industry vertical: Highway engineering"}
+{"name": "Water Resources Engineering", "facet": "Domain", "context": "Industry vertical: Water resources engineering"}
+{"name": "Wastewater Engineering", "facet": "Domain", "context": "Industry vertical: Wastewater engineering"}
+{"name": "Sanitary Engineering", "facet": "Domain", "context": "Industry vertical: Sanitary engineering"}
+{"name": "Traffic Engineering", "facet": "Domain", "context": "Industry vertical: Traffic engineering"}
+{"name": "Acoustical Engineering", "facet": "Domain", "context": "Industry vertical: Acoustical engineering"}
+{"name": "Fire Protection Engineering", "facet": "Domain", "context": "Industry vertical: Fire protection engineering"}
+{"name": "Mining Engineering", "facet": "Domain", "context": "Industry vertical: Mining engineering"}
+{"name": "Nuclear Engineering", "facet": "Domain", "context": "Industry vertical: Nuclear engineering"}
+{"name": "Process Engineering", "facet": "Domain", "context": "Industry vertical: Process engineering"}
+{"name": "Textile Engineering", "facet": "Domain", "context": "Industry vertical: Textile engineering"}
+{"name": "Fashion Design", "facet": "Domain", "context": "Industry vertical: Fashion design"}
+{"name": "Fashion Merchandising", "facet": "Hard Skill", "context": "Technical skill: Fashion merchandising"}
+{"name": "Apparel Design", "facet": "Hard Skill", "context": "Technical skill: Apparel design"}
+{"name": "Textile Design", "facet": "Hard Skill", "context": "Technical skill: Textile design"}
+{"name": "Jewelry Design", "facet": "Hard Skill", "context": "Technical skill: Jewelry design"}
+{"name": "Industrial Design", "facet": "Domain", "context": "Industry vertical: Industrial design"}
+{"name": "Product Design", "facet": "Hard Skill", "context": "Technical skill: Product design"}
+{"name": "Package Design", "facet": "Hard Skill", "context": "Technical skill: Package design"}
+{"name": "Exhibition Design", "facet": "Hard Skill", "context": "Technical skill: Exhibition design"}
+{"name": "Interior Architecture", "facet": "Domain", "context": "Industry vertical: Interior architecture"}
+{"name": "Landscape Architecture", "facet": "Domain", "context": "Industry vertical: Landscape architecture"}
+{"name": "Set Design", "facet": "Hard Skill", "context": "Technical skill: Set design"}
+{"name": "Lighting Design", "facet": "Hard Skill", "context": "Technical skill: Lighting design"}
+{"name": "Costume Design", "facet": "Hard Skill", "context": "Technical skill: Costume design"}
+{"name": "Makeup Artistry", "facet": "Hard Skill", "context": "Technical skill: Makeup artistry"}
+{"name": "Hair Styling", "facet": "Hard Skill", "context": "Technical skill: Hair styling"}
+{"name": "Esthetics", "facet": "Hard Skill", "context": "Technical skill: Esthetics and skincare"}
+{"name": "Cosmetology", "facet": "Domain", "context": "Industry vertical: Cosmetology"}
+{"name": "Modeling", "facet": "Role", "context": "Professional role: Fashion or commercial model"}
+{"name": "Casting", "facet": "Hard Skill", "context": "Technical skill: Casting for film and fashion"}
+{"name": "Talent Management", "facet": "Hard Skill", "context": "Technical skill: Talent management"}
+{"name": "Artist Management", "facet": "Hard Skill", "context": "Technical skill: Artist management"}
+{"name": "Gallery Management", "facet": "Hard Skill", "context": "Technical skill: Gallery management"}
+{"name": "Art Appraisal", "facet": "Hard Skill", "context": "Technical skill: Art appraisal"}
+{"name": "Art Restoration", "facet": "Hard Skill", "context": "Technical skill: Art restoration"}
+{"name": "Museum Curation", "facet": "Hard Skill", "context": "Technical skill: Museum curation"}
+{"name": "Archival Research", "facet": "Hard Skill", "context": "Technical skill: Archival research"}
+{"name": "Heritage Conservation", "facet": "Domain", "context": "Industry vertical: Heritage conservation"}
+{"name": "Archaeological Curation", "facet": "Hard Skill", "context": "Technical skill: Archaeological curation"}
+{"name": "Paleontology", "facet": "Domain", "context": "Industry vertical: Paleontology"}
+{"name": "Genealogy", "facet": "Domain", "context": "Industry vertical: Genealogy"}
+{"name": "Heraldry", "facet": "Domain", "context": "Industry vertical: Heraldry"}
+{"name": "Numismatics", "facet": "Domain", "context": "Industry vertical: Numismatics"}
+{"name": "Philately", "facet": "Domain", "context": "Industry vertical: Philately"}
+{"name": "Collectibles", "facet": "Domain", "context": "Industry vertical: Collectibles"}
+{"name": "Antiques", "facet": "Domain", "context": "Industry vertical: Antiques"}
+{"name": "Auctioneering", "facet": "Hard Skill", "context": "Technical skill: Auctioneering"}
+{"name": "Appraisal", "facet": "Hard Skill", "context": "Technical skill: Property or asset appraisal"}
+{"name": "Valuation", "facet": "Hard Skill", "context": "Technical skill: Asset valuation"}
+{"name": "Estate Planning", "facet": "Hard Skill", "context": "Technical skill: Estate planning"}
+{"name": "Trust Administration", "facet": "Hard Skill", "context": "Technical skill: Trust administration"}
+{"name": "Wealth Advisory", "facet": "Hard Skill", "context": "Technical skill: Wealth advisory"}
+{"name": "Financial Planning", "facet": "Hard Skill", "context": "Technical skill: Financial planning"}
+{"name": "Tax Planning", "facet": "Hard Skill", "context": "Technical skill: Tax planning"}
+{"name": "Retirement Planning", "facet": "Hard Skill", "context": "Technical skill: Retirement planning"}
+{"name": "Philanthropic Advisory", "facet": "Hard Skill", "context": "Technical skill: Philanthropic advisory"}
+{"name": "Family Office", "facet": "Domain", "context": "Industry vertical: Family office"}
+{"name": "Concierge", "facet": "Role", "context": "Professional role: Concierge"}
+{"name": "Personal Assistant", "facet": "Role", "context": "Professional role: Personal assistant"}
+{"name": "Lifestyle Management", "facet": "Hard Skill", "context": "Technical skill: Lifestyle management"}
+{"name": "Luxury Goods", "facet": "Domain", "context": "Industry vertical: Luxury goods"}
+{"name": "Jewelry", "facet": "Domain", "context": "Industry vertical: Jewelry"}
+{"name": "Watches", "facet": "Domain", "context": "Industry vertical: Watches"}
+{"name": "Yachting", "facet": "Domain", "context": "Industry vertical: Yachting"}
+{"name": "Private Aviation", "facet": "Domain", "context": "Industry vertical: Private aviation"}
+{"name": "Luxury Travel", "facet": "Domain", "context": "Industry vertical: Luxury travel"}
+{"name": "Personal Shopping", "facet": "Hard Skill", "context": "Technical skill: Personal shopping"}
+{"name": "Wardrobe Styling", "facet": "Hard Skill", "context": "Technical skill: Wardrobe styling"}
+{"name": "Etiquette", "facet": "Hard Skill", "context": "Technical skill: Etiquette and protocol"}
+{"name": "Protocol", "facet": "Hard Skill", "context": "Technical skill: Protocol and diplomatic relations"}
+{"name": "Public Relations", "facet": "Domain", "context": "Industry vertical: Public relations"}
+{"name": "Media Relations", "facet": "Hard Skill", "context": "Technical skill: Media relations"}
+{"name": "Crisis Communications", "facet": "Hard Skill", "context": "Technical skill: Crisis communications"}
+{"name": "Internal Communications", "facet": "Hard Skill", "context": "Technical skill: Internal communications"}
+{"name": "Corporate Communications", "facet": "Hard Skill", "context": "Technical skill: Corporate communications"}
+{"name": "Investor Relations", "facet": "Hard Skill", "context": "Technical skill: Investor relations"}
+{"name": "Government Relations", "facet": "Hard Skill", "context": "Technical skill: Government relations"}
+{"name": "Public Affairs", "facet": "Hard Skill", "context": "Technical skill: Public affairs"}
+{"name": "Lobbying", "facet": "Hard Skill", "context": "Technical skill: Lobbying"}
+{"name": "Political Campaigning", "facet": "Hard Skill", "context": "Technical skill: Political campaigning"}
+{"name": "Political Consulting", "facet": "Hard Skill", "context": "Technical skill: Political consulting"}
+{"name": "Speechwriting", "facet": "Hard Skill", "context": "Technical skill: Speechwriting"}
+{"name": "Debate", "facet": "Hard Skill", "context": "Technical skill: Debate and persuasion"}
+{"name": "Political Analysis", "facet": "Hard Skill", "context": "Technical skill: Political analysis"}
+{"name": "Policy Analysis", "facet": "Hard Skill", "context": "Technical skill: Policy analysis"}
+{"name": "Social Policy", "facet": "Domain", "context": "Industry vertical: Social policy"}
+{"name": "Economic Policy", "facet": "Domain", "context": "Industry vertical: Economic policy"}
+{"name": "Environmental Policy", "facet": "Domain", "context": "Industry vertical: Environmental policy"}
+{"name": "Health Policy", "facet": "Domain", "context": "Industry vertical: Health policy"}
+{"name": "Education Policy", "facet": "Domain", "context": "Industry vertical: Education policy"}
+{"name": "Foreign Policy", "facet": "Domain", "context": "Industry vertical: Foreign policy"}
+{"name": "Trade Policy", "facet": "Domain", "context": "Industry vertical: Trade policy"}
+{"name": "Defense Policy", "facet": "Domain", "context": "Industry vertical: Defense policy"}
+{"name": "Science Policy", "facet": "Domain", "context": "Industry vertical: Science policy"}
+{"name": "Tech Policy", "facet": "Domain", "context": "Industry vertical: Tech policy"}
+{"name": "Urban Policy", "facet": "Domain", "context": "Industry vertical: Urban policy"}
+{"name": "Rural Policy", "facet": "Domain", "context": "Industry vertical: Rural policy"}
+{"name": "Social Justice", "facet": "Domain", "context": "Industry vertical: Social justice"}
+{"name": "Civil Rights", "facet": "Domain", "context": "Industry vertical: Civil rights"}
+{"name": "Women's Rights", "facet": "Domain", "context": "Industry vertical: Women's rights"}
+{"name": "Children's Rights", "facet": "Domain", "context": "Industry vertical: Children's rights"}
+{"name": "Labor Rights", "facet": "Domain", "context": "Industry vertical: Labor rights"}
+{"name": "Animal Rights", "facet": "Domain", "context": "Industry vertical: Animal rights"}
+{"name": "Environmental Justice", "facet": "Domain", "context": "Industry vertical: Environmental justice"}
+{"name": "Diversity and Inclusion", "facet": "Hard Skill", "context": "Technical skill: Diversity, equity, and inclusion (DEI)"}
+{"name": "Accessibility", "facet": "Hard Skill", "context": "Technical skill: Accessibility and universal design"}
+{"name": "Universal Design", "facet": "Hard Skill", "context": "Technical skill: Universal design"}
+{"name": "Assistive Technology", "facet": "Hard Skill", "context": "Technical skill: Assistive technology"}
+{"name": "Braille", "facet": "Hard Skill", "context": "Technical skill: Braille literacy"}
+{"name": "Sign Language", "facet": "Hard Skill", "context": "Technical skill: Sign language interpretation"}
+{"name": "Non-verbal Communication", "facet": "Soft Skill", "context": "Professional competency: Non-verbal communication"}
+{"name": "Body Language", "facet": "Soft Skill", "context": "Professional competency: Body language analysis"}
+{"name": "Active Listening", "facet": "Soft Skill", "context": "Professional competency: Active listening"}
+{"name": "Empathy", "facet": "Soft Skill", "context": "Professional competency: Empathy and compassion"}
+{"name": "Compassion", "facet": "Soft Skill", "context": "Professional competency: Compassion"}
+{"name": "Resilience", "facet": "Soft Skill", "context": "Professional competency: Resilience and grit"}
+{"name": "Grit", "facet": "Soft Skill", "context": "Professional competency: Grit and determination"}
+{"name": "Growth Mindset", "facet": "Soft Skill", "context": "Professional competency: Growth mindset"}
+{"name": "Adaptability", "facet": "Soft Skill", "context": "Professional competency: Adaptability and flexibility"}
+{"name": "Flexibility", "facet": "Soft Skill", "context": "Professional competency: Flexibility"}
+{"name": "Patience", "facet": "Soft Skill", "context": "Professional competency: Patience"}
+{"name": "Tolerance", "facet": "Soft Skill", "context": "Professional competency: Tolerance"}
+{"name": "Open-mindedness", "facet": "Soft Skill", "context": "Professional competency: Open-mindedness"}
+{"name": "Curiosity", "facet": "Soft Skill", "context": "Professional competency: Curiosity and lifelong learning"}
+{"name": "Creativity", "facet": "Soft Skill", "context": "Professional competency: Creativity and innovation"}
+{"name": "Innovation", "facet": "Soft Skill", "context": "Professional competency: Innovation"}
+{"name": "Problem Solving", "facet": "Soft Skill", "context": "Professional competency: Problem solving"}
+{"name": "Decision Making", "facet": "Soft Skill", "context": "Professional competency: Decision making"}
+{"name": "Time Management", "facet": "Soft Skill", "context": "Professional competency: Time management"}
+{"name": "Organization", "facet": "Soft Skill", "context": "Professional competency: Organizational skills"}
+{"name": "Prioritization", "facet": "Soft Skill", "context": "Professional competency: Task prioritization"}
+{"name": "Goal Setting", "facet": "Soft Skill", "context": "Professional competency: Goal setting"}
+{"name": "Planning", "facet": "Soft Skill", "context": "Professional competency: Planning and foresight"}
+{"name": "Foresight", "facet": "Soft Skill", "context": "Professional competency: Foresight and trend analysis"}
+{"name": "Leadership", "facet": "Soft Skill", "context": "Professional competency: Leadership and influence"}
+{"name": "Influence", "facet": "Soft Skill", "context": "Professional competency: Influence and persuasion"}
+{"name": "Persuasion", "facet": "Soft Skill", "context": "Professional competency: Persuasion"}
+{"name": "Negotiation", "facet": "Soft Skill", "context": "Professional competency: Negotiation"}
+{"name": "Conflict Resolution", "facet": "Soft Skill", "context": "Professional competency: Conflict resolution"}
+{"name": "Mediation", "facet": "Soft Skill", "context": "Professional competency: Mediation"}
+{"name": "Collaboration", "facet": "Soft Skill", "context": "Professional competency: Collaboration and teamwork"}
+{"name": "Teamwork", "facet": "Soft Skill", "context": "Professional competency: Teamwork"}
+{"name": "Networking", "facet": "Soft Skill", "context": "Professional competency: Professional networking"}
+{"name": "Relationship Building", "facet": "Soft Skill", "context": "Professional competency: Relationship building"}
+{"name": "Trust Building", "facet": "Soft Skill", "context": "Professional competency: Trust building"}
+{"name": "Accountability", "facet": "Soft Skill", "context": "Professional competency: Accountability and ownership"}
+{"name": "Ownership", "facet": "Soft Skill", "context": "Professional competency: Ownership"}
+{"name": "Responsibility", "facet": "Soft Skill", "context": "Professional competency: Responsibility"}
+{"name": "Ethics", "facet": "Soft Skill", "context": "Professional competency: Ethics and integrity"}
+{"name": "Integrity", "facet": "Soft Skill", "context": "Professional competency: Integrity"}
+{"name": "Professionalism", "facet": "Soft Skill", "context": "Professional competency: Professionalism"}
+{"name": "Work Ethic", "facet": "Soft Skill", "context": "Professional competency: Strong work ethic"}
+{"name": "Reliability", "facet": "Soft Skill", "context": "Professional competency: Reliability"}
+{"name": "Dependability", "facet": "Soft Skill", "context": "Professional competency: Dependability"}
+{"name": "Loyalty", "facet": "Soft Skill", "context": "Professional competency: Loyalty"}
+{"name": "Confidentiality", "facet": "Soft Skill", "context": "Professional competency: Confidentiality"}
+{"name": "Attention to Detail", "facet": "Soft Skill", "context": "Professional competency: Attention to detail"}
+{"name": "Accuracy", "facet": "Soft Skill", "context": "Professional competency: Accuracy"}
+{"name": "Efficiency", "facet": "Soft Skill", "context": "Professional competency: Efficiency"}
+{"name": "Productivity", "facet": "Soft Skill", "context": "Professional competency: Productivity"}
+{"name": "Optimization", "facet": "Soft Skill", "context": "Professional competency: Process optimization"}
+{"name": "Automation", "facet": "Soft Skill", "context": "Professional competency: Workflow automation"}
+{"name": "Systems Thinking", "facet": "Soft Skill", "context": "Professional competency: Systems thinking"}
+{"name": "Analytical Thinking", "facet": "Soft Skill", "context": "Professional competency: Analytical thinking"}
+{"name": "Logical Thinking", "facet": "Soft Skill", "context": "Professional competency: Logical thinking"}
+{"name": "Quantitative Thinking", "facet": "Soft Skill", "context": "Professional competency: Quantitative thinking"}
+{"name": "Qualitative Thinking", "facet": "Soft Skill", "context": "Professional competency: Qualitative thinking"}
+{"name": "Visual Thinking", "facet": "Soft Skill", "context": "Professional competency: Visual thinking"}
+{"name": "Spatial Thinking", "facet": "Soft Skill", "context": "Professional competency: Spatial thinking"}
+{"name": "Abstract Thinking", "facet": "Soft Skill", "context": "Professional competency: Abstract thinking"}
+{"name": "Concept Development", "facet": "Soft Skill", "context": "Professional competency: Concept development"}
+{"name": "Hypothesis Testing", "facet": "Soft Skill", "context": "Professional competency: Hypothesis testing"}
+{"name": "Experimentation", "facet": "Soft Skill", "context": "Professional competency: Experimentation"}
+{"name": "Data Interpretation", "facet": "Soft Skill", "context": "Professional competency: Data interpretation"}
+{"name": "Storytelling", "facet": "Soft Skill", "context": "Professional competency: Storytelling and narrative"}
+{"name": "Narrative", "facet": "Soft Skill", "context": "Professional competency: Narrative"}
+{"name": "Presentation", "facet": "Soft Skill", "context": "Professional competency: Presentation skills"}
+{"name": "Communication", "facet": "Soft Skill", "context": "Professional competency: Communication skills"}
+{"name": "Verbal Communication", "facet": "Soft Skill", "context": "Professional competency: Verbal communication"}
+{"name": "Written Communication", "facet": "Soft Skill", "context": "Professional competency: Written communication"}
+{"name": "Visual Communication", "facet": "Soft Skill", "context": "Professional competency: Visual communication"}
+{"name": "Interpersonal Communication", "facet": "Soft Skill", "context": "Professional competency: Interpersonal communication"}
+{"name": "Cross-cultural Communication", "facet": "Soft Skill", "context": "Professional competency: Cross-cultural communication"}
+{"name": "Multicultural Communication", "facet": "Soft Skill", "context": "Professional competency: Multicultural communication"}
+{"name": "Diversity Communication", "facet": "Soft Skill", "context": "Professional competency: Diversity communication"}
+{"name": "Inclusive Communication", "facet": "Soft Skill", "context": "Professional competency: Inclusive communication"}
+{"name": "Technical Communication", "facet": "Soft Skill", "context": "Professional competency: Technical communication"}
+{"name": "Scientific Communication", "facet": "Soft Skill", "context": "Professional competency: Scientific communication"}
+{"name": "Medical Communication", "facet": "Soft Skill", "context": "Professional competency: Medical communication"}
+{"name": "Legal Communication", "facet": "Soft Skill", "context": "Professional competency: Legal communication"}
+{"name": "Financial Communication", "facet": "Soft Skill", "context": "Professional competency: Financial communication"}
+{"name": "Business Communication", "facet": "Soft Skill", "context": "Professional competency: Business communication"}
+{"name": "Customer Communication", "facet": "Soft Skill", "context": "Professional competency: Customer communication"}
+{"name": "Stakeholder Communication", "facet": "Soft Skill", "context": "Professional competency: Stakeholder communication"}
+{"name": "Crisis Communication", "facet": "Soft Skill", "context": "Professional competency: Crisis communication"}
+{"name": "Media Communication", "facet": "Soft Skill", "context": "Professional competency: Media communication"}
+{"name": "Social Media Communication", "facet": "Soft Skill", "context": "Professional competency: Social media communication"}
+{"name": "Digital Communication", "facet": "Soft Skill", "context": "Professional competency: Digital communication"}
+{"name": "Virtual Communication", "facet": "Soft Skill", "context": "Professional competency: Virtual communication"}
+{"name": "Remote Communication", "facet": "Soft Skill", "context": "Professional competency: Remote communication"}
+{"name": "Asynchronous Communication", "facet": "Soft Skill", "context": "Professional competency: Asynchronous communication"}
+{"name": "Synchronous Communication", "facet": "Soft Skill", "context": "Professional competency: Synchronous communication"}
+{"name": "Internal Communication", "facet": "Soft Skill", "context": "Professional competency: Internal communication"}
+{"name": "External Communication", "facet": "Soft Skill", "context": "Professional competency: External communication"}
+{"name": "Upward Communication", "facet": "Soft Skill", "context": "Professional competency: Upward communication"}
+{"name": "Downward Communication", "facet": "Soft Skill", "context": "Professional competency: Downward communication"}
+{"name": "Horizontal Communication", "facet": "Soft Skill", "context": "Professional competency: Horizontal communication"}
+{"name": "Formal Communication", "facet": "Soft Skill", "context": "Professional competency: Formal communication"}
+{"name": "Informal Communication", "facet": "Soft Skill", "context": "Professional competency: Informal communication"}
+{"name": "Listening", "facet": "Soft Skill", "context": "Professional competency: Listening skills"}
+{"name": "Questioning", "facet": "Soft Skill", "context": "Professional competency: Questioning skills"}
+{"name": "Feedback", "facet": "Soft Skill", "context": "Professional competency: Giving and receiving feedback"}
+{"name": "Giving Feedback", "facet": "Soft Skill", "context": "Professional competency: Giving feedback"}
+{"name": "Receiving Feedback", "facet": "Soft Skill", "context": "Professional competency: Receiving feedback"}
+{"name": "Constructive Criticism", "facet": "Soft Skill", "context": "Professional competency: Constructive criticism"}
+{"name": "Praise", "facet": "Soft Skill", "context": "Professional competency: Giving praise"}
+{"name": "Recognition", "facet": "Soft Skill", "context": "Professional competency: Providing recognition"}
+{"name": "Appreciation", "facet": "Soft Skill", "context": "Professional competency: Showing appreciation"}
+{"name": "Gratitude", "facet": "Soft Skill", "context": "Professional competency: Expressing gratitude"}
+{"name": "Humility", "facet": "Soft Skill", "context": "Professional competency: Humility"}
+{"name": "Self-awareness", "facet": "Soft Skill", "context": "Professional competency: Self-awareness"}
+{"name": "Self-regulation", "facet": "Soft Skill", "context": "Professional competency: Self-regulation"}
+{"name": "Self-motivation", "facet": "Soft Skill", "context": "Professional competency: Self-motivation"}
+{"name": "Self-discipline", "facet": "Soft Skill", "context": "Professional competency: Self-discipline"}
+{"name": "Self-confidence", "facet": "Soft Skill", "context": "Professional competency: Self-confidence"}
+{"name": "Self-esteem", "facet": "Soft Skill", "context": "Professional competency: Self-esteem"}
+{"name": "Self-compassion", "facet": "Soft Skill", "context": "Professional competency: Self-compassion"}
+{"name": "Self-care", "facet": "Soft Skill", "context": "Professional competency: Self-care"}
+{"name": "Work-life Balance", "facet": "Soft Skill", "context": "Professional competency: Work-life balance"}
+{"name": "Stress Management", "facet": "Soft Skill", "context": "Professional competency: Stress management"}
+{"name": "Time Management", "facet": "Soft Skill", "context": "Professional competency: Time management"}
+{"name": "Energy Management", "facet": "Soft Skill", "context": "Professional competency: Energy management"}
+{"name": "Productivity", "facet": "Soft Skill", "context": "Professional competency: Productivity"}
+{"name": "Efficiency", "facet": "Soft Skill", "context": "Professional competency: Efficiency"}
+{"name": "Effectiveness", "facet": "Soft Skill", "context": "Professional competency: Effectiveness"}
+{"name": "Focus", "facet": "Soft Skill", "context": "Professional competency: Focus and concentration"}
+{"name": "Concentration", "facet": "Soft Skill", "context": "Professional competency: Concentration"}
+{"name": "Deep Work", "facet": "Soft Skill", "context": "Professional competency: Deep work"}
+{"name": "Flow State", "facet": "Soft Skill", "context": "Professional competency: Flow state"}
+{"name": "Mindfulness", "facet": "Soft Skill", "context": "Professional competency: Mindfulness"}
+{"name": "Presence", "facet": "Soft Skill", "context": "Professional competency: Presence"}
+{"name": "Intentionality", "facet": "Soft Skill", "context": "Professional competency: Intentionality"}
+{"name": "Purpose", "facet": "Soft Skill", "context": "Professional competency: Purpose-driven work"}
+{"name": "Meaning", "facet": "Soft Skill", "context": "Professional competency: Meaningful work"}
+{"name": "Values", "facet": "Soft Skill", "context": "Professional competency: Values-based work"}
+{"name": "Alignment", "facet": "Soft Skill", "context": "Professional competency: Alignment"}
+{"name": "Impact", "facet": "Soft Skill", "context": "Professional competency: Impact-oriented work"}
+{"name": "Contribution", "facet": "Soft Skill", "context": "Professional competency: Contribution"}
+{"name": "Service", "facet": "Soft Skill", "context": "Professional competency: Service-oriented work"}
+{"name": "Altruism", "facet": "Soft Skill", "context": "Professional competency: Altruism"}
+{"name": "Kindness", "facet": "Soft Skill", "context": "Professional competency: Kindness"}
+{"name": "Generosity", "facet": "Soft Skill", "context": "Professional competency: Generosity"}
+{"name": "Helpfulness", "facet": "Soft Skill", "context": "Professional competency: Helpfulness"}
+{"name": "Support", "facet": "Soft Skill", "context": "Professional competency: Providing support"}
+{"name": "Guidance", "facet": "Soft Skill", "context": "Professional competency: Providing guidance"}
+{"name": "Mentorship", "facet": "Soft Skill", "context": "Professional competency: Mentorship"}
+{"name": "Coaching", "facet": "Soft Skill", "context": "Professional competency: Coaching"}
+{"name": "Training", "facet": "Soft Skill", "context": "Professional competency: Training others"}
+{"name": "Teaching", "facet": "Soft Skill", "context": "Professional competency: Teaching others"}
+{"name": "Learning", "facet": "Soft Skill", "context": "Professional competency: Learning from others"}
+{"name": "Growth", "facet": "Soft Skill", "context": "Professional competency: Personal and professional growth"}
+{"name": "Development", "facet": "Soft Skill", "context": "Professional competency: Personal and professional development"}
+{"name": "Transformation", "facet": "Soft Skill", "context": "Professional competency: Transformation"}
+{"name": "Change", "facet": "Soft Skill", "context": "Professional competency: Managing and adapting to change"}
+{"name": "Innovation", "facet": "Soft Skill", "context": "Professional competency: Innovation and creativity"}
+{"name": "Creativity", "facet": "Soft Skill", "context": "Professional competency: Creativity"}
+{"name": "Imagination", "facet": "Soft Skill", "context": "Professional competency: Imagination"}
+{"name": "Vision", "facet": "Soft Skill", "context": "Professional competency: Vision"}
+{"name": "Inspiration", "facet": "Soft Skill", "context": "Professional competency: Inspiration"}
+{"name": "Motivation", "facet": "Soft Skill", "context": "Professional competency: Motivation"}
+{"name": "Empowerment", "facet": "Soft Skill", "context": "Professional competency: Empowerment"}
+{"name": "Enablement", "facet": "Soft Skill", "context": "Professional competency: Enablement"}
+{"name": "Encouragement", "facet": "Soft Skill", "context": "Professional competency: Encouragement"}
+{"name": "Validation", "facet": "Soft Skill", "context": "Professional competency: Validation"}
+{"name": "Acknowledgement", "facet": "Soft Skill", "context": "Professional competency: Acknowledgement"}
+{"name": "Respect", "facet": "Soft Skill", "context": "Professional competency: Showing and earning respect"}
+{"name": "Dignity", "facet": "Soft Skill", "context": "Professional competency: Respecting dignity"}
+{"name": "Equality", "facet": "Soft Skill", "context": "Professional competency: Promoting equality"}
+{"name": "Equity", "facet": "Soft Skill", "context": "Professional competency: Promoting equity"}
+{"name": "Inclusion", "facet": "Soft Skill", "context": "Professional competency: Promoting inclusion"}
+{"name": "Diversity", "facet": "Soft Skill", "context": "Professional competency: Promoting diversity"}
+{"name": "Belonging", "facet": "Soft Skill", "context": "Professional competency: Fostering belonging"}
+{"name": "Psychological Safety", "facet": "Soft Skill", "context": "Professional competency: Creating psychological safety"}
+{"name": "Culture", "facet": "Soft Skill", "context": "Professional competency: Fostering positive culture"}
+{"name": "Community", "facet": "Soft Skill", "context": "Professional competency: Building community"}
+{"name": "Team", "facet": "Soft Skill", "context": "Professional competency: Building and leading teams"}
+{"name": "Organization", "facet": "Soft Skill", "context": "Professional competency: Building and leading organizations"}
+{"name": "System", "facet": "Soft Skill", "context": "Professional competency: Understanding and influencing systems"}
+{"name": "Society", "facet": "Soft Skill", "context": "Professional competency: Contributing to society"}
+{"name": "World", "facet": "Soft Skill", "context": "Professional competency: Contributing to the world"}
+{"name": "Future", "facet": "Soft Skill", "context": "Professional competency: Shaping the future"}
+{"name": "Legacy", "facet": "Soft Skill", "context": "Professional competency: Building a legacy"}

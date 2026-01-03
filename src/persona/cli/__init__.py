@@ -155,8 +155,7 @@ def reindex(ctx: typer.Context):
             # for duckdb, since session-based database is memory
             for k, v in index.items():
                 logger.info(f'Updating table: {k} with {len(v)} entries.')
-                # NB: type hint is literal so using k makes pylance unhappy
-                session.upsert('roles' if k == 'roles' else 'skills', v)
+                session.upsert(k, v)
 
 
 @app.command(help='Initialize Persona objects on target storage.')

@@ -88,12 +88,12 @@ class Transaction:
         """Update the index with the new or updated template entry."""
         if upserts:
             meta_store.upsert(
-                'skills' if type == 'skills' else 'roles',
+                type,
                 upserts,
             )
         if deletes:
             meta_store.remove(
-                'skills' if type == 'skills' else 'roles',
+                type,
                 deletes,
             )
 
