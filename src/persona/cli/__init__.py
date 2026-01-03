@@ -140,7 +140,9 @@ def reindex(ctx: typer.Context):
             afs = AsyncFileSystemWrapper(afs)
         queue = asyncio.Queue(maxsize=128)
         producer_task = asyncio.create_task(_template_producer(afs, _path, queue))
-        consumer_task = asyncio.create_task(_embedding_consumer(queue, embedder, batch_size=32))
+        consumer_task = asyncio.create_task(
+            _embedding_consumer(queue, embedder, batch_size=32, index_keys=['roles', 'skills'])
+        )
         await asyncio.gather(producer_task)
         results = await consumer_task
         return results

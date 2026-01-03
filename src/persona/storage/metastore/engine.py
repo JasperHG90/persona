@@ -144,16 +144,24 @@ class DuckDBMetaStoreEngine(CursorLikeMetaStoreEngine[DuckDBMetaStoreConfig]):
             raise RuntimeError('No database connection; call connect() first.')
         for table in self._tables:
             self._conn.execute(
-                f'CREATE TABLE {table} (name VARCHAR PRIMARY KEY, date_created TIMESTAMP, description VARCHAR, uuid VARCHAR(32), files VARCHAR[], embedding FLOAT[384])'
+                f'CREATE TABLE {table} (name VARCHAR PRIMARY KEY, date_created TIMESTAMP, description VARCHAR, tags VARCHAR[], uuid VARCHAR(32), files VARCHAR[], embedding FLOAT[384])'
             )
             path_ = getattr(self._config, f'{table}_index_path')
             try:
                 self._logger.debug(f'Loading existing {table} index from disk ...')
                 self._conn.execute(f"INSERT INTO {table} SELECT * FROM read_parquet('{path_}');")
-            except Exception:
+            except duckdb.BinderException as e:
+                self._logger.error(
+                    'Schema mismatch when loading index. Please reindex the metastore using `persona reindex`'
+                )
+                raise e
+            except duckdb.IOException:
                 self._logger.warning(
                     f'No existing {table} index found at {path_}: Table initialized empty ...'
                 )
+            except Exception as e:
+                self._logger.error('Unknown error when loading existing index.')
+                raise e
         return self
 
     def _export_tables(self):

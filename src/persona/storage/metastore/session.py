@@ -119,7 +119,7 @@ class CursorLikeMetaStoreSession(BaseMetaStoreSession):
         return columns
 
     def upsert(self, table_name: str, data: list[dict[str, str | list[str]]]):
-        sql = f'INSERT OR REPLACE INTO "{table_name}" (name, description, uuid, files, embedding) VALUES ($name, $description, $uuid, $files, $embedding)'
+        sql = f'INSERT OR REPLACE INTO "{table_name}" (name, date_created, description, tags, uuid, files, embedding) VALUES ($name, $date_created, $description, $tags, $uuid, $files, $embedding)'
         self._cursor.executemany(sql, data)
 
     def truncate_tables(self):

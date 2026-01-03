@@ -163,6 +163,10 @@ async def _template_producer(afs: AsyncFileSystem, root: str, queue: asyncio.Que
                 type=entry_type,
                 files=cleaned_files,
             )
+            # Save manifest
+            await afs._pipe(
+                manifest_path, orjson.dumps(entry.model_dump(exclude_none=True, exclude={'type'}))
+            )
         await queue.put(entry)
     await queue.put(None)
 
