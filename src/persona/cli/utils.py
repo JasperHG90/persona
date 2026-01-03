@@ -2,6 +2,7 @@ import pathlib as plb
 from typing_extensions import Annotated
 
 import typer
+import orjson
 from rich.console import Console
 import asyncio
 import os
@@ -130,27 +131,39 @@ async def _template_producer(afs: AsyncFileSystem, root: str, queue: asyncio.Que
         if await afs._isdir(template):
             continue
         _template = cast(str, template)
-        # NB: this is always text content
-        content = cast(bytes, await afs._cat_file(_template)).decode('utf-8')
-        fm = await asyncio.to_thread(frontmatter.loads, content)
         entry_type = 'skills' if _template.split('/')[-1] == 'SKILL.md' else 'roles'
-        fp = _template.rsplit('/', 1)[0] + '/**/*'
-        description = '%s - %s' % (
-            cast(str, fm.metadata['name']),
-            cast(str, fm.metadata['description']),
-        )
-        related_files_raw = cast(list[str], await afs._glob(fp))
-        cleaned_files = [
-            os.path.relpath(f, root).replace('../', '').replace('.persona/', '')
-            for f in related_files_raw
-        ]
-        entry = IndexEntry(
-            name=cast(str, fm.metadata['name']),
-            description=description,
-            uuid=uuid.uuid4().hex,  # Random init
-            type=entry_type,
-            files=cleaned_files,
-        )
+        # Check for a manifest file and read that first
+        manifest_path = os.path.join(_template.rsplit('/', 1)[0], '.manifest.json')
+        if await afs._exists(manifest_path):
+            content = orjson.loads(cast(bytes, await afs._cat_file(manifest_path)))
+            entry = IndexEntry(
+                name=content['name'],
+                description=content['description'],
+                uuid=content.get('uuid', uuid.uuid4().hex),
+                type=entry_type,
+                files=content['files'],
+            )
+        else:
+            # NB: this is always text content
+            content = cast(bytes, await afs._cat_file(_template)).decode('utf-8')
+            fm = await asyncio.to_thread(frontmatter.loads, content)
+            fp = _template.rsplit('/', 1)[0] + '/**/*'
+            description = '%s - %s' % (
+                cast(str, fm.metadata['name']),
+                cast(str, fm.metadata['description']),
+            )
+            related_files_raw = cast(list[str], await afs._glob(fp))
+            cleaned_files = [
+                os.path.relpath(f, root).replace('../', '').replace('.persona/', '')
+                for f in related_files_raw
+            ]
+            entry = IndexEntry(
+                name=cast(str, fm.metadata['name']),
+                description=description,
+                uuid=uuid.uuid4().hex,  # Random init
+                type=entry_type,
+                files=cleaned_files,
+            )
         await queue.put(entry)
     await queue.put(None)
 

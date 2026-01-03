@@ -55,7 +55,11 @@ class CursorLikeMetaStoreEngine(Generic[T], metaclass=ABCMeta):
 
     @contextmanager
     def open(self, bootstrap: bool = False) -> Generator[Self, None, None]:
-        """Connect to a metastore backend and close the connection gracefully"""
+        """Connect to a metastore backend and close the connection gracefully
+
+        Args:
+            bootstrap (bool, optional): Whether to bootstrap the metastore upon connection. Defaults to False
+        """
         try:
             self.connect()
             if bootstrap:

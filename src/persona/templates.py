@@ -154,7 +154,7 @@ class Template(BaseModel):
                 'Template must have a name and description either in the frontmatter or provided during registration.'
             )
 
-        entry.update('embedding', embedder.encode(entry.description).tolist())
+        entry.update('embedding', embedder.encode([entry.description]).squeeze().tolist())
 
         target_key = f'{self.get_type()}/{entry.name}'
 

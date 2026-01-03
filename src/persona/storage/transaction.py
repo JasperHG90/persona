@@ -1,6 +1,7 @@
+import os
 import logging
 import hashlib
-from typing import Any, Literal, TYPE_CHECKING
+from typing import Any, Literal, TYPE_CHECKING, cast
 
 import orjson
 from pydantic import RootModel, Field
@@ -46,8 +47,9 @@ class Transaction:
     def _add_file_hash(self, file: str, content: bytes) -> None:
         self._hashes.add(file, content)
 
-    def _update_index(self, meta_store: 'BaseMetaStoreSession') -> None:
-        """Update the index with the new or updated template entry."""
+    def _process_metadata(
+        self,
+    ) -> dict[str, list[str] | list[dict[str, str | list[str]]] | str] | None:
         types: list[str] = []
         deletes: list[str] = []
         upserts: list[dict[str, str | list[str]]] = []
@@ -70,14 +72,28 @@ class Transaction:
             self._logger.debug('No metadata to update in index.')
             return
 
+        return {
+            'type': type_[0],
+            'deletes': deletes,
+            'upserts': upserts,
+        }
+
+    def _update_index(
+        self,
+        meta_store: 'BaseMetaStoreSession',
+        upserts: list[dict[str, str | list[str]]],
+        deletes: list[str],
+        type: str,
+    ) -> None:
+        """Update the index with the new or updated template entry."""
         if upserts:
             meta_store.upsert(
-                'skills' if type_[0] == 'skills' else 'roles',
+                'skills' if type == 'skills' else 'roles',
                 upserts,
             )
         if deletes:
             meta_store.remove(
-                'skills' if type_[0] == 'skills' else 'roles',
+                'skills' if type == 'skills' else 'roles',
                 deletes,
             )
 
@@ -106,27 +122,49 @@ class Transaction:
 
     def __exit__(self, exc_type, exc_value, traceback):
         self._logger.debug('Ending transaction...')
-        self._file_store._transaction = None
-        self._meta_store_engine._transaction = None
 
         # If any error occurred, roll back changes on the FileStore
         if exc_type is not None:
             self._logger.error(f'Transaction failed with exception: {exc_value}')
             self._logger.debug('Performing rollback due to exception...')
             self.rollback()
+            return
 
         # Try to write updates/deletes to MetaStore. If that fails,
         # roll back changes on the FileStore
         try:
+            metadata = self._process_metadata()
+            if metadata is None:
+                self._logger.debug('No metadata changes to process during transaction commit.')
+                return
+            # Save manifests (index entries) to file store
+            for entry in cast(dict, metadata).get('upserts', []):
+                template_root = entry['files'][0].rsplit('/', 1)[0]
+                self._file_store.save(
+                    os.path.join(template_root, '.manifest.json'),
+                    orjson.dumps(
+                        {k: v for k, v in entry.items() if k != 'embedding'},
+                        option=orjson.OPT_INDENT_2,
+                    ),
+                )
             # NB: for DuckDB, closing the local session will trigger an export of the
             #  data to storage as parquet
             with self._meta_store_engine.open(bootstrap=True) as connected:
                 with connected.session() as session:
-                    self._update_index(meta_store=session)
+                    self._update_index(
+                        meta_store=session,
+                        upserts=cast(list[dict[str, str | list[str]]], metadata['upserts']),
+                        deletes=cast(list[str], metadata['deletes']),
+                        type=cast(str, metadata['type']),
+                    )
         except Exception as e:
             self._logger.error(f'Failed to update index during transaction commit: {e}')
             self._logger.debug('Performing rollback due to index update failure...')
             self.rollback()
             raise e
+
+        # Clear transaction references
+        self._file_store._transaction = None
+        self._meta_store_engine._transaction = None
 
         self._log = []
