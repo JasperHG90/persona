@@ -137,7 +137,9 @@ class Transaction:
             if metadata is None:
                 self._logger.debug('No metadata changes to process during transaction commit.')
                 return
-            # Save manifests (index entries) to file store
+            # NB: Save manifests (index entries) to file store
+            # Add them using `.save()` to ensure they are part of the transaction
+            # And are rolled back if needed
             for entry in cast(dict, metadata).get('upserts', []):
                 template_root = entry['files'][0].rsplit('/', 1)[0]
                 self._file_store.save(
