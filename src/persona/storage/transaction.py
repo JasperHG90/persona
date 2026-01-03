@@ -149,7 +149,7 @@ class Transaction:
                         option=orjson.OPT_INDENT_2,
                     ),
                 )
-            # NB: for DuckDB, closing the local session will trigger an export of the
+            # NB: for DuckDB, closing the `connected` object will trigger an export of the
             #  data to storage as parquet
             with self._meta_store_engine.open(bootstrap=True) as connected:
                 with connected.session() as session:
