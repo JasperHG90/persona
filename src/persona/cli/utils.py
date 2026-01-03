@@ -15,7 +15,6 @@ from fsspec.asyn import AsyncFileSystem
 
 from persona.storage import IndexEntry
 from persona.embedder import FastEmbedder
-from persona.types import personaTypes
 from persona.cache import download_and_cache_github_repo
 from persona.cli.commands import copy_template, list_templates, remove_template, match_query
 
@@ -171,6 +170,7 @@ async def _template_producer(afs: AsyncFileSystem, root: str, queue: asyncio.Que
 async def _embedding_consumer(
     queue: asyncio.Queue,
     embedder: FastEmbedder,
+    index_keys: list[str],
     batch_size: int = 32,
 ) -> dict[str, list[dict]]:
     """Consume template frontmatter and embed them in batches of size 32
@@ -183,10 +183,7 @@ async def _embedding_consumer(
     Returns:
         dict[str, list[dict]]: Dictionary with keys 'skills' and 'roles' containing lists of embedded templates.
     """
-    index = {
-        'skills': [],
-        'roles': [],
-    }
+    index = {k: [] for k in index_keys}
     batch: list[IndexEntry] = []
 
     async def process_batch(current_batch: list[IndexEntry]):
@@ -196,8 +193,13 @@ async def _embedding_consumer(
         embeddings = await asyncio.to_thread(embedder.encode, descriptions)
         for item, embedding in zip(current_batch, embeddings):
             item.update('embedding', embedding.tolist())
-            index_type = cast(personaTypes, item.type)
-            index[index_type].append(item.model_dump(exclude_none=True, exclude={'type'}))
+            if item.type is None:
+                raise ValueError('Item type cannot be None')
+            if item.type not in index:
+                raise ValueError(
+                    f'Unknown item type: {item.type}, expected one of {index_keys}',
+                )
+            index[item.type].append(item.model_dump(exclude_none=True, exclude={'type'}))
 
     while True:
         item = await queue.get()

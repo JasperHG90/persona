@@ -12,7 +12,6 @@ from persona.storage import (
     BaseFileStore,
 )
 from persona.embedder import FastEmbedder
-from persona.types import personaTypes
 from persona.mcp.models import TemplateDetails, SkillFile, TemplateMatch
 from persona.mcp.utils.const import EXT_WHITELIST
 from persona.mcp.utils.lib import library_skills
@@ -20,7 +19,7 @@ from persona.mcp.utils.lib import library_skills
 logger = logging.getLogger('persona.mcp.utils.retrieval')
 
 
-def _list(type: personaTypes, session: BaseMetaStoreSession) -> list[dict]:
+def _list(type: str, session: BaseMetaStoreSession) -> list[dict]:
     """List all personas (logic)."""
     return session.get_many(
         table_name=type,
@@ -150,7 +149,7 @@ def _get_persona(
 
 
 def _match(
-    type: personaTypes,
+    type: str,
     query_string: str,
     embedding_model: FastEmbedder,
     meta_store: BaseMetaStoreSession,
