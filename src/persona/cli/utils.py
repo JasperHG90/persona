@@ -15,6 +15,7 @@ from fsspec.asyn import AsyncFileSystem
 
 from persona.storage import IndexEntry
 from persona.embedder import FastEmbedder
+from persona.tagger import TagExtractor
 from persona.cache import download_and_cache_github_repo
 from persona.cli.commands import copy_template, list_templates, remove_template, match_query
 
@@ -186,6 +187,7 @@ async def _template_producer(afs: AsyncFileSystem, root: str, queue: asyncio.Que
 async def _embedding_consumer(
     queue: asyncio.Queue,
     embedder: FastEmbedder,
+    tagger: TagExtractor,
     index_keys: list[str],
     batch_size: int = 32,
 ) -> dict[str, list[dict]]:
@@ -206,9 +208,14 @@ async def _embedding_consumer(
         if not current_batch:
             return
         descriptions = [cast(str, entry.description) for entry in current_batch]
+        ids = cast(list[str], [entry.name for entry in current_batch])
         embeddings = await asyncio.to_thread(embedder.encode, descriptions)
+        # NB: it's simpler to just extract it for the whole batch
+        tags = await asyncio.to_thread(tagger.extract_tags, ids, descriptions)
         for item, embedding in zip(current_batch, embeddings):
             item.update('embedding', embedding.tolist())
+            if item.tags is None:
+                item.update('tags', tags.get(cast(str, item.name), []))
             if item.type is None:
                 raise ValueError('Item type cannot be None')
             if item.type not in index:

@@ -22,6 +22,7 @@ from .utils import _template_producer, _embedding_consumer
 from persona.storage import get_file_store_backend, get_meta_store_backend
 from persona.config import parse_persona_config, PersonaConfig
 from persona.embedder import get_embedding_model
+from persona.tagger import get_tagger
 
 logger = logging.getLogger('persona')
 handler = logging.StreamHandler()
@@ -124,6 +125,7 @@ def reindex(ctx: typer.Context):
     target_file_store = get_file_store_backend(_config.file_store)
     meta_store = get_meta_store_backend(_config.meta_store, read_only=False)
     embedder = get_embedding_model()
+    tagger = get_tagger(embedder)
     _path = _config.root
 
     async def run_pipeline():
@@ -141,7 +143,9 @@ def reindex(ctx: typer.Context):
         queue = asyncio.Queue(maxsize=128)
         producer_task = asyncio.create_task(_template_producer(afs, _path, queue))
         consumer_task = asyncio.create_task(
-            _embedding_consumer(queue, embedder, batch_size=32, index_keys=['roles', 'skills'])
+            _embedding_consumer(
+                queue, embedder, tagger, batch_size=32, index_keys=['roles', 'skills']
+            )
         )
         await asyncio.gather(producer_task)
         results = await consumer_task
