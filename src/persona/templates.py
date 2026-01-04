@@ -17,6 +17,7 @@ from persona.storage import (
 )
 from persona.config import LocalFileStoreConfig
 from persona.embedder import FastEmbedder
+from persona.tagger import TagExtractor
 from persona.types import personaTypes
 
 logger = logging.getLogger('persona.core.files')
@@ -129,6 +130,7 @@ class Template(BaseModel):
         target_file_store: BaseFileStore,
         meta_store_engine: CursorLikeMetaStoreEngine,
         embedder: FastEmbedder,
+        tagger: TagExtractor,
     ) -> None:
         """Recursively copies all files in the directory of a template to the target file store.
 
@@ -155,6 +157,10 @@ class Template(BaseModel):
             )
 
         entry.update('embedding', embedder.encode([entry.description]).squeeze().tolist())
+
+        if entry.tags is None or cast(list[str] | None, metadata.get('tags', None)) is None:
+            tags = tagger.extract_tags(ids=[entry.name], texts=[entry.description])
+            entry.update('tags', tags[entry.name])
 
         target_key = f'{self.get_type()}/{entry.name}'
 

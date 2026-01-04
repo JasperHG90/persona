@@ -9,6 +9,7 @@ from persona.config import PersonaConfig
 from persona.storage import get_file_store_backend, get_meta_store_backend, IndexEntry, Transaction
 from persona.templates import TemplateFile, Template
 from persona.embedder import get_embedding_model
+from persona.tagger import get_tagger
 from persona.utils import get_templates_data, search_templates_data
 
 console = Console()
@@ -77,6 +78,7 @@ def copy_template(
     path: plb.Path,
     name: str | None,
     description: str | None,
+    tags: list[str] | None,
     type: str,
 ):
     """Copy a template from a local path to the target file store.
@@ -92,13 +94,15 @@ def copy_template(
     target_file_store = get_file_store_backend(config.file_store)
     meta_store = get_meta_store_backend(config.meta_store, read_only=False)
     embedder = get_embedding_model()
+    tagger = get_tagger(embedder)
     template: Template = TemplateFile.validate_python({'path': path, 'type': type})
     with Transaction(target_file_store, meta_store):
         template.process_template(
-            entry=IndexEntry(name=name, description=description),
+            entry=IndexEntry(name=name, description=description, tags=tags),
             target_file_store=target_file_store,
             meta_store_engine=meta_store,
             embedder=embedder,
+            tagger=tagger,
         )
 
 

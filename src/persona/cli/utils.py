@@ -73,13 +73,21 @@ def create_cli(name: str, template_type: str, help_string: str, description_stri
                 help=f'A brief description of the {description_string}. If not provided, then must be described in the YAML frontmatter of the template.'
             ),
         ] = None,
+        tags: Annotated[
+            list[str] | None,
+            typer.Option(
+                '--tag',
+                '-t',
+                help=f'Tags to associate with the {name}. Can be provided multiple times. If not provided, then these will be generated automatically from the template description.',
+            ),
+        ] = None,
     ):
         if github_url:
             repo_path = download_and_cache_github_repo(github_url, path)
             template_path = repo_path / path
         else:
             template_path = plb.Path(path)
-        copy_template(ctx, template_path, name, description, template_type)
+        copy_template(ctx, template_path, name, description, tags, template_type)
 
     @app.command(
         'remove',
@@ -141,6 +149,7 @@ async def _template_producer(afs: AsyncFileSystem, root: str, queue: asyncio.Que
                 uuid=content.get('uuid', uuid.uuid4().hex),
                 type=entry_type,
                 files=content['files'],
+                tags=content.get('tags', None),
             )
         else:
             # NB: this is always text content
@@ -162,8 +171,11 @@ async def _template_producer(afs: AsyncFileSystem, root: str, queue: asyncio.Que
                 uuid=uuid.uuid4().hex,  # Random init
                 type=entry_type,
                 files=cleaned_files,
+                tags=cast(list[str] | None, fm.metadata.get('tags', None)),
             )
             # Save manifest
+            # NB: This speeds up future reads, but requires **write** permissions
+            # to the storage backend
             await afs._pipe(
                 manifest_path, orjson.dumps(entry.model_dump(exclude_none=True, exclude={'type'}))
             )
