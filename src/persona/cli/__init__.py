@@ -34,6 +34,44 @@ LAZY_SUBCOMMANDS = {
 }
 
 
+# class LazyTyperGroup(TyperGroup):
+#     def list_commands(self, ctx):
+#         base = super().list_commands(ctx)
+#         return list(sorted(base + list(LAZY_SUBCOMMANDS.keys())))
+
+#     def get_command(self, ctx, cmd_name):
+#         if cmd_name in LAZY_SUBCOMMANDS:
+#             return self._lazy_load(cmd_name)
+#         return super().get_command(ctx, cmd_name)
+
+#     def _lazy_load(self, cmd_name):
+#         import_path = LAZY_SUBCOMMANDS[cmd_name]
+#         modname, app_obj_name = import_path.split(":")
+
+#         mod = importlib.import_module(modname)
+#         typer_app = getattr(mod, app_obj_name)
+
+#         # Fix: Create command first, then set name
+#         cmd = typer_get_command(typer_app)
+#         cmd.name = cmd_name
+#         return cmd
+
+#     def format_commands(self, ctx, formatter):
+#         """Custom formatter to prevent lazy loading during --help"""
+#         commands = []
+#         for subcommand in super().list_commands(ctx):
+#             cmd = self.get_command(ctx, subcommand)
+#             if cmd and not cmd.hidden:
+#                 commands.append((subcommand, cmd.get_short_help_str()))
+
+#         for name in LAZY_SUBCOMMANDS.keys():
+#             commands.append((name, ""))
+
+
+#         commands.sort(key=lambda x: x[0])
+#         if commands:
+#             with formatter.section("Commands"):
+#                 formatter.write_dl(commands)
 class LazyTyperGroup(TyperGroup):
     def list_commands(self, ctx):
         base = super().list_commands(ctx)
