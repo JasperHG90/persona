@@ -160,9 +160,10 @@ def install_skill(ctx: typer.Context, name: str, output_dir: plb.Path):
     console.print(f'[green]Skill "{name}" has been installed to {output_dir}.[/green]')
 
 
-def get_role(
+def get_definition(
     ctx: typer.Context,
     name: str,
+    type: str,
     output_dir: plb.Path | None = None,
 ):
     """Get a role description and either print it to the console or write it to disk
@@ -186,7 +187,7 @@ def get_role(
         )
 
         try:
-            raw_content = api.get_role(name)
+            raw_content = api.get_definition(name, type)
         except ValueError as e:
             console.print(f'[red]{e}[/red]')
             raise typer.Exit(code=1)

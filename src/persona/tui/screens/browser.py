@@ -33,7 +33,7 @@ class BrowserScreen(Static):
         template_type = cast(personaTypes, self.type)
         if query:
             results = app.api.search_templates(
-                query, template_type, columns=['name', 'description', 'uuid', 'score']
+                query, template_type, columns=['name', 'description', 'uuid']
             )
         else:
             results = app.api.list_templates(template_type, columns=['name', 'description', 'uuid'])
@@ -44,7 +44,10 @@ class BrowserScreen(Static):
         table = self.query_one(DataTable)
         table.clear()
         for r in results:
-            table.add_row(*[str(v) for v in r.values()], key=r['name'])
+            table.add_row(
+                *[str(v) for k, v in r.items() if k in ['name', 'description', 'uuid']],
+                key=r['name'],
+            )
 
     def on_input_changed(self, event: Input.Changed) -> None:
         if event.input.id == f'search_{self.type}':

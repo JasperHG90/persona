@@ -19,16 +19,22 @@ from persona.storage import IndexEntry
 from persona.embedder import FastEmbedder
 from persona.tagger import TagExtractor
 from persona.cache import download_and_cache_github_repo
-from persona.cli.commands import copy_template, list_templates, remove_template, match_query
+from persona.cli.commands import (
+    copy_template,
+    list_templates,
+    remove_template,
+    match_query,
+    get_definition,
+)
 
 console = Console()
 
 logger = logging.getLogger('persona.cli.utils')
 
 
-def create_cli(name: str, template_type: str, help_string: str, description_string: str):
+def create_cli(typer_name: str, template_type: str, help_string: str, description_string: str):
     app = typer.Typer(
-        name=name,
+        name=typer_name,
         help=help_string,
         no_args_is_help=True,
     )
@@ -45,7 +51,7 @@ def create_cli(name: str, template_type: str, help_string: str, description_stri
 
     @app.command(
         'register',
-        help=f'Register a new {name}.',
+        help=f'Register a new {template_type}.',
         no_args_is_help=True,
     )
     def register_item(
@@ -53,7 +59,7 @@ def create_cli(name: str, template_type: str, help_string: str, description_stri
         path: Annotated[
             str,
             typer.Argument(
-                help=f'The path to the {name} definition file. If a github url is passed, then this is the path within the repo'
+                help=f'The path to the {template_type} definition file. If a github url is passed, then this is the path within the repo'
                 'to the template file relative to the repo root.',
             ),
         ],
@@ -62,14 +68,14 @@ def create_cli(name: str, template_type: str, help_string: str, description_stri
             typer.Option(
                 '--github-url',
                 '-g',
-                help=f'The GitHub URL of the {name} to register. Must be in format "https://github.com/<USER>/<REPO>/tree/<BRANCH>"'
+                help=f'The GitHub URL of the {template_type} to register. Must be in format "https://github.com/<USER>/<REPO>/tree/<BRANCH>"'
                 '. Path to the template must then be specified relative to the repo root.',
             ),
         ] = None,
         name: Annotated[
             str | None,
             typer.Option(
-                help=f'The name of the {name} to register. If not provided, then must be described in the YAML frontmatter of the template.'
+                help=f'The name of the {template_type} to register. If not provided, then must be described in the YAML frontmatter of the template.'
             ),
         ] = None,
         description: Annotated[
@@ -83,7 +89,7 @@ def create_cli(name: str, template_type: str, help_string: str, description_stri
             typer.Option(
                 '--tag',
                 '-t',
-                help=f'Tags to associate with the {name}. Can be provided multiple times. If not provided, then these will be generated automatically from the template description.',
+                help=f'Tags to associate with the {template_type}. Can be provided multiple times. If not provided, then these will be generated automatically from the template description.',
             ),
         ] = None,
     ):
@@ -96,7 +102,7 @@ def create_cli(name: str, template_type: str, help_string: str, description_stri
 
     @app.command(
         'remove',
-        help=f'Remove an existing {name}.',
+        help=f'Remove an existing {template_type}.',
         no_args_is_help=True,
     )
     def remove_item(
@@ -104,7 +110,7 @@ def create_cli(name: str, template_type: str, help_string: str, description_stri
         name: Annotated[
             str,
             typer.Argument(
-                help=f'The name of the {name} to remove.',
+                help=f'The name of the {template_type} to remove.',
             ),
         ],
     ):
@@ -112,7 +118,7 @@ def create_cli(name: str, template_type: str, help_string: str, description_stri
 
     @app.command(
         'match',
-        help=f'Match a query to available {name}.',
+        help=f'Match a query to available {template_type}.',
         no_args_is_help=True,
     )
     def match(
@@ -120,11 +126,40 @@ def create_cli(name: str, template_type: str, help_string: str, description_stri
         query: Annotated[
             str,
             typer.Argument(
-                help=f'The description of the desired {name}.',
+                help=f'The description of the desired {template_type}.',
             ),
         ],
     ):
         match_query(ctx, query, template_type)
+
+    @app.command(name='get', help=f'Get the definition of a {template_type}.')
+    def get_item(
+        ctx: typer.Context,
+        name: Annotated[
+            str,
+            typer.Argument(
+                help=f'The name of the {template_type} to retrieve.',
+            ),
+        ],
+        output_dir: Annotated[
+            plb.Path | None,
+            typer.Option(
+                '--output-dir',
+                '-o',
+                help=f'Directory to save the {template_type} definition to. If not provided, prints to console.',
+                dir_okay=True,
+                file_okay=False,
+                writable=True,
+            ),
+        ] = None,
+    ):
+        f"""Get the definition of a {template_type}.
+
+        Args:
+            ctx (typer.Context): Typer context
+            name (str): The name of the {template_type} to retrieve.
+        """
+        get_definition(ctx, name, template_type, output_dir)
 
     return app
 

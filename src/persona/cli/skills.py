@@ -7,7 +7,7 @@ from persona.cli.commands import install_skill
 
 
 app = create_cli(
-    name='skills',
+    typer_name='skills',
     template_type='skills',
     help_string='Manage LLM skills.',
     description_string='skills',

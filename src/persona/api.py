@@ -9,7 +9,6 @@ from persona.embedder import FastEmbedder
 from persona.tagger import get_tagger
 from persona.templates import TemplateFile, Template
 from persona.models import SkillFile
-from persona.types import personaTypes
 
 # Moved back to mcp/utils/const.py or passed in as config if needed globally
 # For now, we will allow injecting a whitelist or default to a safe list if strictly necessary here,
@@ -67,7 +66,7 @@ class PersonaAPI:
         if not self._file_store:
             raise ValueError('File store instance is required for this operation.')
 
-    def list_templates(self, type: personaTypes, columns: list[str]) -> list[dict]:
+    def list_templates(self, type: str, columns: list[str]) -> list[dict]:
         """List templates of a specific type."""
         with self._meta_store.read_session() as session:
             results = session.get_many(
@@ -79,7 +78,7 @@ class PersonaAPI:
     def search_templates(
         self,
         query: str,
-        type: personaTypes,
+        type: str,
         columns: list[str],
         limit: int | None = None,
         max_cosine_distance: float | None = None,
@@ -104,16 +103,16 @@ class PersonaAPI:
 
         return results
 
-    def get_role(self, name: str) -> bytes:
-        """Get role raw content."""
+    def get_definition(self, name: str, type: str) -> bytes:
+        """Get template raw content."""
         self._requires_file_store()
 
         with self._meta_store.read_session() as session:
-            if not session.exists('roles', name):
-                raise ValueError(f"Role '{name}' does not exist.")
+            if not session.exists(type, name):
+                raise ValueError(f"{type.rstrip('s').capitalize()} '{name}' does not exist.")
 
-        role_path = f'roles/{name}/ROLE.md'
-        return cast(BaseFileStore, self._file_store).load(role_path)
+        definition_path = f'{type}/{name}/{type.rstrip("s").upper()}.md'
+        return cast(BaseFileStore, self._file_store).load(definition_path)
 
     def get_skill_files(self, name: str) -> dict[str, bytes]:
         """Get all raw files for a skill."""
@@ -242,7 +241,7 @@ class PersonaAPI:
     def publish_template(
         self,
         path: plb.Path,
-        type: personaTypes,
+        type: str,
         name: str | None = None,
         description: str | None = None,
         tags: list[str] | None = None,
@@ -265,7 +264,7 @@ class PersonaAPI:
                 tagger=tagger,
             )
 
-    def delete_template(self, name: str, type: personaTypes):
+    def delete_template(self, name: str, type: str):
         """Delete a template."""
         self._requires_file_store()
         fs = cast(BaseFileStore, self._file_store)
