@@ -61,7 +61,7 @@ def list_templates(ctx: typer.Context, type: str):
     meta_store = get_meta_store_backend(config.meta_store, read_only=True)
     table = Table('Name', 'Path', 'Description', 'UUID')
     with meta_store.open(bootstrap=True) as connected:
-        with connected.session() as session:
+        with connected.read_session() as session:
             results = get_templates_data(session, config.root, type)
     for result in results:
         table.add_row(
@@ -98,7 +98,7 @@ def copy_template(
     template: Template = TemplateFile.validate_python({'path': path, 'type': type})
     with Transaction(target_file_store, meta_store):
         template.process_template(
-            entry=IndexEntry(name=name, description=description, tags=tags),
+            entry=IndexEntry(name=name, description=description, tags=tags or []),
             target_file_store=target_file_store,
             meta_store_engine=meta_store,
             embedder=embedder,
