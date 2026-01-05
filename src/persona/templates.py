@@ -1,5 +1,6 @@
 import os
 import logging
+import hashlib
 from abc import abstractmethod
 import pathlib as plb
 from typing import Literal, Self, cast
@@ -184,6 +185,8 @@ class Template(BaseModel):
 
             if isinstance(file_, PersonaRootSourceFile):
                 content = file_.update_metadata(entry.name, entry.description)
+                # Update the etag value of the entry
+                entry.update('etag', hashlib.md5(content).hexdigest())
             else:
                 content = file_.content
 

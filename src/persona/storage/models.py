@@ -14,8 +14,13 @@ class IndexEntry(BaseModel):
     )
     uuid: str | None = Field(
         default=None,
-        description='The unique identifier of the template',
+        description='The unique identifier of the template (all files in the template share this UUID)',
         examples=['123e4567-e89b-12d3-a456-426614174000'],
+    )
+    etag: str | None = Field(
+        default=None,
+        description="The MD5 hash of the template's description file (e.g. ROLE.md or SKILL.md)",
+        examples=['9e107d9d372bb6826bd81d3542a419d6'],
     )
     files: list[str] | None = Field(
         default=None,

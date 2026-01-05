@@ -93,11 +93,11 @@ class TagExtractor:
         return f"""
         WITH matched_taxonomy AS (
             SELECT
-                i.input_id,
+                i.id,
                 t.name,
                 t.facet,
                 ROUND(array_cosine_similarity(t.embedding::FLOAT[384], i.query_vec::FLOAT[384])::DOUBLE, 3) as score,
-                row_number() OVER (PARTITION BY i.input_id, t.facet ORDER BY score DESC) as rank
+                row_number() OVER (PARTITION BY i.id, t.facet ORDER BY score DESC) as rank
             FROM read_parquet('{self._vocab_path}') t
             CROSS JOIN queries i
             QUALIFY
@@ -112,25 +112,24 @@ class TagExtractor:
         unique_tags AS (
             -- Deduplicate: Keep only the highest score for each tag per input
             SELECT
-                input_id,
+                id,
                 name,
                 MAX(score) as best_score
             FROM matched_taxonomy
-            GROUP BY input_id, name
+            GROUP BY id, name
         )
         SELECT
-            input_id,
+            id,
             -- Aggregate unique tags into a list, sorted by the highest match score
             list(name ORDER BY best_score DESC) as tags
         FROM unique_tags
-        GROUP BY input_id
-        ORDER BY input_id;
+        GROUP BY id
+        ORDER BY id;
         """
 
     def extract_tags(self, ids: list[str], texts: list[str]) -> dict[str, list[str]]:
         # NB: used in sql query
         queries = pa.Table.from_pydict({'id': ids, 'query_vec': self._model.encode(texts).tolist()})  # noqa
         return {
-            r['input_id']: r['tags']
-            for r in self._con.execute(self._sql).fetch_arrow_table().to_pylist()
+            r['id']: r['tags'] for r in self._con.execute(self._sql).fetch_arrow_table().to_pylist()
         }

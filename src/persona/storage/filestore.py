@@ -1,4 +1,3 @@
-import os
 import logging
 from typing import Generic, TypeVar, cast, BinaryIO, TYPE_CHECKING
 from abc import ABCMeta, abstractmethod
@@ -38,7 +37,9 @@ class BaseFileStore(Generic[T], metaclass=ABCMeta):
         Returns:
             str: joined path, e.g. /home/vscode/workspace/path/to/file.txt
         """
-        return os.path.join(str(self.config.root), key)
+        if not self.config.root:
+            raise ValueError('Root path is not set.')
+        return f'{self.config.root.rstrip("/")}/{key}'
 
     def _save(self, key: str, data: bytes) -> None:
         """Save data to the storage backend without transaction logging."""

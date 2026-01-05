@@ -1,15 +1,16 @@
 import pathlib as plb
 from typing_extensions import Annotated
-
-import typer
-import orjson
-from rich.console import Console
+import hashlib
+import datetime as dt
 import asyncio
 import os
 import uuid
 import itertools
 from typing import cast
 
+import typer
+import orjson
+from rich.console import Console
 import frontmatter
 from fsspec.asyn import AsyncFileSystem
 
@@ -125,6 +126,56 @@ def create_cli(name: str, template_type: str, help_string: str, description_stri
     return app
 
 
+def _get_mtime_ts(details: dict) -> float:
+    """Safely extract a unix timestamp (float) from fsspec info."""
+    if not details:
+        return 0.0
+
+    val = details.get('mtime', details.get('updated'))
+
+    if isinstance(val, dt.datetime):
+        return val.timestamp()
+
+    return float(val or 0.0)
+
+
+def _get_entry_from_manifest(
+    content_bytes: bytes,
+    entry_type: str,
+) -> IndexEntry:
+    content = orjson.loads(content_bytes)
+    return IndexEntry(
+        name=content['name'],
+        description=content['description'],
+        uuid=content.get('uuid', uuid.uuid4().hex),
+        etag=content.get('etag', ''),
+        type=entry_type,
+        files=content['files'],
+        tags=content.get('tags', None),
+    )
+
+
+async def _get_entry_from_source(
+    content_bytes: bytes,
+    files: list[str],
+    entry_type: str,
+) -> IndexEntry:
+    fm = await asyncio.to_thread(frontmatter.loads, content_bytes.decode('utf-8'))
+    description = '%s - %s' % (
+        cast(str, fm.metadata['name']),
+        cast(str, fm.metadata['description']),
+    )
+    return IndexEntry(
+        name=cast(str, fm.metadata['name']),
+        description=description,
+        uuid=uuid.uuid4().hex,  # Random init
+        type=entry_type,
+        etag=hashlib.md5(content_bytes).hexdigest(),
+        files=files,
+        tags=cast(list[str] | None, fm.metadata.get('tags', None)),
+    )
+
+
 async def _template_producer(afs: AsyncFileSystem, root: str, queue: asyncio.Queue):
     """Async read templates from the storage backend and process frontmatter
 
@@ -141,38 +192,35 @@ async def _template_producer(afs: AsyncFileSystem, root: str, queue: asyncio.Que
         _template = cast(str, template)
         entry_type = f'{_template.split("/")[-1].replace(".md", "").lower()}s'
         # Check for a manifest file and read that first
-        manifest_path = os.path.join(_template.rsplit('/', 1)[0], '.manifest.json')
-        if await afs._exists(manifest_path):
-            content = orjson.loads(cast(bytes, await afs._cat_file(manifest_path)))
-            entry = IndexEntry(
-                name=content['name'],
-                description=content['description'],
-                uuid=content.get('uuid', uuid.uuid4().hex),
-                type=entry_type,
-                files=content['files'],
-                tags=content.get('tags', None),
-            )
-        else:
+        manifest_path = f'{_template.rsplit("/", 1)[0]}/.manifest.json'
+        manifest_exists = await afs._exists(manifest_path)
+        entry: IndexEntry | None = None
+        if manifest_exists:
+            manifest_mtime = _get_mtime_ts(await afs._info(manifest_path))
+            template_mtime = _get_mtime_ts(await afs._info(_template))
+            if template_mtime <= manifest_mtime:
+                content = cast(bytes, await afs._cat_file(manifest_path))
+                entry = _get_entry_from_manifest(
+                    content,
+                    entry_type,
+                )
+        if entry is None:  # Read directly from source
             # NB: this is always text content
-            content = cast(bytes, await afs._cat_file(_template)).decode('utf-8')
-            fm = await asyncio.to_thread(frontmatter.loads, content)
+            content = cast(bytes, await afs._cat_file(_template))
             fp = _template.rsplit('/', 1)[0] + '/**/*'
-            description = '%s - %s' % (
-                cast(str, fm.metadata['name']),
-                cast(str, fm.metadata['description']),
-            )
             related_files_raw = cast(list[str], await afs._glob(fp))
             cleaned_files = [
-                os.path.relpath(f, root).replace('../', '').replace('.persona/', '')
+                os.path.relpath(f, root)
+                .replace('\\', '/')
+                .replace('../', '')
+                .replace('.persona/', '')
                 for f in related_files_raw
+                if not f.endswith('.manifest.json')
             ]
-            entry = IndexEntry(
-                name=cast(str, fm.metadata['name']),
-                description=description,
-                uuid=uuid.uuid4().hex,  # Random init
-                type=entry_type,
-                files=cleaned_files,
-                tags=cast(list[str] | None, fm.metadata.get('tags', None)),
+            entry = await _get_entry_from_source(
+                content,
+                cleaned_files,
+                entry_type,
             )
             # Save manifest
             # NB: This speeds up future reads, but requires **write** permissions
@@ -212,10 +260,14 @@ async def _embedding_consumer(
         embeddings = await asyncio.to_thread(embedder.encode, descriptions)
         # NB: it's simpler to just extract it for the whole batch
         tags = await asyncio.to_thread(tagger.extract_tags, ids, descriptions)
+        print(tags)
         for item, embedding in zip(current_batch, embeddings):
             item.update('embedding', embedding.tolist())
-            if item.tags is None:
-                item.update('tags', tags.get(cast(str, item.name), []))
+            item_name = cast(str, item.name)
+            if tags.get(item_name, None) is not None:
+                print(item_name, tags[item_name])
+                if item.tags is None or (item.tags == [] and tags[item_name] != []):
+                    item.update('tags', tags.get(item_name, []))
             if item.type is None:
                 raise ValueError('Item type cannot be None')
             if item.type not in index:

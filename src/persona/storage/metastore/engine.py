@@ -144,7 +144,7 @@ class DuckDBMetaStoreEngine(CursorLikeMetaStoreEngine[DuckDBMetaStoreConfig]):
             raise RuntimeError('No database connection; call connect() first.')
         for table in self._tables:
             self._conn.execute(
-                f'CREATE TABLE {table} (name VARCHAR PRIMARY KEY, date_created TIMESTAMP, description VARCHAR, tags VARCHAR[], uuid VARCHAR(32), files VARCHAR[], embedding FLOAT[384])'
+                f'CREATE TABLE {table} (name VARCHAR PRIMARY KEY, date_created TIMESTAMP, description VARCHAR, tags VARCHAR[], uuid VARCHAR(32), etag VARCHAR(32), files VARCHAR[], embedding FLOAT[384])'
             )
             path_ = getattr(self._config, f'{table}_index_path')
             try:

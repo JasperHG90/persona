@@ -1,4 +1,3 @@
-import os
 import logging
 import hashlib
 from typing import Any, Literal, TYPE_CHECKING, cast
@@ -143,7 +142,7 @@ class Transaction:
             for entry in cast(dict, metadata).get('upserts', []):
                 template_root = entry['files'][0].rsplit('/', 1)[0]
                 self._file_store.save(
-                    os.path.join(template_root, '.manifest.json'),
+                    f'{template_root.rstrip("/")}/.manifest.json',
                     orjson.dumps(
                         {k: v for k, v in entry.items() if k != 'embedding'},
                         option=orjson.OPT_INDENT_2,

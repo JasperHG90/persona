@@ -1,4 +1,3 @@
-import os
 import pathlib as plb
 from typing import Literal, Union
 from typing_extensions import Annotated
@@ -24,13 +23,13 @@ class BaseFileStoreConfig(ConfigWithRoot):
     def roles_dir(self) -> str:
         if not self.root:
             raise ValueError('Root path is not set.')
-        return os.path.join(self.root, 'roles')
+        return f'{self.root.rstrip("/")}/roles'
 
     @property
     def skills_dir(self) -> str:
         if not self.root:
             raise ValueError('Root path is not set.')
-        return os.path.join(self.root, 'skills')
+        return f'{self.root.rstrip("/")}/skills'
 
 
 class LocalFileStoreConfig(BaseFileStoreConfig):
@@ -79,21 +78,21 @@ class FileStoreBasedMetaStoreConfig(BaseMetaStoreConfig, ConfigWithRoot):
         """Directory on the file store backend where index files are stored."""
         if not self.root:
             raise ValueError('Root path is not set.')
-        return os.path.join(self.root, self.index_folder)
+        return f'{self.root.rstrip("/")}/{self.index_folder}'
 
     @property
     def roles_index_path(self) -> str:
         """Path to the roles index parquet file."""
         if not self.root:
             raise ValueError('Root path is not set.')
-        return os.path.join(self.index_path, 'roles.parquet')
+        return f'{self.index_path.rstrip("/")}/roles.parquet'
 
     @property
     def skills_index_path(self) -> str:
         """Path to the skills index parquet file."""
         if not self.root:
             raise ValueError('Root path is not set.')
-        return os.path.join(self.index_path, 'skills.parquet')
+        return f'{self.index_path.rstrip("/")}/skills.parquet'
 
 
 class DuckDBMetaStoreConfig(FileStoreBasedMetaStoreConfig, ConfigWithRoot):

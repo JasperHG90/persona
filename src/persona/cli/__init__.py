@@ -161,6 +161,7 @@ def reindex(ctx: typer.Context):
             # for duckdb, since session-based database is memory
             for k, v in index.items():
                 logger.info(f'Updating table: {k} with {len(v)} entries.')
+                print(v)
                 session.upsert(k, v)
 
 
