@@ -93,7 +93,7 @@ def insert_data(
         ),
         (
             'Analytics Engineer - The analytics engineer role focuses on building and maintaining data analytics infrastructure to support business intelligence and data-driven decision-making.',
-            ['Data Engineer', 'Machine Learning Engineer', 'DevOps Engineer'],
+            ['Data Engineer', 'DevOps Engineer', 'Machine Learning Engineer'],
         ),
         (
             'Scrum Master - The scrum master role is responsible for facilitating agile development processes, removing impediments, and ensuring effective communication within the development team.',
