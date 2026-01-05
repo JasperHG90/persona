@@ -17,6 +17,8 @@ from persona.storage import (
 )
 from persona.embedder import get_embedding_model, FastEmbedder
 from persona.mcp.models import AppContext
+from persona.api import PersonaAPI
+from .lib import library_skills
 
 
 @asynccontextmanager
@@ -42,10 +44,22 @@ async def lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
     meta_store_engine = (
         get_meta_store_backend(config.meta_store, read_only=True).connect().bootstrap()
     )
+    embedding_model = get_embedding_model()
+
     app_context = AppContext(config=config)
     app_context._file_store = file_store
     app_context._meta_store_engine = meta_store_engine
-    app_context._embedding_model = get_embedding_model()
+    app_context._embedding_model = embedding_model
+
+    # Initialize API once for the lifetime of the server
+    app_context._api = PersonaAPI(
+        config=config,
+        file_store=file_store,
+        meta_store=meta_store_engine,
+        embedder=embedding_model,
+        library_skills=library_skills,
+    )
+
     yield app_context
     meta_store_engine.close()
 
@@ -56,6 +70,11 @@ def get_meta_store_session(ctx: Context) -> Generator[BaseMetaStoreSession, None
     meta_store = app_context._meta_store_engine
     with meta_store.read_session() as session:
         yield session
+
+
+def get_api(ctx: Context) -> PersonaAPI:
+    app_context: AppContext = cast(RequestContext, ctx.request_context).lifespan_context
+    return app_context._api
 
 
 def get_file_store(ctx: Context) -> BaseFileStore:

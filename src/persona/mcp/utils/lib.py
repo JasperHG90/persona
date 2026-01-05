@@ -2,9 +2,9 @@ import pathlib as plb
 import logging
 from collections import defaultdict
 
-from persona.mcp.models import SkillFile
+from persona.models import SkillFile
 
-logger = logging.getLogger('persona.mcp.utils.retrieval')
+logger = logging.getLogger('persona.mcp.utils.lib')
 
 library_skills_path = plb.Path(__file__).parent.parent / 'assets' / 'skills'
 

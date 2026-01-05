@@ -3,8 +3,7 @@ from textual.widgets import Header, Footer, TabbedContent, TabPane
 from persona.config import PersonaConfig
 from persona.tui.screens.browser import BrowserScreen
 
-from persona.storage import get_meta_store_backend, CursorLikeMetaStoreEngine
-from persona.embedder import get_embedding_model, FastEmbedder
+from persona.api import PersonaAPI
 
 
 class PersonaApp(App):
@@ -14,10 +13,7 @@ class PersonaApp(App):
     def __init__(self, config: PersonaConfig):
         super().__init__()
         self.persona_config = config
-        self.meta_store: CursorLikeMetaStoreEngine = (
-            get_meta_store_backend(config.meta_store, read_only=True).connect().bootstrap()
-        )
-        self.embedder: FastEmbedder = get_embedding_model()
+        self.api = PersonaAPI(config)
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -27,6 +23,3 @@ class PersonaApp(App):
             with TabPane('Skills', id='skills'):
                 yield BrowserScreen(type='skills')
         yield Footer()
-
-    def on_unmount(self) -> None:
-        self.meta_store.close()
