@@ -149,9 +149,14 @@ def parse_persona_config(data: dict) -> PersonaConfig:
     """Parse persona config from a dictionary."""
     data_ = copy.deepcopy(data)
 
-    if data['file_store'].get('type') is None:
+    if data_.get('file_store') is None:
+        data_['file_store'] = {'type': 'local'}
+    elif data_['file_store'].get('type') is None:
         data_['file_store']['type'] = 'local'
-    if data['meta_store'].get('type') is None:
+
+    if data_.get('meta_store') is None:
+        data_['meta_store'] = {'type': 'duckdb'}
+    elif data_['meta_store'].get('type') is None:
         data_['meta_store']['type'] = 'duckdb'
 
     return PersonaConfig(**data_)
