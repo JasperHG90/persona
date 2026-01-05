@@ -52,10 +52,10 @@ pip install git+https://github.com/JasperHG90/persona.git
 
 ### 2. Initialization
 
-Initialize your local registry. This creates a `.persona` directory in your home folder to store your roles and skills.
+Initialize your local registry. This creates a `.persona` directory in your home folder to store your roles and skills, and will also create the persona configuration at `.persona.config.yaml`.
 
 ```sh
-persona init
+persona --set root=~/.persona init
 ```
 
 ### 3. Usage
