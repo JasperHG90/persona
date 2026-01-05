@@ -5,6 +5,7 @@ import datetime as dt
 import asyncio
 import os
 import uuid
+import logging
 import itertools
 from typing import cast
 
@@ -21,6 +22,8 @@ from persona.cache import download_and_cache_github_repo
 from persona.cli.commands import copy_template, list_templates, remove_template, match_query
 
 console = Console()
+
+logger = logging.getLogger('persona.cli.utils')
 
 
 def create_cli(name: str, template_type: str, help_string: str, description_string: str):
@@ -151,7 +154,7 @@ def _get_entry_from_manifest(
         etag=content.get('etag', ''),
         type=entry_type,
         files=content['files'],
-        tags=content.get('tags', None),
+        tags=content.get('tags', []),
     )
 
 
@@ -172,7 +175,7 @@ async def _get_entry_from_source(
         type=entry_type,
         etag=hashlib.md5(content_bytes).hexdigest(),
         files=files,
-        tags=cast(list[str] | None, fm.metadata.get('tags', None)),
+        tags=cast(list[str], fm.metadata.get('tags', [])),
     )
 
 
@@ -199,12 +202,16 @@ async def _template_producer(afs: AsyncFileSystem, root: str, queue: asyncio.Que
             manifest_mtime = _get_mtime_ts(await afs._info(manifest_path))
             template_mtime = _get_mtime_ts(await afs._info(_template))
             if template_mtime <= manifest_mtime:
+                logger.debug(f'Loading template manifest from {manifest_path}')
                 content = cast(bytes, await afs._cat_file(manifest_path))
                 entry = _get_entry_from_manifest(
                     content,
                     entry_type,
                 )
+            else:
+                logger.debug(f'Manifest for {_template} is outdated!')
         if entry is None:  # Read directly from source
+            logger.debug(f'Loading template source from {_template}')
             # NB: this is always text content
             content = cast(bytes, await afs._cat_file(_template))
             fp = _template.rsplit('/', 1)[0] + '/**/*'
@@ -222,17 +229,14 @@ async def _template_producer(afs: AsyncFileSystem, root: str, queue: asyncio.Que
                 cleaned_files,
                 entry_type,
             )
-            # Save manifest
-            # NB: This speeds up future reads, but requires **write** permissions
-            # to the storage backend
-            await afs._pipe(
-                manifest_path, orjson.dumps(entry.model_dump(exclude_none=True, exclude={'type'}))
-            )
+            # Set manifest path for downstream tasks
+            entry._manifest_path = manifest_path
         await queue.put(entry)
     await queue.put(None)
 
 
 async def _embedding_consumer(
+    afs: AsyncFileSystem,
     queue: asyncio.Queue,
     embedder: FastEmbedder,
     tagger: TagExtractor,
@@ -260,21 +264,27 @@ async def _embedding_consumer(
         embeddings = await asyncio.to_thread(embedder.encode, descriptions)
         # NB: it's simpler to just extract it for the whole batch
         tags = await asyncio.to_thread(tagger.extract_tags, ids, descriptions)
-        print(tags)
         for item, embedding in zip(current_batch, embeddings):
             item.update('embedding', embedding.tolist())
             item_name = cast(str, item.name)
-            if tags.get(item_name, None) is not None:
-                print(item_name, tags[item_name])
-                if item.tags is None or (item.tags == [] and tags[item_name] != []):
-                    item.update('tags', tags.get(item_name, []))
+            if tags.get(item_name) is not None:
+                if item.tags == [] and tags[item_name] != []:
+                    item.update('tags', tags[item_name])
             if item.type is None:
                 raise ValueError('Item type cannot be None')
             if item.type not in index:
                 raise ValueError(
                     f'Unknown item type: {item.type}, expected one of {index_keys}',
                 )
-            index[item.type].append(item.model_dump(exclude_none=True, exclude={'type'}))
+            item_dict = item.model_dump(exclude_none=True, exclude={'type'})
+            index[item.type].append(item_dict)
+            # If manifest path is set, then we need to update it
+            if item._manifest_path:
+                logging.debug(f'Writing manifest at {item._manifest_path}')
+                await afs._pipe(
+                    item._manifest_path,
+                    orjson.dumps({k: v for k, v in item_dict.items() if k != 'embedding'}),
+                )
 
     while True:
         item = await queue.get()

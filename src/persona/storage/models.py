@@ -1,9 +1,11 @@
 import datetime as dt
 
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel, Field, field_serializer, PrivateAttr
 
 
 class IndexEntry(BaseModel):
+    _manifest_path: str | None = PrivateAttr(default=None)
+
     name: str | None = Field(
         default=None, description='The name of the template', examples=['helpful-assistant']
     )
@@ -34,8 +36,8 @@ class IndexEntry(BaseModel):
         default=None,
         description='The embedding vector representing the template for similarity searches',
     )
-    tags: list[str] | None = Field(
-        default=None,
+    tags: list[str] = Field(
+        default_factory=list,
         description='List of tags associated with the template',
         examples=[['assistant', 'helpful', 'task-management']],
     )

@@ -144,7 +144,7 @@ def reindex(ctx: typer.Context):
         producer_task = asyncio.create_task(_template_producer(afs, _path, queue))
         consumer_task = asyncio.create_task(
             _embedding_consumer(
-                queue, embedder, tagger, batch_size=32, index_keys=['roles', 'skills']
+                afs, queue, embedder, tagger, batch_size=32, index_keys=['roles', 'skills']
             )
         )
         await asyncio.gather(producer_task)
@@ -161,7 +161,6 @@ def reindex(ctx: typer.Context):
             # for duckdb, since session-based database is memory
             for k, v in index.items():
                 logger.info(f'Updating table: {k} with {len(v)} entries.')
-                print(v)
                 session.upsert(k, v)
 
 
