@@ -162,6 +162,7 @@ class DuckDBMetaStoreEngine(CursorLikeMetaStoreEngine[DuckDBMetaStoreConfig]):
                 self._logger.warning(
                     f'No existing {table} index found at {path_}: Table initialized empty ...'
                 )
+                self._bootstrapped = True
             except Exception as e:
                 self._logger.error('Unknown error when loading existing index.')
                 raise e

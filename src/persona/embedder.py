@@ -98,7 +98,7 @@ class EmbeddingDownloader:
         """Download the model to the model directory."""
         if not self.model_dir.exists() or force_download:
             self.model_dir.mkdir(parents=True, exist_ok=True)
-        self._download_and_unzip(self._model_url, self.model_dir)
+            self._download_and_unzip(self._model_url, self.model_dir)
 
 
 class FastEmbedder:

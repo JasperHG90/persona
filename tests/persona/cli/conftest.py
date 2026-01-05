@@ -19,11 +19,12 @@ def mock_home(tmp_path: Path) -> Path:
 @pytest.fixture
 def mock_config_file(mock_home: Path) -> Path:
     config_file = mock_home.parent / '.persona.config.yaml'
-    config_data = {'type': 'local', 'root': str(mock_home), 'index': 'index'}
+    config_data = {
+        'root': str(mock_home),
+        'file_store': {'type': 'local', 'root': str(mock_home)},
+        'meta_store': {'type': 'duckdb', 'root': str(mock_home)},
+    }
     with open(config_file, 'w') as f:
         yaml.dump(config_data, f)
-
-    index = mock_home / 'index'
-    index.mkdir(parents=True, exist_ok=True)
 
     return config_file

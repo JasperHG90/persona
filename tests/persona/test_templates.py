@@ -1,147 +1,264 @@
 import pathlib as plb
-import pytest
 from unittest.mock import MagicMock
+
+import numpy as np
+import pytest
 from pydantic import ValidationError
 
 from persona.storage import IndexEntry
-from persona.templates import Persona, Skill, TemplateFile
+from persona.templates import (
+    PersonaRootSourceFile,
+    Role,
+    Skill,
+    SourceFile,
+    TemplateFile,
+    _is_persona_root_file,
+)
 
 
-def test_template_path_validation_exists() -> None:
-    with pytest.raises(ValidationError):
+@pytest.mark.parametrize(
+    ('filename', 'expected'),
+    [
+        ('ROLE.md', True),
+        ('SKILL.md', True),
+        ('README.md', False),
+        ('other.py', False),
+    ],
+)
+def test_is_persona_root_file(filename: str, expected: bool) -> None:
+    assert _is_persona_root_file(plb.Path(filename)) == expected
+
+
+def test_source_file_properties(tmp_path: plb.Path) -> None:
+    # Arrange
+    content = b'test content'
+    file_path = tmp_path / 'source' / 'subdir' / 'file.txt'
+    file_path.parent.mkdir(parents=True)
+    file_path.write_bytes(content)
+
+    # Act
+    sf = SourceFile(
+        path=file_path,
+        source_path_root=tmp_path / 'source',
+        target_path_root='target/root',
+    )
+
+    # Assert
+    assert sf.content == content
+    # target_key should be target_path_root + relative path from source_path_root
+    assert sf.target_key == 'target/root/subdir/file.txt'
+
+
+def test_source_file_target_key_cleanup() -> None:
+    # Arrange
+    file_path = plb.Path('/a/b/.persona/c/file.txt')
+    source_root = plb.Path('/a/b')
+
+    # Act
+    sf = SourceFile(
+        path=file_path,
+        source_path_root=source_root,
+        target_path_root='roles/my-role',
+    )
+
+    # Assert
+    # relpath is .persona/c/file.txt, .persona/ should be stripped
+    assert sf.target_key == 'roles/my-role/c/file.txt'
+
+
+def test_persona_root_source_file_metadata(tmp_path: plb.Path) -> None:
+    # Arrange
+    content = '---\nname: original\ndescription: old desc\n---\nbody'
+    file_path = tmp_path / 'ROLE.md'
+    file_path.write_text(content)
+
+    sf = PersonaRootSourceFile(path=file_path)
+
+    # Act
+    updated_content = sf.update_metadata(name='new name', description='new desc')
+
+    # Assert
+    assert b'new name' in updated_content
+    assert b'new desc' in updated_content
+    assert b'body' in updated_content
+    # sf.metadata is updated in-place because it's a reference to fm.metadata
+    assert sf.metadata == {'name': 'new name', 'description': 'new desc'}
+
+
+def test_template_invalid_path() -> None:
+    with pytest.raises(ValidationError, match='Path does not exist'):
         Skill(path=plb.Path('non_existent_path'))
 
 
 @pytest.mark.parametrize(
-    ('file_name', 'template_type'),
+    ('cls', 'filename', 'valid'),
     [
-        ('SKILL.md', Skill),
-        ('PERSONA.md', Persona),
+        (Skill, 'SKILL.md', True),
+        (Skill, 'ROLE.md', False),
+        (Role, 'ROLE.md', True),
+        (Role, 'SKILL.md', False),
     ],
 )
-def test_template_file_template_name_correct_file(
-    tmp_path: plb.Path, file_name: str, template_type
-) -> None:
-    template_file = tmp_path / file_name
-    template_file.touch()
-    template_type(path=template_file)
-
-
-@pytest.mark.parametrize(
-    ('file_name', 'template_type'),
-    [
-        ('SKILL.md', Skill),
-        ('PERSONA.md', Persona),
-    ],
-)
-def test_template_file_template_name_correct_dir(
-    tmp_path: plb.Path, file_name: str, template_type
-) -> None:
-    template_dir = tmp_path / 'template'
-    template_dir.mkdir()
-    (template_dir / file_name).touch()
-    template_type(path=template_dir)
-
-
-def test_template_file_template_name_incorrect(tmp_path: plb.Path) -> None:
-    template_file = tmp_path / 'INVALID.md'
-    template_file.touch()
-    with pytest.raises(ValidationError):
-        Skill(path=template_file)
-
-
-def test_template_metadata_property(tmp_path: plb.Path) -> None:
-    template_file = tmp_path / 'SKILL.md'
-    template_file.write_text('---\nname: test\ndescription: a test\n---\n')
-    skill = Skill(path=template_file)
-    assert skill.metadata == {'name': 'test', 'description': 'a test'}
-
-
-@pytest.mark.parametrize(
-    ('template_class', 'file_name', 'is_dir'),
-    [
-        (Skill, 'SKILL.md', False),
-        (Persona, 'PERSONA.md', True),
-    ],
-)
-def test_template_copy_template(
-    tmp_path: plb.Path, template_class: Skill | Persona, file_name: str, is_dir: bool
+def test_template_file_name_validation(
+    tmp_path: plb.Path, cls: type, filename: str, valid: bool
 ) -> None:
     # Arrange
-    if is_dir:
-        template_path = tmp_path / 'template'
-        template_path.mkdir()
-        (template_path / file_name).write_text('---\n---\n')
+    path = tmp_path / filename
+    path.touch()
+
+    # Act & Assert
+    if valid:
+        obj = cls(path=path)
+        assert obj.path == path
     else:
-        template_path = tmp_path / file_name
-        template_path.write_text('---\n---\n')
-
-    mock_storage = MagicMock()
-    mock_vector_db = MagicMock()
-    entry = IndexEntry(name='test_name', description='test_description', type='skill')
-    mock_vector_db._metadata = [('upsert', entry)]
-    template = template_class.model_validate({'path': template_path})
-
-    # Act
-    template.copy_template(entry, mock_storage, mock_vector_db)
-
-    # Assert
-    mock_storage.save.assert_called()
-    mock_vector_db.update_table.assert_called()
+        with pytest.raises(ValidationError, match='is not a valid'):
+            cls(path=path)
 
 
-def test_template_copy_template_missing_name_description(tmp_path: plb.Path) -> None:
-    template_file = tmp_path / 'SKILL.md'
-    template_file.write_text('---\n---\n')
-    skill = Skill(path=template_file)
-    mock_storage = MagicMock()
-    mock_vector_db = MagicMock()
-    entry = IndexEntry()
-    with pytest.raises(ValueError):
-        skill.copy_template(entry, mock_storage, mock_vector_db)
-
-
-def test_template_copy_template_binary_file(tmp_path: plb.Path) -> None:
-    template_dir = tmp_path / 'template'
+def test_template_directory_validation(tmp_path: plb.Path) -> None:
+    # Arrange
+    template_dir = tmp_path / 'my_skill'
     template_dir.mkdir()
     (template_dir / 'SKILL.md').touch()
-    binary_file = template_dir / 'binary.bin'
-    binary_file.write_bytes(b'\x80')
 
-    mock_storage = MagicMock()
-    mock_vector_db = MagicMock()
-    entry = IndexEntry(name='test_name', description='test_description', type='skill')
-    mock_vector_db._metadata = [('upsert', entry)]
+    # Act
     skill = Skill(path=template_dir)
 
-    skill.copy_template(entry, mock_storage, mock_vector_db)
+    # Assert
+    assert skill.is_dir is True
 
 
-def test_skill_get_type(tmp_path: plb.Path) -> None:
-    template_file = tmp_path / 'SKILL.md'
-    template_file.touch()
-    skill = Skill(path=template_file)
-    assert skill.get_type() == 'skill'
+def test_template_directory_validation_missing_file(tmp_path: plb.Path) -> None:
+    # Arrange
+    template_dir = tmp_path / 'empty_dir'
+    template_dir.mkdir()
+
+    # Act & Assert
+    with pytest.raises(ValidationError, match='is not a valid SKILL.md template'):
+        Skill(path=template_dir)
 
 
-def test_persona_get_type(tmp_path: plb.Path) -> None:
-    template_file = tmp_path / 'PERSONA.md'
-    template_file.touch()
-    persona = Persona(path=template_file)
-    assert persona.get_type() == 'persona'
+def test_template_metadata_extraction(tmp_path: plb.Path) -> None:
+    # Arrange
+    template_dir = tmp_path / 'my_role'
+    template_dir.mkdir()
+    (template_dir / 'ROLE.md').write_text('---\nname: role-name\n---')
+
+    role = Role(path=template_dir)
+
+    # Act
+    metadata = role.metadata
+
+    # Assert
+    assert metadata == {'name': 'role-name'}
 
 
-def test_anytemplate_discriminator(tmp_path: plb.Path) -> None:
-    skill_path = tmp_path / 'SKILL.md'
-    skill_path.touch()
-    persona_path = tmp_path / 'PERSONA.md'
-    persona_path.touch()
+def test_process_template_full_cycle(tmp_path: plb.Path) -> None:
+    # Arrange
+    template_dir = tmp_path / 'my_skill'
+    template_dir.mkdir()
+    root_file = template_dir / 'SKILL.md'
+    root_file.write_text('---\nname: skill-from-fm\ndescription: desc-from-fm\n---\ncontent')
+    (template_dir / 'other.py').write_text('print("hello")')
 
-    skill_data = {'type': 'skill', 'path': skill_path}
-    persona_data = {'type': 'persona', 'path': persona_path}
+    skill = Skill(path=template_dir)
 
-    skill_obj = TemplateFile.validate_python(skill_data)
-    persona_obj = TemplateFile.validate_python(persona_data)
+    entry = IndexEntry()
+    mock_file_store = MagicMock()
+    mock_meta_engine = MagicMock()
+    mock_embedder = MagicMock()
+    mock_embedder.encode.return_value = np.zeros((1, 384))
+    mock_tagger = MagicMock()
+    mock_tagger.extract_tags.return_value = {'skill-from-fm': ['tag1']}
 
+    # Act
+    skill.process_template(
+        entry=entry,
+        target_file_store=mock_file_store,
+        meta_store_engine=mock_meta_engine,
+        embedder=mock_embedder,
+        tagger=mock_tagger,
+    )
+
+    # Assert
+    assert entry.name == 'skill-from-fm'
+    assert entry.description == 'skill-from-fm - desc-from-fm'
+    assert entry.type == 'skills'
+    assert entry.tags == ['tag1']
+    assert entry.embedding == [0.0] * 384
+    assert len(entry.files) == 2
+    assert any(f.endswith('SKILL.md') for f in entry.files)
+    assert any(f.endswith('other.py') for f in entry.files)
+    assert entry.etag is not None
+
+    assert mock_file_store.save.call_count == 2
+    mock_meta_engine.index.assert_called_once_with(entry)
+
+
+def test_process_template_overrides(tmp_path: plb.Path) -> None:
+    # Arrange
+    root_file = tmp_path / 'SKILL.md'
+    # Including tags in frontmatter prevents the tagger from being called
+    root_file.write_text('---\nname: fm-name\ndescription: fm-desc\ntags: [fm-tag]\n---')
+    skill = Skill(path=root_file)
+
+    entry = IndexEntry(name='explicit-name', description='explicit-desc', tags=['manual'])
+    mock_file_store = MagicMock()
+    mock_meta_engine = MagicMock()
+    mock_embedder = MagicMock()
+    mock_embedder.encode.return_value = np.zeros((1, 384))
+    mock_tagger = MagicMock()
+
+    # Act
+    skill.process_template(
+        entry=entry,
+        target_file_store=mock_file_store,
+        meta_store_engine=mock_meta_engine,
+        embedder=mock_embedder,
+        tagger=mock_tagger,
+    )
+
+    # Assert
+    assert entry.name == 'explicit-name'
+    assert entry.description == 'explicit-name - explicit-desc'
+    assert entry.tags == ['manual']
+    mock_tagger.extract_tags.assert_not_called()
+
+
+def test_process_template_missing_metadata_error(tmp_path: plb.Path) -> None:
+    # Arrange
+    root_file = tmp_path / 'SKILL.md'
+    root_file.write_text('---\n---')  # No name/description
+    skill = Skill(path=root_file)
+
+    entry = IndexEntry()
+    mock_file_store = MagicMock()
+    mock_meta_engine = MagicMock()
+    mock_embedder = MagicMock()
+    mock_tagger = MagicMock()
+
+    # Act & Assert
+    with pytest.raises(ValueError, match='Template must have a name and description'):
+        skill.process_template(
+            entry=entry,
+            target_file_store=mock_file_store,
+            meta_store_engine=mock_meta_engine,
+            embedder=mock_embedder,
+            tagger=mock_tagger,
+        )
+
+
+def test_template_file_adapter_discriminator(tmp_path: plb.Path) -> None:
+    # Arrange
+    skill_file = tmp_path / 'SKILL.md'
+    skill_file.touch()
+    role_file = tmp_path / 'ROLE.md'
+    role_file.touch()
+
+    # Act
+    skill_obj = TemplateFile.validate_python({'type': 'skills', 'path': str(skill_file)})
+    role_obj = TemplateFile.validate_python({'type': 'roles', 'path': str(role_file)})
+
+    # Assert
     assert isinstance(skill_obj, Skill)
-    assert isinstance(persona_obj, Persona)
+    assert isinstance(role_obj, Role)

@@ -5,7 +5,6 @@ import pytest
 from typer.testing import CliRunner
 
 from persona.cli import app
-from persona.models import TemplateSummary
 
 
 @pytest.fixture
@@ -18,17 +17,20 @@ def mock_api():
 
 def test_list_templates_personas(runner: CliRunner, mock_api: MagicMock) -> None:
     # Arrange
+    # API returns dicts, not objects
     mock_api.list_templates.return_value = [
-        TemplateSummary(name='test_persona', description='A test persona', uuid='1234')
+        {'name': 'test_persona', 'description': 'A test persona', 'uuid': '1234'}
     ]
 
     # Act
-    result = runner.invoke(app, ['personas', 'list'])
+    result = runner.invoke(app, ['roles', 'list'])
 
     # Assert
     assert result.exit_code == 0
     assert 'test_persona' in result.stdout
-    mock_api.list_templates.assert_called_once_with('personas')
+    mock_api.list_templates.assert_called_once_with(
+        'roles', columns=['name', 'description', 'uuid']
+    )
 
 
 def test_list_templates_empty(runner: CliRunner, mock_api: MagicMock) -> None:
@@ -36,11 +38,13 @@ def test_list_templates_empty(runner: CliRunner, mock_api: MagicMock) -> None:
     mock_api.list_templates.return_value = []
 
     # Act
-    result = runner.invoke(app, ['personas', 'list'])
+    result = runner.invoke(app, ['roles', 'list'])
 
     # Assert
     assert result.exit_code == 0
-    mock_api.list_templates.assert_called_once_with('personas')
+    mock_api.list_templates.assert_called_once_with(
+        'roles', columns=['name', 'description', 'uuid']
+    )
 
 
 def test_copy_template(runner: CliRunner, mock_api: MagicMock, tmp_path: plb.Path) -> None:
@@ -51,7 +55,7 @@ def test_copy_template(runner: CliRunner, mock_api: MagicMock, tmp_path: plb.Pat
     # Act
     result = runner.invoke(
         app,
-        ['personas', 'register', str(template_path)],
+        ['roles', 'register', str(template_path)],
     )
 
     # Assert
@@ -61,12 +65,12 @@ def test_copy_template(runner: CliRunner, mock_api: MagicMock, tmp_path: plb.Pat
 
 def test_remove_template(runner: CliRunner, mock_api: MagicMock) -> None:
     # Act
-    result = runner.invoke(app, ['personas', 'remove', 'test_persona'])
+    result = runner.invoke(app, ['roles', 'remove', 'test_persona'])
 
     # Assert
     assert result.exit_code == 0
     assert 'Template "test_persona" has been removed' in result.stdout
-    mock_api.delete_template.assert_called_once_with('test_persona', 'personas')
+    mock_api.delete_template.assert_called_once_with('test_persona', 'roles')
 
 
 def test_remove_template_not_found(runner: CliRunner, mock_api: MagicMock) -> None:
@@ -76,7 +80,7 @@ def test_remove_template_not_found(runner: CliRunner, mock_api: MagicMock) -> No
     )
 
     # Act
-    result = runner.invoke(app, ['personas', 'remove', 'non_existent_persona'])
+    result = runner.invoke(app, ['roles', 'remove', 'non_existent_persona'])
 
     # Assert
     assert result.exit_code != 0

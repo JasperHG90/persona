@@ -4,12 +4,11 @@ from unittest.mock import patch
 from typer.testing import CliRunner
 
 from persona.cli.utils import create_cli
-from persona.cli.commands import TemplateTypeEnum
 
 
 def test_create_cli_list(runner: CliRunner) -> None:
     # Arrange
-    app = create_cli('test', TemplateTypeEnum.PERSONA, 'help', 'desc')
+    app = create_cli('test', 'roles', 'help', 'desc')
 
     # Act
     with patch('persona.cli.utils.list_templates') as mock_list:
@@ -22,7 +21,7 @@ def test_create_cli_list(runner: CliRunner) -> None:
 
 def test_create_cli_register_local(runner: CliRunner, tmp_path: Path) -> None:
     # Arrange
-    app = create_cli('test', TemplateTypeEnum.PERSONA, 'help', 'desc')
+    app = create_cli('test', 'roles', 'help', 'desc')
     template_path = tmp_path / 'PERSONA.md'
     template_path.touch()
 
@@ -37,7 +36,7 @@ def test_create_cli_register_local(runner: CliRunner, tmp_path: Path) -> None:
 
 def test_create_cli_register_github(runner: CliRunner) -> None:
     # Arrange
-    app = create_cli('test', TemplateTypeEnum.PERSONA, 'help', 'desc')
+    app = create_cli('test', 'roles', 'help', 'desc')
 
     # Act
     with patch('persona.cli.utils.download_and_cache_github_repo') as mock_download:
@@ -60,7 +59,7 @@ def test_create_cli_register_github(runner: CliRunner) -> None:
 
 def test_create_cli_remove(runner: CliRunner) -> None:
     # Arrange
-    app = create_cli('test', TemplateTypeEnum.PERSONA, 'help', 'desc')
+    app = create_cli('test', 'roles', 'help', 'desc')
 
     # Act
     with patch('persona.cli.utils.remove_template') as mock_remove:

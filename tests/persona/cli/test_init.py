@@ -5,14 +5,13 @@ from unittest.mock import patch, MagicMock
 import pytest
 from typer.testing import CliRunner
 
-from persona.storage import VectorDatabase
 from persona.cli import app
 
 
 def test_main_debug(runner: CliRunner, mock_config_file: Path) -> None:
-    # Arrange
     # Act
-    result = runner.invoke(app, ['--config', str(mock_config_file), '--debug', 'personas', 'list'])
+    # We use 'roles' command just as a placeholder to trigger the callback
+    result = runner.invoke(app, ['--config', str(mock_config_file), '--debug', 'roles', 'list'])
 
     # Assert
     assert result.exit_code == 0
@@ -20,9 +19,8 @@ def test_main_debug(runner: CliRunner, mock_config_file: Path) -> None:
 
 
 def test_main_config_path(runner: CliRunner, mock_config_file: Path) -> None:
-    # Arrange
     # Act
-    result = runner.invoke(app, ['--config', str(mock_config_file), 'personas', 'list'])
+    result = runner.invoke(app, ['--config', str(mock_config_file), 'roles', 'list'])
 
     # Assert
     assert result.exit_code == 0
@@ -37,7 +35,7 @@ def test_main_config_path_env_var(
     monkeypatch.setenv('PERSONA_CONFIG_PATH', str(mock_config_file))
 
     # Act
-    result = runner.invoke(app, ['personas', 'list'])
+    result = runner.invoke(app, ['roles', 'list'])
 
     # Assert
     assert result.exit_code == 0
@@ -45,29 +43,27 @@ def test_main_config_path_env_var(
 
 def test_main_set_vars(runner: CliRunner, mock_config_file: Path) -> None:
     # Arrange
-    with patch('persona.storage.local.LocalStorageBackend.load') as mock_local_storage_load:
-        with patch('persona.cli.commands.VectorDatabase') as mock_vector_db:
-            mock_vector_db.return_value = MagicMock()
-            mock_local_storage_load.return_value = MagicMock()
-            # Act
-            result = runner.invoke(
-                app,
-                [
-                    '--config',
-                    str(mock_config_file),
-                    '--set',
-                    'index=index2',
-                    'personas',
-                    'list',
-                ],
-            )
+    # Mocking get_meta_store_backend to avoid database connection
+    with patch('persona.cli.commands.get_meta_store_backend') as mock_meta:
+        mock_meta.return_value.open.return_value.__enter__.return_value = MagicMock()
+        # Act
+        result = runner.invoke(
+            app,
+            [
+                '--config',
+                str(mock_config_file),
+                '--set',
+                'root=/tmp/other_root',
+                'roles',
+                'list',
+            ],
+        )
 
-            # Assert
-            assert result.exit_code == 0
+        # Assert
+        assert result.exit_code == 0
 
 
 def test_main_set_vars_invalid(runner: CliRunner, mock_config_file: Path) -> None:
-    # Arrange
     # Act
     result = runner.invoke(
         app,
@@ -76,7 +72,7 @@ def test_main_set_vars_invalid(runner: CliRunner, mock_config_file: Path) -> Non
             str(mock_config_file),
             '--set',
             'root',
-            'personas',
+            'roles',
             'list',
         ],
     )
@@ -92,7 +88,19 @@ def test_main_no_config_file(
     # Arrange
     monkeypatch.setenv('PERSONA_STORAGE_TYPE', 'local')
     # Act
-    result = runner.invoke(app, ['--config', str(mock_home / 'nonexistent.yaml'), 'init'])
+    # Provide minimal required config via --set to avoid KeyError in parse_persona_config
+    result = runner.invoke(
+        app,
+        [
+            '--config',
+            str(mock_home / 'nonexistent.yaml'),
+            '--set',
+            'file_store.type=local',
+            '--set',
+            'meta_store.type=duckdb',
+            'init',
+        ],
+    )
 
     # Assert
     assert result.exit_code == 0
@@ -105,75 +113,27 @@ def test_main_malformed_config(runner: CliRunner, mock_home: Path) -> None:
         f.write(':')
 
     # Act
-    result = runner.invoke(app, ['--config', str(config_file), 'personas', 'list'])
+    result = runner.invoke(app, ['--config', str(config_file), 'roles', 'list'])
 
     # Assert
     assert result.exit_code != 0
     assert 'Error loading configuration' in result.stdout
 
 
-def test_reindex(
-    runner: CliRunner, mock_config_file: Path, mock_home: Path, vector_db: VectorDatabase
-) -> None:
-    # Arrange
-    (mock_home / 'personas' / 'test_persona').mkdir(parents=True)
-    (mock_home / 'skills' / 'test_skill').mkdir(parents=True)
-    with open(mock_home / 'personas' / 'test_persona' / 'PERSONA.md', 'w') as f:
-        f.write('---\nname: test_persona\ndescription: A test persona\n---\n')
-    with open(mock_home / 'skills' / 'test_skill' / 'SKILL.md', 'w') as f:
-        f.write('---\nname: test_skill\ndescription: A test skill\n---\n')
-
+def test_init(runner: CliRunner, mock_home: Path, mock_config_file: Path) -> None:
     # Act
-    with patch('persona.cli.VectorDatabase', return_value=vector_db):
-        result = runner.invoke(app, ['--config', str(mock_config_file), 'reindex'])
+    result = runner.invoke(app, ['--config', str(mock_config_file), 'init'])
 
     # Assert
     assert result.exit_code == 0
-
-    personas = vector_db.get_or_create_table('personas')
-    skills = vector_db.get_or_create_table('skills')
-
-    assert personas.count_rows() == 1
-    assert skills.count_rows() == 1
-
-
-def test_reindex_no_files(
-    runner: CliRunner, mock_config_file: Path, vector_db: VectorDatabase
-) -> None:
-    # Arrange
-    # Act
-    with patch('persona.cli.VectorDatabase', return_value=vector_db):
-        result = runner.invoke(app, ['--config', str(mock_config_file), 'reindex'])
-
-    # Assert
-    assert result.exit_code == 0
-
-    assert vector_db.get_or_create_table('personas').count_rows() == 0
-    assert vector_db.get_or_create_table('skills').count_rows() == 0
-
-
-def test_init(
-    runner: CliRunner, mock_home: Path, monkeypatch: pytest.MonkeyPatch, mock_config_file: Path
-) -> None:
-    # Arrange
-    monkeypatch.setenv('PERSONA_STORAGE_TYPE', 'local')
-    config_path = mock_home.parent / '.persona.config.yaml'
-
-    # Act
-    result = runner.invoke(app, ['--config', str(config_path), 'init'])
-
-    # Assert
-    assert result.exit_code == 0
-    assert config_path.exists()
-    assert (mock_home / 'personas').exists()
+    assert mock_config_file.exists()
+    assert (mock_home / 'roles').exists()
     assert (mock_home / 'skills').exists()
+    # Metastore index folder
     assert (mock_home / 'index').exists()
-    assert (mock_home / 'index' / 'personas.lance').exists()
-    assert (mock_home / 'index' / 'skills.lance').exists()
 
 
 def test_init_already_exists(runner: CliRunner, mock_config_file: Path) -> None:
-    # Arrange
     # Act
     result = runner.invoke(app, ['--config', str(mock_config_file), 'init'])
 
