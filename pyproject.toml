@@ -56,7 +56,7 @@ quote-style = "single"
 indent-style = "space"
 
 [tool.pyright]
-exclude = [".venv", ".github", "docs", "tests", ".devcontainer"]
+exclude = [".venv", ".github", "docs", "tests", ".devcontainer", "scripts"]
 include = ["src", "scripts"]
 pythonVersion = "3.12"
 venvPath = "."
