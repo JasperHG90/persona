@@ -124,7 +124,7 @@ def get_role(
 ) -> TemplateDetails:
     """Get a role by name."""
     api = get_api(ctx)
-    raw_content = api.get_role(name)
+    raw_content = api.get_definition(name, 'roles')
     import frontmatter
 
     post = frontmatter.loads(raw_content.decode('utf-8'))
