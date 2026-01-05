@@ -33,10 +33,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run pre-commit checks
-        uses: JasperHG90/toiminnot/actions/pre_commit@main
+        uses: JasperHG90/toiminnot/actions/prek@main
         with:
           python_version: ${{ env.PYTHON_VERSION }}
-          pre_commit_version: '4.2.0'
+          prek_version: '0.2.25'
 
   unit-tests:
     runs-on: ubuntu-latest
