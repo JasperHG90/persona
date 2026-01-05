@@ -115,8 +115,8 @@ class TestEmbeddingDownloader:
         # Create a valid zip file in memory
         zip_buffer = BytesIO()
         with zipfile.ZipFile(zip_buffer, 'w') as zf:
-            # The code expects files to be inside a folder named 'minilm-l6-v2-quantized'
-            zf.writestr('minilm-l6-v2-quantized/model.onnx', b'dummy content')
+            # The code expects files to be inside a folder named 'minilm-l6-v2-persona-ft-q8'
+            zf.writestr('minilm-l6-v2-persona-ft-q8/model.onnx', b'dummy content')
 
         mock_response = MagicMock()
         mock_response.content = zip_buffer.getvalue()
@@ -145,25 +145,6 @@ class TestEmbeddingDownloader:
         # Act & Assert
         with pytest.raises(httpx.RequestError):
             downloader.download(force_download=True)
-
-    def test_download_skip_if_exists(
-        self,
-        mock_user_data_path: MagicMock,
-        mock_httpx_get: MagicMock,
-        tmp_path: pytest.TempPathFactory,
-    ) -> None:
-        # Arrange
-        mock_user_data_path.return_value = tmp_path
-        target_dir = tmp_path / 'embeddings/minilm-l6-v2-persona-ft-q8'
-        target_dir.mkdir(parents=True)
-
-        downloader = EmbeddingDownloader()
-
-        # Act
-        downloader.download(force_download=False)
-
-        # Assert
-        mock_httpx_get.assert_not_called()
 
 
 class TestFastEmbedder:

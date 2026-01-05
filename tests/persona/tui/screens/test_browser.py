@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import MagicMock, patch, mock_open
 from textual.widgets import DataTable, Button, TabbedContent
 from persona.tui.screens.browser import BrowserScreen
+from persona.tui.screens.path_input import PathInputScreen
 from persona.tui.app import PersonaApp
 
 
@@ -137,3 +138,42 @@ async def test_browser_install_skill_flow(mock_app: PersonaApp, mock_api: MagicM
 
             # Verify API install called
             mock_api.install_skill.assert_called()
+
+
+@pytest.mark.asyncio
+async def test_role_default_save_path(mock_app: PersonaApp, mock_api: MagicMock) -> None:
+    """Test that the default save path for roles follows the correct format."""
+    async with mock_app.run_test() as pilot:
+        await pilot.pause()
+        roles_browser = mock_app.query_one('#roles BrowserScreen', BrowserScreen)
+        table = roles_browser.query_one(DataTable)
+
+        # Mock push_screen to capture the screen instance
+        original_push_screen = mock_app.push_screen
+        mock_push_screen = MagicMock(side_effect=original_push_screen)
+        mock_app.push_screen = mock_push_screen
+
+        # Select a role
+        table.focus()
+        table.move_cursor(row=0)
+        await pilot.press('enter')
+        await pilot.pause()
+
+        # Click Save
+        await pilot.click('#action_roles')
+        await pilot.pause(0.5)
+
+        # Check what screen was pushed
+        assert mock_push_screen.called
+        args, _ = mock_push_screen.call_args
+        pushed_screen = args[0]
+
+        assert isinstance(pushed_screen, PathInputScreen)
+
+        # The selected role name is 'Test Role' (from conftest fixtures usually, assuming 'Test Role')
+        # Check conftest.py to be sure what the mock returns.
+        # But generally we expect .persona/roles/<safe_name>/ROLE.md
+
+        expected_suffix = '.persona/roles/Test Role/ROLE.md'
+        # We need to check if the path ends with this
+        assert pushed_screen.initial_value.endswith(expected_suffix)

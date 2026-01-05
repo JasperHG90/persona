@@ -100,7 +100,9 @@ class BrowserScreen(Static):
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == f'action_{self.type}' and self.selected_name:
             if self.type == 'roles':
-                default_path = f'{self.selected_name.replace(" ", "_").lower()}_ROLE.md'
+                default_path = str(
+                    plb.Path.cwd() / '.persona' / 'roles' / self.selected_name / 'ROLE.md'
+                )
                 self.app.push_screen(
                     PathInputScreen('Save Role to...', default_path), self.save_role
                 )
