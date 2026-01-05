@@ -198,7 +198,7 @@ def reindex(ctx: typer.Context):
         )
         if isinstance(target_file_store._fs, LocalFileSystem):
             afs = AsyncFileSystemWrapper(afs)
-        queue = asyncio.Queue(maxsize=128)
+        queue: asyncio.Queue = asyncio.Queue(maxsize=128)
         producer_task = asyncio.create_task(_template_producer(afs, _path, queue))
         consumer_task = asyncio.create_task(
             _embedding_consumer(

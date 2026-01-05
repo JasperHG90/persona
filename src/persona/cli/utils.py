@@ -288,7 +288,7 @@ async def _embedding_consumer(
     Returns:
         dict[str, list[dict]]: Dictionary with keys 'skills' and 'roles' containing lists of embedded templates.
     """
-    index = {k: [] for k in index_keys}
+    index: dict[str, list[dict]] = {k: [] for k in index_keys}
     batch: list[IndexEntry] = []
 
     async def process_batch(current_batch: list[IndexEntry]):

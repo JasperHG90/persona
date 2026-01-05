@@ -55,12 +55,10 @@ indent-width = 4
 quote-style = "single"
 indent-style = "space"
 
-[tool.pyright]
-exclude = [".venv", ".github", "docs", "tests", ".devcontainer", "scripts"]
-include = ["src", "scripts"]
-pythonVersion = "3.12"
-venvPath = "."
-venv = ".venv"
+[tool.mypy]
+plugins = ['pydantic.mypy']
+follow_imports = "silent"
+explicit_package_bases = true
 
 [tool.pytest.ini_options]
 markers = [

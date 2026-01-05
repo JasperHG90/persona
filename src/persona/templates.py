@@ -178,9 +178,9 @@ class Template(BaseModel):
                 'target_path_root': target_key,
             }
             file_ = (
-                SourceFile(**kwargs)
+                SourceFile(**kwargs)  # type: ignore[arg-type]
                 if not _is_persona_root_file(filename)
-                else PersonaRootSourceFile(**kwargs)
+                else PersonaRootSourceFile(**kwargs)  # type: ignore[arg-type]
             )
 
             if isinstance(file_, PersonaRootSourceFile):
@@ -215,4 +215,4 @@ class Role(Template):
 AnyTemplate = Annotated[Skill | Role, Field(discriminator='type')]
 
 
-TemplateFile = TypeAdapter(AnyTemplate)
+TemplateFile = TypeAdapter(AnyTemplate)  # type: ignore[var-annotated]

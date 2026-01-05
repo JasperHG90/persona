@@ -1,6 +1,7 @@
 import zipfile
+import pathlib as plb
 from io import BytesIO
-from typing import Generator
+from typing import Generator, cast
 from unittest.mock import MagicMock, patch
 
 import httpx
@@ -54,7 +55,7 @@ class TestGetEmbeddingModel:
     ) -> None:
         # Arrange
         # Create a fake model directory structure
-        model_dir = tmp_path / 'embeddings' / 'minilm-l6-v2-persona-ft-q8'
+        model_dir = cast(plb.Path, tmp_path) / 'embeddings' / 'minilm-l6-v2-persona-ft-q8'
         model_dir.mkdir(parents=True)
         required_files = [
             'config.json',
@@ -128,7 +129,7 @@ class TestEmbeddingDownloader:
         downloader.download(force_download=True)
 
         # Assert
-        target_dir = tmp_path / 'embeddings/minilm-l6-v2-persona-ft-q8'
+        target_dir = cast(plb.Path, tmp_path) / 'embeddings/minilm-l6-v2-persona-ft-q8'
         assert target_dir.exists()
         assert (target_dir / 'model.onnx').exists()
         assert (target_dir / 'model.onnx').read_bytes() == b'dummy content'

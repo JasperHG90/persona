@@ -69,7 +69,7 @@ class Transaction:
             raise ValueError('All index entries must have the same type for a single transaction.')
         elif len(type_) == 0:
             self._logger.debug('No metadata to update in index.')
-            return
+            return None
 
         return {
             'type': type_[0],

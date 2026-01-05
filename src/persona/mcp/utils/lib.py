@@ -11,7 +11,7 @@ library_skills_path = plb.Path(__file__).parent.parent / 'assets' / 'skills'
 
 def _get_builtin_skills() -> dict[str, dict[str, SkillFile]]:
     """Get all skills that are part of this MCP library."""
-    skills = defaultdict(dict)
+    skills: dict[str, dict[str, SkillFile]] = defaultdict(dict)
     for skill_path in library_skills_path.glob('*/SKILL.md'):
         skill_name = skill_path.parent.name
         for fn in skill_path.parent.glob('**/*'):
