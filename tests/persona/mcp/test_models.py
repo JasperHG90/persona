@@ -1,31 +1,37 @@
 from unittest.mock import MagicMock
-from persona.mcp.models import AppContext, TemplateSummary, TemplateDetails
-from persona.storage.base import StorageBackend, VectorDatabase
-from persona.config import StorageConfig
+from persona.mcp.models import AppContext, TemplateDetails
+from persona.config import PersonaConfig
+from persona.storage import BaseFileStore, CursorLikeMetaStoreEngine
+from persona.embedder import FastEmbedder
+from persona.api import PersonaAPI
 
 
-def test_app_context_initialization():
-    """Test that AppContext can be initialized with a StorageConfig."""
-    mock_storage_config = MagicMock(spec=StorageConfig)
-    mock_storage_backend = MagicMock(spec=StorageBackend)
-    mock_vector_db = MagicMock(spec=VectorDatabase)
-    app_context = AppContext(config=mock_storage_config)
-    app_context._target_storage = mock_storage_backend
-    app_context._vector_db = mock_vector_db
-    assert app_context.config is mock_storage_config
-    assert app_context._target_storage is mock_storage_backend
-    assert app_context._vector_db is mock_vector_db
+def test_app_context_initialization() -> None:
+    """Test that AppContext can be initialized with required components."""
+    # Use real config to avoid Pydantic validation issues with Mocks
+    real_config = PersonaConfig(root='/tmp/test')
+
+    mock_file_store = MagicMock(spec=BaseFileStore)
+    mock_meta_store = MagicMock(spec=CursorLikeMetaStoreEngine)
+    mock_embedder = MagicMock(spec=FastEmbedder)
+    mock_api = MagicMock(spec=PersonaAPI)
+
+    app_context = AppContext(config=real_config)
+
+    # Private attributes are set after init in the lifespan
+    app_context._file_store = mock_file_store
+    app_context._meta_store_engine = mock_meta_store
+    app_context._embedding_model = mock_embedder
+    app_context._api = mock_api
+
+    assert app_context.config is real_config
+    assert app_context._file_store is mock_file_store
+    assert app_context._meta_store_engine is mock_meta_store
+    assert app_context._embedding_model is mock_embedder
+    assert app_context._api is mock_api
 
 
-def test_template_summary_initialization():
-    """Test that TemplateSummary can be initialized with name, description, and uuid."""
-    summary = TemplateSummary(name='test', description='a test', uuid='1234')
-    assert summary.name == 'test'
-    assert summary.description == 'a test'
-    assert summary.uuid == '1234'
-
-
-def test_template_details_initialization():
+def test_template_details_initialization() -> None:
     """Test that TemplateDetails can be initialized with name, description, and prompt."""
     details = TemplateDetails(name='test', description='a test', prompt='a prompt')
     assert details.name == 'test'

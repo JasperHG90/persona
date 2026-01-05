@@ -1,70 +1,228 @@
 import pytest
-import pytest_asyncio
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch, AsyncMock
+from fastmcp import Context
 from persona.mcp.server import (
-    AppContext,
-    _list,
-    _get_persona,
+    list_roles,
+    list_skills,
+    install_skill,
+    get_skill_version,
+    get_role,
+    match_role,
+    match_skill,
+    persona_roleplay,
+    persona_template,
+    persona_review,
+    persona_edit,
+    skill_deploy,
+    skill_update,
 )
-from persona.config import StorageConfig
+from persona.mcp.models import TemplateDetails
+from persona.models import TemplateMatch
+from persona.api import PersonaAPI
 
 
-def side_effect_get_or_create_table(table_name: str):
-    if table_name == 'skills':
-        mock_table = MagicMock()
-        mock_table.to_arrow.return_value.select.return_value.to_pylist.return_value = [
-            {'name': 'fakedescription', 'description': 'A fake skill', 'uuid': 'abcd'},
-            {'name': 'another_skill', 'description': 'Another skill', 'uuid': 'efgh'},
-        ]
-        return mock_table
-    elif table_name == 'personas':
-        mock_table = MagicMock()
-        mock_table.to_arrow.return_value.select.return_value.to_pylist.return_value = [
-            {'name': 'test_persona', 'description': 'a test', 'uuid': '1234'},
-        ]
-        return mock_table
+@pytest.fixture
+def mock_context() -> MagicMock:
+    return MagicMock(spec=Context)
 
 
-@pytest_asyncio.fixture
-async def mock_app_context():
-    # Mock the AppContext index
-    mock_vector_db = MagicMock()
-    mock_vector_db._metadata = []
-    get_or_create_table_mock = MagicMock(side_effect=side_effect_get_or_create_table)
-    mock_vector_db.get_or_create_table.side_effect = get_or_create_table_mock
+@pytest.fixture
+def mock_api() -> MagicMock:
+    return MagicMock(spec=PersonaAPI)
 
-    mock_storage_config = StorageConfig.model_validate(
-        {'type': 'local', 'root': '/tmp/test_persona'}
+
+def test_list_roles(mock_context: MagicMock, mock_api: MagicMock) -> None:
+    mock_api.list_templates.return_value = [{'name': 'role1', 'description': 'desc', 'uuid': '123'}]
+
+    with patch('persona.mcp.server.get_api', return_value=mock_api):
+        result = list_roles.fn(mock_context)
+
+    mock_api.list_templates.assert_called_once_with(
+        'roles', columns=['name', 'description', 'uuid']
     )
-    app_context = AppContext(config=mock_storage_config)
-    app_context._vector_db = mock_vector_db
-    app_context._target_storage = MagicMock()
-    # a string containing valid yaml frontmatter
-    app_context._target_storage.load.return_value = """---
-name: test
-description: a test
+    assert result == [{'name': 'role1', 'description': 'desc', 'uuid': '123'}]
+
+
+def test_list_skills(mock_context: MagicMock, mock_api: MagicMock) -> None:
+    mock_api.list_templates.return_value = [
+        {'name': 'skill1', 'description': 'desc', 'uuid': '456'}
+    ]
+
+    with patch('persona.mcp.server.get_api', return_value=mock_api):
+        result = list_skills.fn(mock_context)
+
+    mock_api.list_templates.assert_called_once_with(
+        'skills', columns=['name', 'description', 'uuid']
+    )
+    assert result == [{'name': 'skill1', 'description': 'desc', 'uuid': '456'}]
+
+
+def test_install_skill(mock_context: MagicMock, mock_api: MagicMock) -> None:
+    mock_api.install_skill.return_value = '/path/to/SKILL.md'
+
+    with patch('persona.mcp.server.get_api', return_value=mock_api):
+        result = install_skill.fn(mock_context, name='skill1', local_skill_dir='/tmp/skills')
+
+    # Check that it converted string to Path
+    mock_api.install_skill.assert_called_once()
+    args, _ = mock_api.install_skill.call_args
+    assert args[0] == 'skill1'
+    assert str(args[1]) == '/tmp/skills'
+    assert result == '/path/to/SKILL.md'
+
+
+def test_get_skill_version(mock_context: MagicMock, mock_api: MagicMock) -> None:
+    mock_api.get_skill_version.return_value = 'v1.0'
+
+    with patch('persona.mcp.server.get_api', return_value=mock_api):
+        result = get_skill_version.fn(mock_context, name='skill1')
+
+    mock_api.get_skill_version.assert_called_once_with('skill1')
+    assert result == 'v1.0'
+
+
+def test_get_role(mock_context: MagicMock, mock_api: MagicMock) -> None:
+    # returns raw bytes of frontmatter
+    raw_content = b"""---
+description: A test role
 ---
-some content
-""".encode('utf-8')
-    return app_context
+You are a test role.
+"""
+    mock_api.get_definition.return_value = raw_content
+
+    with patch('persona.mcp.server.get_api', return_value=mock_api):
+        result = get_role.fn(mock_context, name='test_role')
+
+    mock_api.get_definition.assert_called_once_with('test_role', 'roles')
+    assert isinstance(result, TemplateDetails)
+    assert result.name == 'test_role'
+    assert result.description == 'A test role'
+    assert result.prompt == 'You are a test role.'
+
+
+def test_match_role(mock_context: MagicMock, mock_api: MagicMock) -> None:
+    search_results = [{'name': 'match1', 'description': 'desc', 'uuid': '111', 'score': 0.9}]
+    mock_api.search_templates.return_value = search_results
+
+    with patch('persona.mcp.server.get_api', return_value=mock_api):
+        result = match_role.fn(mock_context, query='expert', limit=5, max_cosine_distance=0.5)
+
+    mock_api.search_templates.assert_called_once_with(
+        query='expert',
+        type='roles',
+        columns=['name', 'description', 'uuid'],
+        limit=5,
+        max_cosine_distance=0.5,
+    )
+    assert len(result) == 1
+    assert isinstance(result[0], TemplateMatch)
+    assert result[0].name == 'match1'
+
+
+def test_match_skill(mock_context: MagicMock, mock_api: MagicMock) -> None:
+    search_results = [{'name': 'skill1', 'description': 'desc', 'uuid': '222', 'score': 0.8}]
+    mock_api.search_templates.return_value = search_results
+
+    with patch('persona.mcp.server.get_api', return_value=mock_api):
+        result = match_skill.fn(mock_context, query='tool', limit=3, max_cosine_distance=0.4)
+
+    mock_api.search_templates.assert_called_once_with(
+        query='tool',
+        type='skills',
+        columns=['name', 'description', 'uuid'],
+        limit=3,
+        max_cosine_distance=0.4,
+    )
+    assert len(result) == 1
+    assert isinstance(result[0], TemplateMatch)
+    assert result[0].name == 'skill1'
+
+
+# Async prompt tests
+# We mock aiofiles.open to return a mock object that supports async read
 
 
 @pytest.mark.asyncio
-async def test_list_skills_logic(mock_app_context):
-    response = await _list('skills', mock_app_context)
-    assert len(response) == 2
-    assert response[0]['name'] == 'fakedescription'
-    assert response[1]['name'] == 'another_skill'
+async def test_persona_roleplay() -> None:
+    mock_file = AsyncMock()
+    mock_file.read.return_value = 'Template content'
+    mock_open = MagicMock()
+    mock_open.__aenter__.return_value = mock_file
+
+    with patch('aiofiles.open', return_value=mock_open):
+        result = await persona_roleplay.fn('my description')
+
+    assert 'Template content' in result
+    assert 'my description' in result
 
 
 @pytest.mark.asyncio
-async def test_list_personas_logic(mock_app_context):
-    response = await _list('personas', mock_app_context)
-    assert len(response) == 1
-    assert response[0]['name'] == 'test_persona'
+async def test_persona_template() -> None:
+    mock_file = AsyncMock()
+    mock_file.read.return_value = 'Template content'
+    mock_open = MagicMock()
+    mock_open.__aenter__.return_value = mock_file
+
+    with patch('aiofiles.open', return_value=mock_open):
+        result = await persona_template.fn('my description')
+
+    assert 'Template content' in result
+    assert 'my description' in result
 
 
 @pytest.mark.asyncio
-async def test_get_persona_logic(mock_app_context):
-    response = await _get_persona(mock_app_context, 'test_persona')
-    assert response.name == 'test_persona'
+async def test_persona_review() -> None:
+    mock_file = AsyncMock()
+    mock_file.read.return_value = 'Review template'
+    mock_open = MagicMock()
+    mock_open.__aenter__.return_value = mock_file
+
+    with patch('aiofiles.open', return_value=mock_open):
+        result = await persona_review.fn('role def', chat_history='history')
+
+    assert 'Review template' in result
+    assert 'role def' in result
+    assert 'history' in result
+
+
+@pytest.mark.asyncio
+async def test_persona_edit() -> None:
+    mock_file = AsyncMock()
+    mock_file.read.return_value = 'Edit template'
+    mock_open = MagicMock()
+    mock_open.__aenter__.return_value = mock_file
+
+    with patch('aiofiles.open', return_value=mock_open):
+        result = await persona_edit.fn('role def', feedback='bad')
+
+    assert 'Edit template' in result
+    assert 'role def' in result
+    assert 'bad' in result
+
+
+@pytest.mark.asyncio
+async def test_skill_deploy() -> None:
+    mock_file = AsyncMock()
+    mock_file.read.return_value = 'Deploy template'
+    mock_open = MagicMock()
+    mock_open.__aenter__.return_value = mock_file
+
+    with patch('aiofiles.open', return_value=mock_open):
+        result = await skill_deploy.fn('do task')
+
+    assert 'Deploy template' in result
+    assert 'do task' in result
+
+
+@pytest.mark.asyncio
+async def test_skill_update() -> None:
+    mock_file = AsyncMock()
+    mock_file.read.return_value = 'Update template'
+    mock_open = MagicMock()
+    mock_open.__aenter__.return_value = mock_file
+
+    with patch('aiofiles.open', return_value=mock_open):
+        result = await skill_update.fn('my_skill')
+
+    assert 'Update template' in result
+    assert 'my_skill' in result
