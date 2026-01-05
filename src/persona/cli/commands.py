@@ -139,3 +139,38 @@ def remove_template(ctx: typer.Context, name: str, type: str):
             meta_store.deindex(entry=IndexEntry(name=name, type=type))
 
     console.print(f'[green]Template "{name}" has been removed.[/green]')
+
+
+def get_role(
+    ctx: typer.Context,
+    name: str,
+    output_dir: plb.Path | None = None,
+):
+    """Get a role description and either print it to the console or write it to disk
+
+    Args:
+        ctx (typer.Context): Typer context
+        name (str): Name of the role to retrieve.
+        output_dir (plb.Path | None, optional): Output directory to save the role definition. Defaults to None.
+
+    Raises:
+        typer.Exit: If the role does not exist.
+    """
+    config = ctx.obj['config']
+    file_store = get_file_store_backend(config.file_store)
+    meta_store = get_meta_store_backend(config.meta_store, read_only=True)
+
+    with meta_store.open(bootstrap=True) as connected:
+        with connected.session() as session:
+            if not session.exists('roles', name):
+                console.print(f'[red]Role "{name}" does not exist.[/red]')
+                raise typer.Exit(code=1)
+    template_key = 'roles/%s/ROLE.md' % (name)
+    role_definition = file_store.load(template_key).decode('utf-8')
+    if output_dir:
+        output_path = output_dir / name / 'ROLE.md'
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(role_definition, encoding='utf-8')
+        console.print(f'[green]Role definition saved to {output_path}[/green]')
+    else:
+        console.print(role_definition)
