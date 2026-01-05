@@ -3,7 +3,10 @@ import logging
 from typing import cast
 from typing_extensions import Annotated
 import pathlib as plb
+import importlib
 
+from typer.core import TyperGroup
+from typer.main import get_command as typer_get_command
 import typer
 import yaml
 from box import Box
@@ -13,16 +16,7 @@ from fsspec.implementations.asyn_wrapper import AsyncFileSystemWrapper
 from fsspec.implementations.local import LocalFileSystem
 from fsspec.asyn import AsyncFileSystem
 
-from .roles import app as roles_app
-from .skills import app as skills_app
-from .cache import app as cache_app
-from .mcp import app as mcp_app
-from .config import app as config_app
-from .utils import _template_producer, _embedding_consumer
-from persona.storage import get_file_store_backend, get_meta_store_backend
 from persona.config import parse_persona_config, PersonaConfig
-from persona.embedder import get_embedding_model
-from persona.tagger import get_tagger
 
 logger = logging.getLogger('persona')
 handler = logging.StreamHandler()
@@ -31,20 +25,41 @@ handler.setFormatter(format)
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
+LAZY_SUBCOMMANDS = {
+    'roles': 'persona.cli.roles:app',
+    'skills': 'persona.cli.skills:app',
+    'cache': 'persona.cli.cache:app',
+    'mcp': 'persona.cli.mcp:app',
+    'config': 'persona.cli.config:app',
+}
+
+
+class LazyTyperGroup(TyperGroup):
+    def list_commands(self, ctx):
+        base = super().list_commands(ctx)
+        return list(sorted(base + list(LAZY_SUBCOMMANDS.keys())))
+
+    def get_command(self, ctx, cmd_name):
+        if cmd_name in LAZY_SUBCOMMANDS:
+            return self._lazy_load(cmd_name)
+        return super().get_command(ctx, cmd_name)
+
+    def _lazy_load(self, cmd_name):
+        import_path = LAZY_SUBCOMMANDS[cmd_name]
+        modname, app_obj_name = import_path.split(':')
+        mod = importlib.import_module(modname)
+        typer_app = getattr(mod, app_obj_name)
+        return typer_get_command(typer_app)
+
 
 app = typer.Typer(
-    name='persona',
+    cls=LazyTyperGroup,
     help='Manage LLM roles and skills.',
     no_args_is_help=True,
     pretty_exceptions_show_locals=False,
     pretty_exceptions_enable=True,
     pretty_exceptions_short=True,
 )
-app.add_typer(roles_app, name='roles', help='Manage roles.')
-app.add_typer(skills_app, name='skills', help='Manage skills.')
-app.add_typer(cache_app, name='cache', help='Manage the cache.')
-app.add_typer(mcp_app, name='mcp', help='Manage the MCP server.')
-app.add_typer(config_app, name='config', help='Show configuration information.')
 
 
 @app.callback(invoke_without_command=True)
@@ -121,6 +136,11 @@ def main(
 @app.command(help='Re-index personas and skills.')
 def reindex(ctx: typer.Context):
     """Re-index personas and skills."""
+    from persona.cli.utils import _template_producer, _embedding_consumer
+    from persona.storage import get_file_store_backend, get_meta_store_backend
+    from persona.embedder import get_embedding_model
+    from persona.tagger import get_tagger
+
     _config: PersonaConfig = ctx.obj['config']
     target_file_store = get_file_store_backend(_config.file_store)
     meta_store = get_meta_store_backend(_config.meta_store, read_only=False)
@@ -167,6 +187,9 @@ def reindex(ctx: typer.Context):
 @app.command(help='Initialize Persona objects on target storage.')
 def init(ctx: typer.Context):
     """Initialize Persona configuration file."""
+    from persona.storage import get_file_store_backend, get_meta_store_backend
+    from persona.embedder import get_embedding_model
+
     _config: PersonaConfig = ctx.obj['config']
     target_storage = get_file_store_backend(_config.file_store)
     meta_store = get_meta_store_backend(_config.meta_store, read_only=False)
