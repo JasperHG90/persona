@@ -1,17 +1,18 @@
 import typer
 
+try:
+    from persona.mcp.server import entrypoint
+
+    _has_mcp_deps = True
+except ImportError:
+    _has_mcp_deps = False
+
 app = typer.Typer()
 
 
 @app.command(name='start')
 def start_server():
     """Start the MCP server."""
-    try:
-        from persona.mcp.server import entrypoint
-
-        _has_mcp_deps = True
-    except ImportError:
-        _has_mcp_deps = False
 
     if not _has_mcp_deps:
         typer.echo(
