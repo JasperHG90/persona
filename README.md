@@ -1,180 +1,149 @@
+# Persona
+
 ![](./assets/logo.png)
 
-**A developer-friendly toolkit for managing and deploying LLM personas and skills across any environment.**
+**A unified interface for managing AI identity and capabilities.**
 
-Persona provides a robust Python CLI and a high-performance MCP server to give you a flexible, extensible platform for your LLM applications. Manage your AI's identity (Roles) and capabilities (Skills), from your local machine to the cloud.
-
----
-
-## 📚 What is Persona?
-
-Persona is a system designed to standardize how Large Language Models (LLMs) adopt roles and utilize tools.
-
--   **Roles** are carefully curated prompts that tell the LLM *how* to behave (e.g., "Python Expert", "Master Chef").
--   **Skills** are packages of instructions and scripts that give the LLM the *ability* to perform specific tasks (e.g., "Web Scraper", "Data Analysis").
-
-By decoupling these from your application logic, Persona allows you to:
--   **Standardize** interactions across different LLM providers.
--   **Manage** prompts and tools as code.
--   **Deploy** these capabilities via a standardized MCP server.
-
-### Philosophy
-
-Persona is built on the belief that **prompt engineering is software engineering**. The "who" (Role) and the "how" (Skills) of an AI should be decoupled from the application logic.
-
-*   **Standardization:** Managing personas and skills as consistent, versioned artifacts (code) rather than scattered strings.
-*   **Extensibility:** Storing these resources anywhere (local files, cloud storage) via a robust abstraction layer.
-*   **Remote Management:** Separating the "brain" management from the client application via a standardized API (MCP).
+Persona is a standard for decoupling **Roles** (who the AI is) and **Skills** (what the AI can do) from specific LLM providers and applications. Write your prompts and tools once, and deploy them across the Gemini CLI, Cline, Python scripts, or any MCP-compatible environment.
 
 ---
 
-## 🚀 Getting Started
+## ❓ Why Persona?
 
-Follow this guide to get Persona up and running on your local machine in minutes.
+As LLM applications grow, "prompt engineering" often becomes a messy tangle of strings hardcoded into different applications. Persona solves this by treating prompts as **software artifacts**:
+
+1.  **Decoupling:** Your prompts (Roles) and tools (Skills) shouldn't be locked into a specific AI or client. Persona lets you define them in a neutral, standardized format.
+2.  **Local & Transparent:** Your data stays with you. Roles and skills are stored as simple Markdown files on your local disk. Metadata and embeddings are persisted in **Parquet** files, ensuring your registry is human-readable, portable, and easy to inspect.
+3.  **Portability:** Use the same "Expert Python Architect" persona in your IDE (via Cline), your terminal (via Gemini CLI), or your backend services (via the Python SDK).
+4.  **Dynamic Context:** Instead of overloading the context window with every possible instruction, Persona allows agents to "pull" roles and skills just-in-time from a local or remote registry.
+
+## 🚀 Key Features
+
+-   **Role Management:** Create, version, and match against curated system prompts.
+-   **Skill Registry:** Package scripts and instructions into portable "Skills" that agents can install on-demand.
+-   **MCP Server:** A high-performance Model Context Protocol server that exposes your registry to any supported client.
+-   **TUI:** A beautiful Terminal User Interface built with **Textual** for visual library management.
+-   **CLI Tool:** A robust command-line interface for managing your local and remote assets.
+
+---
+
+## ⚡ Getting Started
 
 ### 1. Installation
 
-Clone the repository and set up the environment.
+Install Persona using `uv` (recommended) or pip.
 
 ```sh
-git clone https://github.com/your-repo/persona.git
-cd persona
-# Uses 'uv' for dependency management
-just setup
+# Using uv (fastest)
+uv tool install git+https://github.com/JasperHG90/persona.git
+
+# Or using pip
+pip install git+https://github.com/JasperHG90/persona.git
 ```
 
 ### 2. Initialization
 
-Before using Persona, initialize the configuration and local storage directories. This will create a `.persona` folder in your user data directory (or configured root) to store roles and skills.
+Initialize your local registry. This creates a `.persona` directory in your home folder to store your roles and skills.
 
 ```sh
 persona init
 ```
 
-### 3. Verify Installation
+### 3. Usage
 
-Run the test suite to ensure everything is working correctly.
+You can now interact with your registry immediately.
 
+**Create an example role:**
+Create a file named `retro-agent.md` and copy the following content. Persona uses YAML frontmatter to index your prompts.
+
+```markdown
+---
+name: Retro Agent
+description: A master prompt engineer who scientifically analyzes and iteratively
+  improves LLM prompts based on evidence from chat histories.
+---
+
+## Role
+You are a master prompt engineer. Your goal is to analyze the user's prompt
+and provide scientific feedback on how to improve it.
+
+## Directives
+1. Always be concise and direct.
+2. Focus on the 'why' behind your suggestions.
+3. Provide a 'before' and 'after' example.
+```
+
+**Register and find your assets:**
 ```sh
-just test
+# Register the role
+persona roles register ./retro-agent.md
+
+# Match the role based on description
+persona roles match "prompt engineering master"
+```
+
+**Connect to LLM Clients (MCP):**
+Persona's MCP server is **stdio-based**, allowing you to use your library across various LLM clients (like Cline, Claude Desktop, or Gemini CLI).
+
+For detailed instructions on how to connect Persona to your preferred client, see the [**MCP Installation Guide**](./docs/guides/installation-mcp.md).
+
+---
+
+## 📚 Documentation
+
+We follow the [Diataxis](https://diataxis.fr/) framework for our documentation.
+
+### 🏁 Tutorials (Learning-oriented)
+*   [**Installation Guide**](./docs/guides/installation-mcp.md): detailed setup instructions.
+*   [**TUI Usage**](./docs/guides/tui-usage.md): How to use the Terminal User Interface.
+
+### 🗺️ Guides (Task-oriented)
+*   [**Prompting Guide**](./docs/guides/prompting.md): Best practices for writing Roles.
+*   [**Skills Management**](./docs/guides/skills-management.md): How to create and package Skills.
+*   [**Configuration**](./docs/guides/configuration.md): Customizing paths and backends.
+
+### 🧠 Explanation (Understanding-oriented)
+*   [**Context Reduction**](./docs/explanation/context-reduction.md): The philosophy behind efficient context management.
+*   [**Limitations**](./docs/explanation/limitations.md): Current constraints and boundaries.
+
+### 📖 Reference (Information-oriented)
+*   [**CLI Commands**](./docs/reference/cli.md): Full command-line reference.
+*   [**Python API**](./docs/reference/api.md): Library reference for Python developers.
+*   [**Storage API**](./docs/reference/storage.md): Details on the storage abstraction layer.
+
+---
+
+## 🔌 Integrations
+
+Persona is designed to work where you work.
+
+### Gemini CLI
+Add Persona to your `.gemini/settings.json` to give your CLI agent access to your full library of roles.
+
+### Cline & VS Code
+Configure the MCP server in your Cline settings to allow your coding assistant to switch personas dynamically.
+
+### Python Library
+Import `persona` in your scripts to programmatically manage context.
+
+```python
+from persona import PersonaAPI
+from persona.config import PersonaConfig
+from persona.storage import get_meta_store_backend
+
+# Load default config and initialize API
+config = PersonaConfig()
+with get_meta_store_backend(config.meta_store, read_only=True).open(bootstrap=True) as meta_store:
+    api = PersonaAPI(config, meta_store=meta_store)
+    role = api.get_definition("Expert Python", type="roles")
+    print(role.decode("utf-8"))
 ```
 
 ---
 
-## 📖 How-To Guides
+## 🛠️ Contributing
 
-### Manage Roles
-
-Roles define the personality and expertise of your LLM.
-
-**List available roles:**
-```sh
-persona roles list
-```
-
-**Register a new role from a local file:**
-```sh
-persona roles register /path/to/my-role.yaml
-```
-
-**Register a role from GitHub:**
-```sh
-persona roles register path/to/role.yaml --github-url https://github.com/user/repo/tree/main
-```
-
-**Match a role based on a description:**
-```sh
-persona roles match "Expert Python programmer"
-```
-
-### Manage Skills
-
-Skills provide executable capabilities to your LLM.
-
-**List available skills:**
-```sh
-persona skills list
-```
-
-**Register a new skill:**
-```sh
-persona skills register /path/to/skill-directory
-```
-
-### Run the MCP Server
-
-The MCP server allows external applications (like Gemini, Claude, or IDE extensions) to interact with your Persona registry.
-
-**Start the server (Stdio mode):**
-```sh
-persona mcp start
-```
-
-**Run via Docker:**
-```sh
-# Build the image
-just build_mcp
-
-# Run the container
-docker run \
-    -v ~/.persona:/app/.persona \
-    -e PERSONA_STORAGE_ROOT=/app/.persona \
-    -e PERSONA_STORAGE_TYPE=local \
-    persona mcp start
-```
-
----
-
-## ⚙️ Configuration Reference
-
-Persona is configured via a `config.yaml` file (usually in `~/.persona/config.yaml`) or environment variables.
-
-### Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PERSONA_ROOT` | Root directory for file storage. | User data dir (e.g. `~/.local/share/persona`) |
-| `PERSONA_FILE_STORE__TYPE` | Storage backend type. | `local` |
-| `PERSONA_META_STORE__TYPE` | Metadata/Index backend type. | `duckdb` |
-| `PERSONA_LOG_LEVEL` | Logging verbosity. | `INFO` |
-
-### MCP Client Configuration
-
-To use Persona with an MCP client (like Gemini), add this to your client's settings file (e.g., `.gemini/settings.json`):
-
-```json
-{
-    "mcpServers": {
-        "persona": {
-            "command": "uv",
-            "args": [
-                "run",
-                "persona",
-                "mcp",
-                "start"
-            ],
-            "trusted": true
-        }
-    }
-}
-```
-
----
-
-## 🛠️ Developer Workflow
-
-We use `just` to manage development tasks.
-
--   `just setup`: Install dependencies and pre-commit hooks.
--   `just test`: Run the full test suite.
--   `just pre_commit`: Run linting and formatting checks.
--   `just build_mcp`: Build the Docker image.
-
----
-
-## Contributing
-
-We welcome contributions! Please open an issue on GitHub to discuss your ideas before submitting a Pull Request.
+We welcome contributions! Please see our [Developer Guide](./GEMINI.md) for how to set up the development environment.
 
 ## License
 
