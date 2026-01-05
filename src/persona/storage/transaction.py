@@ -122,50 +122,52 @@ class Transaction:
     def __exit__(self, exc_type, exc_value, traceback):
         self._logger.debug('Ending transaction...')
 
-        # If any error occurred, roll back changes on the FileStore
-        if exc_type is not None:
-            self._logger.error(f'Transaction failed with exception: {exc_value}')
-            self._logger.debug('Performing rollback due to exception...')
-            self.rollback()
-            return
-
-        # Try to write updates/deletes to MetaStore. If that fails,
-        # roll back changes on the FileStore
         try:
-            metadata = self._process_metadata()
-            if metadata is None:
-                self._logger.debug('No metadata changes to process during transaction commit.')
+            # If any error occurred, roll back changes on the FileStore
+            if exc_type is not None:
+                self._logger.error(f'Transaction failed with exception: {exc_value}')
+                self._logger.debug('Performing rollback due to exception...')
+                self.rollback()
                 return
-            # NB: Save manifests (index entries) to file store
-            # Add them using `.save()` to ensure they are part of the transaction
-            # And are rolled back if needed
-            for entry in cast(dict, metadata).get('upserts', []):
-                template_root = entry['files'][0].rsplit('/', 1)[0]
-                self._file_store.save(
-                    f'{template_root.rstrip("/")}/.manifest.json',
-                    orjson.dumps(
-                        {k: v for k, v in entry.items() if k != 'embedding'},
-                        option=orjson.OPT_INDENT_2,
-                    ),
-                )
-            # NB: for DuckDB, closing the `connected` object will trigger an export of the
-            #  data to storage as parquet
-            with self._meta_store_engine.open(bootstrap=True) as connected:
-                with connected.session() as session:
-                    self._update_index(
-                        meta_store=session,
-                        upserts=cast(list[dict[str, str | list[str]]], metadata['upserts']),
-                        deletes=cast(list[str], metadata['deletes']),
-                        type=cast(str, metadata['type']),
+
+            # Try to write updates/deletes to MetaStore. If that fails,
+            # roll back changes on the FileStore
+            try:
+                metadata = self._process_metadata()
+                if metadata is None:
+                    self._logger.debug('No metadata changes to process during transaction commit.')
+                    return
+                # NB: Save manifests (index entries) to file store
+                # Add them using `.save()` to ensure they are part of the transaction
+                # And are rolled back if needed
+                for entry in cast(dict, metadata).get('upserts', []):
+                    template_root = entry['files'][0].rsplit('/', 1)[0]
+                    self._file_store.save(
+                        f'{template_root.rstrip("/")}/.manifest.json',
+                        orjson.dumps(
+                            {k: v for k, v in entry.items() if k != 'embedding'},
+                            option=orjson.OPT_INDENT_2,
+                        ),
                     )
-        except Exception as e:
-            self._logger.error(f'Failed to update index during transaction commit: {e}')
-            self._logger.debug('Performing rollback due to index update failure...')
-            self.rollback()
-            raise e
+                # NB: for DuckDB, closing the `connected` object will trigger an export of the
+                #  data to storage as parquet
+                with self._meta_store_engine.open(bootstrap=True) as connected:
+                    with connected.session() as session:
+                        self._update_index(
+                            meta_store=session,
+                            upserts=cast(list[dict[str, str | list[str]]], metadata['upserts']),
+                            deletes=cast(list[str], metadata['deletes']),
+                            type=cast(str, metadata['type']),
+                        )
+            except Exception as e:
+                self._logger.error(f'Failed to update index during transaction commit: {e}')
+                self._logger.debug('Performing rollback due to index update failure...')
+                self.rollback()
+                raise e
 
-        # Clear transaction references
-        self._file_store._transaction = None
-        self._meta_store_engine._transaction = None
+        finally:
+            # Clear transaction references
+            self._file_store._transaction = None
+            self._meta_store_engine._transaction = None
 
-        self._log = []
+            self._log = []
