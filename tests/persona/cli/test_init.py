@@ -1,4 +1,5 @@
 import logging
+import re
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
@@ -79,7 +80,10 @@ def test_main_set_vars_invalid(runner: CliRunner, mock_config_file: Path) -> Non
 
     # Assert
     assert result.exit_code != 0
-    assert 'Invalid format for --set option' in result.stderr
+    # Strip ANSI codes to handle CI/Rich formatting differences
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    stderr_clean = ansi_escape.sub('', result.stderr)
+    assert 'Invalid format for --set option' in stderr_clean
 
 
 def test_main_no_config_file(
