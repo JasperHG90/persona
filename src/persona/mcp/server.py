@@ -169,7 +169,7 @@ def match_role(
     results = api.search_templates(
         query=query,
         type='roles',
-        columns=['name', 'description', 'uuid', 'score'],
+        columns=['name', 'description', 'uuid'],
         limit=limit,
         max_cosine_distance=max_cosine_distance,
     )
@@ -210,7 +210,7 @@ def match_skill(
     results = api.search_templates(
         query=query,
         type='skills',
-        columns=['name', 'description', 'uuid', 'score'],
+        columns=['name', 'description', 'uuid'],
         limit=limit,
         max_cosine_distance=max_cosine_distance,
     )

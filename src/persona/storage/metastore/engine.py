@@ -32,6 +32,7 @@ class CursorLikeMetaStoreEngine(Generic[T], metaclass=ABCMeta):
         self._config: T = config
         self._metadata: list[tuple[Literal['upsert', 'delete'], IndexEntry]] = []
         self._transaction: Transaction | None = None
+        self._bootstrapped: bool = False
 
     @abstractmethod
     def bootstrap(self) -> Self:
@@ -67,6 +68,7 @@ class CursorLikeMetaStoreEngine(Generic[T], metaclass=ABCMeta):
             yield self
         finally:
             self.close()
+            self._bootstrapped = False
 
     @contextmanager
     def read_session(self) -> Generator[CursorLikeMetaStoreSession, None, None]:
@@ -150,6 +152,7 @@ class DuckDBMetaStoreEngine(CursorLikeMetaStoreEngine[DuckDBMetaStoreConfig]):
             try:
                 self._logger.debug(f'Loading existing {table} index from disk ...')
                 self._conn.execute(f"INSERT INTO {table} SELECT * FROM read_parquet('{path_}');")
+                self._bootstrapped = True
             except duckdb.BinderException as e:
                 self._logger.error(
                     'Schema mismatch when loading index. Please reindex the metastore using `persona reindex`'

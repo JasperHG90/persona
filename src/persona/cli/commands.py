@@ -6,6 +6,8 @@ from rich.table import Table
 
 from persona.config import PersonaConfig
 from persona.api import PersonaAPI
+from persona.storage import get_file_store_backend, get_meta_store_backend
+from persona.embedder import get_embedding_model
 
 console = Console()
 
@@ -19,9 +21,16 @@ def match_query(ctx: typer.Context, query: str, type: str):
         type (str): type of template to search in
     """
     config: PersonaConfig = ctx.obj['config']
-    api = PersonaAPI(config)
-
-    results = api.search_templates(query, type, columns=['name', 'description', 'uuid', 'score'])  # type: ignore
+    with get_meta_store_backend(config.meta_store, read_only=True).open(
+        bootstrap=True
+    ) as meta_store:
+        api = PersonaAPI(
+            config,
+            meta_store=meta_store,
+            embedder=get_embedding_model(),
+        )
+        # NB: score added automatically
+        results = api.search_templates(query, type, columns=['name', 'description', 'uuid'])  # type: ignore
 
     table = Table('Name', 'Description', 'Distance', 'UUID')
 
@@ -43,8 +52,14 @@ def list_templates(ctx: typer.Context, type: str):
         type (str): type of template to list
     """
     config: PersonaConfig = ctx.obj['config']
-    api = PersonaAPI(config)
-    results = api.list_templates(type, columns=['name', 'description', 'uuid'])  # type: ignore
+    with get_meta_store_backend(config.meta_store, read_only=True).open(
+        bootstrap=True
+    ) as meta_store:
+        api = PersonaAPI(
+            config,
+            meta_store=meta_store,
+        )
+        results = api.list_templates(type, columns=['name', 'description', 'uuid'])  # type: ignore
 
     table = Table('Name', 'Description', 'UUID')
     for result in results:
@@ -74,8 +89,16 @@ def copy_template(
         type (str): Type of the template
     """
     config: PersonaConfig = ctx.obj['config']
-    api = PersonaAPI(config)
-    api.publish_template(path, type, name, description, tags)  # type: ignore
+    with get_meta_store_backend(config.meta_store, read_only=False).open(
+        bootstrap=True
+    ) as meta_store:
+        api = PersonaAPI(
+            config,
+            meta_store=meta_store,
+            file_store=get_file_store_backend(config.file_store),
+            embedder=get_embedding_model(),
+        )
+        api.publish_template(path, type, name, description, tags)  # type: ignore
 
 
 def remove_template(ctx: typer.Context, name: str, type: str):
@@ -90,13 +113,19 @@ def remove_template(ctx: typer.Context, name: str, type: str):
         typer.Exit: If the template does not exist
     """
     config: PersonaConfig = ctx.obj['config']
-    api = PersonaAPI(config)
-
-    try:
-        api.delete_template(name, type)  # type: ignore
-    except ValueError as e:
-        console.print(f'[red]{e}[/red]')
-        raise typer.Exit(code=1)
+    with get_meta_store_backend(config.meta_store, read_only=False).open(
+        bootstrap=True
+    ) as meta_store:
+        api = PersonaAPI(
+            config,
+            meta_store=meta_store,
+            file_store=get_file_store_backend(config.file_store),
+        )
+        try:
+            api.delete_template(name, type)  # type: ignore
+        except ValueError as e:
+            console.print(f'[red]{e}[/red]')
+            raise typer.Exit(code=1)
 
     console.print(f'[green]Template "{name}" has been removed.[/green]')
 
@@ -117,13 +146,20 @@ def get_role(
         typer.Exit: If the role does not exist.
     """
     config: PersonaConfig = ctx.obj['config']
-    api = PersonaAPI(config)
+    with get_meta_store_backend(config.meta_store, read_only=True).open(
+        bootstrap=True
+    ) as meta_store:
+        api = PersonaAPI(
+            config,
+            meta_store=meta_store,
+            file_store=get_file_store_backend(config.file_store),
+        )
 
-    try:
-        raw_content = api.get_role(name)
-    except ValueError as e:
-        console.print(f'[red]{e}[/red]')
-        raise typer.Exit(code=1)
+        try:
+            raw_content = api.get_role(name)
+        except ValueError as e:
+            console.print(f'[red]{e}[/red]')
+            raise typer.Exit(code=1)
 
     if output_dir:
         output_path = output_dir / name / 'ROLE.md'
