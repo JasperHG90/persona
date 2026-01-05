@@ -130,6 +130,36 @@ def remove_template(ctx: typer.Context, name: str, type: str):
     console.print(f'[green]Template "{name}" has been removed.[/green]')
 
 
+def install_skill(ctx: typer.Context, name: str, output_dir: plb.Path):
+    """Install a skill to a local directory
+
+    Args:
+        ctx (typer.Context): Typer context
+        name (str): Name of the skill to install
+        output_dir (plb.Path): Output directory to save the skill to
+
+    Raises:
+        typer.Exit: If the skill does not exist
+    """
+    config: PersonaConfig = ctx.obj['config']
+    with get_meta_store_backend(config.meta_store, read_only=True).open(
+        bootstrap=True
+    ) as meta_store:
+        api = PersonaAPI(
+            config,
+            meta_store=meta_store,
+            file_store=get_file_store_backend(config.file_store),
+        )
+
+        try:
+            api.install_skill(name, output_dir)
+        except ValueError as e:
+            console.print(f'[red]{e}[/red]')
+            raise typer.Exit(code=1)
+
+    console.print(f'[green]Skill "{name}" has been installed to {output_dir}.[/green]')
+
+
 def get_role(
     ctx: typer.Context,
     name: str,
