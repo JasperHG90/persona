@@ -78,7 +78,7 @@ class EmbeddingDownloader:
                 with zipfile.ZipFile(BytesIO(response.content)) as z:
                     z.extractall(temp_dir)
 
-                extracted_dir = plb.Path(temp_dir) / 'minilm-l6-v2-quantized'
+                extracted_dir = plb.Path(temp_dir) / 'minilm-l6-v2-persona-ft-q8'
 
                 for item in extracted_dir.iterdir():
                     target_path = dest / item.name
@@ -96,9 +96,8 @@ class EmbeddingDownloader:
 
     def download(self, force_download: bool = False) -> None:
         """Download the model to the model directory."""
-        if not self.model_dir.exists() or force_download:
-            self.model_dir.mkdir(parents=True, exist_ok=True)
-            self._download_and_unzip(self._model_url, self.model_dir)
+        self.model_dir.mkdir(parents=True, exist_ok=True)
+        self._download_and_unzip(self._model_url, self.model_dir)
 
 
 class FastEmbedder:
