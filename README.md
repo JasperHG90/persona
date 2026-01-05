@@ -20,9 +20,18 @@ As LLM applications grow, "prompt engineering" often becomes a messy tangle of s
 ## 🚀 Key Features
 
 -   **Role Management:** Create, version, and match against curated system prompts.
+
+![](./assets/persona_gemini_cli.gif)
+
 -   **Skill Registry:** Package scripts and instructions into portable "Skills" that agents can install on-demand.
+
+![](./assets/persona_gemini_cli_skills.gif)
+
 -   **MCP Server:** A high-performance Model Context Protocol server that exposes your registry to any supported client.
 -   **TUI:** A beautiful Terminal User Interface built with **Textual** for visual library management.
+
+![](./assets/persona_tui.gif)
+
 -   **CLI Tool:** A robust command-line interface for managing your local and remote assets.
 
 ---
