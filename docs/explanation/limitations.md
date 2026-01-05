@@ -11,7 +11,7 @@ Persona uses **DuckDB** for its metadata store and **SQLite** (via DuckDB) for i
 
 ## 2. Local Execution Environment
 
-The Persona MCP server is designed to interact with the **local filesystem** of the machine where the LLM's client (e.g., VS Code, Claude Desktop) is running.
+The Persona MCP server is designed to interact with the **local filesystem** of the machine where the LLM's client (e.g., VS Code, Claude Desktop) is running. NOTE: this is not true. Persona can work with remote storage backends but it is currently not implemented.
 
 *   **Impact:** If you run the MCP server in a remote container or cloud environment without proper volume mounting, it will not be able to write `.persona/skills` or `.persona/roles` to your local project directory.
 *   **Recommendation:** Use Persona in environments where the AI has direct (or proxied) access to the workspace filesystem.

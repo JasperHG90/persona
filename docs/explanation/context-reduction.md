@@ -33,7 +33,7 @@ The `.persona/` directory acts as a local cache. To keep context efficient:
 
 When creating Roles:
 
-*   **Be Concise:** Focus on *directives* and *behavior* rather than long backstories, unless the backstory is essential for the persona's tone.
+*   **Be Concise:** Focus on *directives* and *behavior* rather than long backstories, unless the backstory is essential for the persona's tone. Use the `persona:roles:template` prompt to generate a starting point. Use `persona:roles:review` and `persona:roles:edit` to update prompts based on a chat history or feedback.
 *   **Link to Skills:** Instead of writing long procedures inside a Role, create a separate Skill. The Role can then simply "know" to use that Skill.
 
 ## Summary
