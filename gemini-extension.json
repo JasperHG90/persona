@@ -7,7 +7,7 @@
       "command": "uvx",
       "args": [
         "--from",
-        "/home/vscode/workspace[mcp]",
+        "git+https://github.com/JasperHG90/persona[mcp]",
         "persona",
         "mcp",
         "start"
